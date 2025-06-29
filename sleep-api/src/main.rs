@@ -1,4 +1,4 @@
-use axum::{routing::get, Router, Json};
+use axum::{Json, Router, routing::get};
 use serde_json::json;
 use tokio::net::TcpListener;
 
