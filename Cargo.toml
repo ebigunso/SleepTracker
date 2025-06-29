@@ -1,0 +1,3 @@
+[workspace]
+members = ["sleep-api"]
+resolver = "2"
