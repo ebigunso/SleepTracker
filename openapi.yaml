@@ -1,0 +1,55 @@
+openapi: 3.0.0
+info:
+  title: Sleep API
+  version: '0.1'
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: OK
+  /sleep:
+    post:
+      responses:
+        '201':
+          description: Created
+  /sleep/{date}:
+    get:
+      parameters:
+        - in: path
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: OK
+  /sleep/{id}:
+    put:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Updated
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+  /exercise:
+    post:
+      responses:
+        '201':
+          description: Created
+  /note:
+    post:
+      responses:
+        '201':
+          description: Created
