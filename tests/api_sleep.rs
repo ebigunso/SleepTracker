@@ -13,6 +13,16 @@ async fn test_sleep_flow() {
     let server = tokio::spawn(axum::serve(listener, app));
 
     let client = Client::new();
+    let health_url = format!("http://{}/health", addr);
+    let mut ready = false;
+    for _ in 0..10 {
+        if client.get(&health_url).send().await.is_ok() {
+            ready = true;
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    assert!(ready, "Server did not become ready in time");
     let input = SleepInput {
         date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
         bed_time: chrono::NaiveTime::from_hms_opt(23, 5, 0).unwrap(),

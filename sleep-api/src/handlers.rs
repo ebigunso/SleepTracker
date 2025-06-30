@@ -3,26 +3,33 @@ use crate::{
     error::ApiError,
     models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
 };
+use sqlx::Sqlite;
 
 pub async fn create_sleep(db: &Db, input: SleepInput) -> Result<i64, ApiError> {
-    sqlx::query("INSERT OR IGNORE INTO days(date) VALUES (?)")
+    let mut tx: sqlx::Transaction<'_, Sqlite> = db.begin().await?;
+    sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
         .bind(input.date)
-        .execute(db)
+        .execute(&mut *tx)
         .await?;
-    let res = sqlx::query("INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)")
-        .bind(input.date)
-        .bind(input.bed_time)
-        .bind(input.wake_time)
-        .execute(db)
-        .await?;
+    let res = sqlx::query::<Sqlite>(
+        "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)",
+    )
+    .bind(input.date)
+    .bind(input.bed_time)
+    .bind(input.wake_time)
+    .execute(&mut *tx)
+    .await?;
     let id = res.last_insert_rowid();
-    sqlx::query("INSERT INTO sleep_metrics(session_id, latency_min, awakenings, quality) VALUES (?, ?, ?, ?)")
-        .bind(id)
-        .bind(input.latency_min)
-        .bind(input.awakenings)
-        .bind(input.quality)
-        .execute(db)
-        .await?;
+    sqlx::query::<Sqlite>(
+        "INSERT INTO sleep_metrics(session_id, latency_min, awakenings, quality) VALUES (?, ?, ?, ?)",
+    )
+    .bind(id)
+    .bind(input.latency_min)
+    .bind(input.awakenings)
+    .bind(input.quality)
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
     Ok(id)
 }
 
@@ -30,7 +37,7 @@ pub async fn get_sleep_by_date(
     db: &Db,
     date: chrono::NaiveDate,
 ) -> Result<Option<SleepSession>, ApiError> {
-    let row = sqlx::query_as::<_, SleepSession>(
+    let row = sqlx::query_as::<Sqlite, SleepSession>(
         r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
            FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.date = ?"#,
     )
@@ -41,31 +48,33 @@ pub async fn get_sleep_by_date(
 }
 
 pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), ApiError> {
-    sqlx::query("INSERT OR IGNORE INTO days(date) VALUES (?)")
+    let mut tx: sqlx::Transaction<'_, Sqlite> = db.begin().await?;
+    sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
         .bind(input.date)
-        .execute(db)
+        .execute(&mut *tx)
         .await?;
-    sqlx::query("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
+    sqlx::query::<Sqlite>("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
         .bind(input.date)
         .bind(input.bed_time)
         .bind(input.wake_time)
         .bind(id)
-        .execute(db)
+        .execute(&mut *tx)
         .await?;
-    sqlx::query(
+    sqlx::query::<Sqlite>(
         "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=? WHERE session_id=?",
     )
     .bind(input.latency_min)
     .bind(input.awakenings)
     .bind(input.quality)
     .bind(id)
-    .execute(db)
+    .execute(&mut *tx)
     .await?;
+    tx.commit().await?;
     Ok(())
 }
 
 pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, ApiError> {
-    let res = sqlx::query("DELETE FROM sleep_sessions WHERE id = ?")
+    let res = sqlx::query::<Sqlite>("DELETE FROM sleep_sessions WHERE id = ?")
         .bind(id)
         .execute(db)
         .await?;
@@ -73,11 +82,11 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, ApiError> {
 }
 
 pub async fn create_exercise(db: &Db, input: ExerciseInput) -> Result<i64, ApiError> {
-    sqlx::query("INSERT OR IGNORE INTO days(date) VALUES (?)")
+    sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
         .bind(input.date)
         .execute(db)
         .await?;
-    let res = sqlx::query("INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)")
+    let res = sqlx::query::<Sqlite>("INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)")
         .bind(input.date)
         .bind(input.intensity)
         .bind(input.start_time)
@@ -88,11 +97,11 @@ pub async fn create_exercise(db: &Db, input: ExerciseInput) -> Result<i64, ApiEr
 }
 
 pub async fn create_note(db: &Db, input: NoteInput) -> Result<i64, ApiError> {
-    sqlx::query("INSERT OR IGNORE INTO days(date) VALUES (?)")
+    sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
         .bind(input.date)
         .execute(db)
         .await?;
-    let res = sqlx::query("INSERT INTO notes(date, body) VALUES (?, ?)")
+    let res = sqlx::query::<Sqlite>("INSERT INTO notes(date, body) VALUES (?, ?)")
         .bind(input.date)
         .bind(input.body)
         .execute(db)
