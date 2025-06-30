@@ -1,6 +1,6 @@
-use sleep_api::{db, app};
-use sleep_api::models::{SleepInput, SleepSession};
 use reqwest::Client;
+use sleep_api::models::{SleepInput, SleepSession};
+use sleep_api::{app, db};
 
 #[tokio::test]
 async fn test_sleep_flow() {
@@ -33,8 +33,12 @@ async fn test_sleep_flow() {
         awakenings: 1,
         quality: 4,
     };
-    let res = client.post(&format!("http://{}/sleep", addr))
-        .json(&input).send().await.unwrap();
+    let res = client
+        .post(&format!("http://{}/sleep", addr))
+        .json(&input)
+        .send()
+        .await
+        .unwrap();
     assert_eq!(res.status(), 201);
     let id: serde_json::Value = res.json().await.unwrap();
     let id = id["id"].as_i64().unwrap();
@@ -47,13 +51,20 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 200);
     let mut session: SleepSession = res.json().await.unwrap();
     assert_eq!(session.id, id);
+    assert_eq!(session.wake_time, input.wake_time);
+    assert_eq!(session.latency_min, input.latency_min);
+    assert_eq!(session.quality, input.quality);
 
     let updated = SleepInput {
         quality: 5,
         ..input.clone()
     };
-    let res = client.put(&format!("http://{}/sleep/{}", addr, id))
-        .json(&updated).send().await.unwrap();
+    let res = client
+        .put(&format!("http://{}/sleep/{}", addr, id))
+        .json(&updated)
+        .send()
+        .await
+        .unwrap();
     assert_eq!(res.status(), 204);
 
     let res = client
@@ -64,8 +75,13 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 200);
     session = res.json().await.unwrap();
     assert_eq!(session.quality, 5);
+    assert_eq!(session.latency_min, updated.latency_min);
 
-    let res = client.delete(&format!("http://{}/sleep/{}", addr, id)).send().await.unwrap();
+    let res = client
+        .delete(&format!("http://{}/sleep/{}", addr, id))
+        .send()
+        .await
+        .unwrap();
     assert_eq!(res.status(), 204);
 
     let res = client

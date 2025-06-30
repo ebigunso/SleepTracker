@@ -3,9 +3,9 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use tracing::error;
 use serde_json::json;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -13,6 +13,8 @@ pub enum ApiError {
     Db(#[from] sqlx::Error),
     #[error("not found")]
     NotFound,
+    #[error("invalid input: {0}")]
+    InvalidInput(String),
 }
 
 impl IntoResponse for ApiError {
@@ -22,13 +24,18 @@ impl IntoResponse for ApiError {
                 error!(?e, "database error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error":"db error"})),
+                    Json(json!({"error":"database error","detail": e.to_string()})),
                 )
                     .into_response()
             }
             ApiError::NotFound => {
                 (StatusCode::NOT_FOUND, Json(json!({"error":"not found"}))).into_response()
             }
+            ApiError::InvalidInput(msg) => (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error":"invalid input","detail": msg})),
+            )
+                .into_response(),
         }
     }
 }

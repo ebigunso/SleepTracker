@@ -37,6 +37,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SleepSession'
   /sleep/{id}:
     put:
       parameters:
@@ -58,9 +62,22 @@ paths:
           description: Deleted
   /exercise:
     post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseInput'
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
   /note:
     post:
       responses:
@@ -86,4 +103,25 @@ components:
         awakenings:
           type: integer
         quality:
+          type: integer
+    SleepSession:
+      allOf:
+        - $ref: '#/components/schemas/SleepInput'
+        - type: object
+          properties:
+            id:
+              type: integer
+    ExerciseInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        intensity:
+          type: string
+          enum: [none, light, hard]
+        start_time:
+          type: string
+          format: time
+        duration_min:
           type: integer

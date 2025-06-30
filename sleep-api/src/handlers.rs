@@ -82,17 +82,24 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, ApiError> {
 }
 
 pub async fn create_exercise(db: &Db, input: ExerciseInput) -> Result<i64, ApiError> {
+    if !matches!(input.intensity.as_str(), "none" | "light" | "hard") {
+        return Err(ApiError::InvalidInput("invalid intensity".into()));
+    }
+    let mut tx: sqlx::Transaction<'_, Sqlite> = db.begin().await?;
     sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
         .bind(input.date)
-        .execute(db)
+        .execute(&mut *tx)
         .await?;
-    let res = sqlx::query::<Sqlite>("INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)")
-        .bind(input.date)
-        .bind(input.intensity)
-        .bind(input.start_time)
-        .bind(input.duration_min)
-        .execute(db)
-        .await?;
+    let res = sqlx::query::<Sqlite>(
+        "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)"
+    )
+    .bind(input.date)
+    .bind(input.intensity)
+    .bind(input.start_time)
+    .bind(input.duration_min)
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
     Ok(res.last_insert_rowid())
 }
 
