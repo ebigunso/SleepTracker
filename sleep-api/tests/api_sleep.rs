@@ -4,6 +4,8 @@ use sleep_api::{app, db};
 
 #[tokio::test]
 async fn test_sleep_flow() {
+    // std::env::set_var is unsafe as of Rust 1.87 because it mutates global
+    // state across threads, so we encapsulate it in an unsafe block.
     unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
     let pool = db::connect().await.unwrap();
     sqlx::migrate!("../migrations").run(&pool).await.unwrap();
