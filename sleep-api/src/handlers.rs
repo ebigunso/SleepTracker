@@ -83,7 +83,9 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, ApiError> {
 
 pub async fn create_exercise(db: &Db, input: ExerciseInput) -> Result<i64, ApiError> {
     if !matches!(input.intensity.as_str(), "none" | "light" | "hard") {
-        return Err(ApiError::InvalidInput("invalid intensity".into()));
+        return Err(ApiError::InvalidInput(
+            "invalid intensity: allowed values are 'none', 'light', 'hard'".into(),
+        ));
     }
     let mut tx: sqlx::Transaction<'_, Sqlite> = db.begin().await?;
     sqlx::query::<Sqlite>("INSERT OR IGNORE INTO days(date) VALUES (?)")
