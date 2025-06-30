@@ -4,13 +4,15 @@ use reqwest::Client;
 
 #[tokio::test]
 async fn test_sleep_flow() {
-    std::env::set_var("DATABASE_URL", "sqlite::memory:");
+    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
     let pool = db::connect().await.unwrap();
     sqlx::migrate!("../migrations").run(&pool).await.unwrap();
     let app = app::router(pool.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let server = tokio::spawn(axum::serve(listener, app));
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
 
     let client = Client::new();
     let health_url = format!("http://{}/health", addr);
@@ -37,9 +39,41 @@ async fn test_sleep_flow() {
     let id: serde_json::Value = res.json().await.unwrap();
     let id = id["id"].as_i64().unwrap();
 
-    let res = client.get(&format!("http://{}/sleep/{}", addr, input.date)).send().await.unwrap();
+    let res = client
+        .get(&format!("http://{}/sleep/date/{}", addr, input.date))
+        .send()
+        .await
+        .unwrap();
     assert_eq!(res.status(), 200);
-    let session: SleepSession = res.json().await.unwrap();
+    let mut session: SleepSession = res.json().await.unwrap();
     assert_eq!(session.id, id);
+
+    let updated = SleepInput {
+        quality: 5,
+        ..input.clone()
+    };
+    let res = client.put(&format!("http://{}/sleep/{}", addr, id))
+        .json(&updated).send().await.unwrap();
+    assert_eq!(res.status(), 204);
+
+    let res = client
+        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    session = res.json().await.unwrap();
+    assert_eq!(session.quality, 5);
+
+    let res = client.delete(&format!("http://{}/sleep/{}", addr, id)).send().await.unwrap();
+    assert_eq!(res.status(), 204);
+
+    let res = client
+        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 404);
+
     server.abort();
 }

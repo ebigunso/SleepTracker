@@ -10,10 +10,23 @@ paths:
           description: OK
   /sleep:
     post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SleepInput'
       responses:
         '201':
           description: Created
-  /sleep/{date}:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+  /sleep/date/{date}:
     get:
       parameters:
         - in: path
@@ -53,3 +66,24 @@ paths:
       responses:
         '201':
           description: Created
+
+components:
+  schemas:
+    SleepInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        bed_time:
+          type: string
+          format: time
+        wake_time:
+          type: string
+          format: time
+        latency_min:
+          type: integer
+        awakenings:
+          type: integer
+        quality:
+          type: integer

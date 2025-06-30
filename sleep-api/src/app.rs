@@ -16,7 +16,7 @@ pub fn router(db: Db) -> Router {
     Router::new()
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
         .route("/sleep", post(create_sleep))
-        .route("/sleep/:date", get(get_sleep))
+        .route("/sleep/date/:date", get(get_sleep))
         .route("/sleep/:id", put(update_sleep).delete(delete_sleep))
         .route("/exercise", post(create_exercise))
         .route("/note", post(create_note))
