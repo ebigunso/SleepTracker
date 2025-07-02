@@ -1,6 +1,8 @@
 use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use crate::domain::DomainError;
+use super::quality::Quality;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SleepInput {
@@ -9,7 +11,16 @@ pub struct SleepInput {
     pub wake_time: NaiveTime,
     pub latency_min: i32,
     pub awakenings: i32,
-    pub quality: i32,
+    pub quality: Quality,
+}
+
+impl SleepInput {
+    pub fn validate(&self) -> Result<(), DomainError> {
+        if self.wake_time == self.bed_time {
+            return Err(DomainError::InvalidSleepTimes);
+        }
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, FromRow)]

@@ -1,11 +1,9 @@
 use reqwest::Client;
-use sleep_api::models::{SleepInput, SleepSession};
+use sleep_api::models::{SleepInput, SleepSession, Quality};
 use sleep_api::{app, db};
 
 #[tokio::test]
 async fn test_sleep_flow() {
-    // std::env::set_var is unsafe as of Rust 1.87 because it mutates global
-    // state across threads, so we encapsulate it in an unsafe block.
     unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
     let pool = db::connect().await.unwrap();
     sqlx::migrate!("../migrations").run(&pool).await.unwrap();
@@ -33,7 +31,7 @@ async fn test_sleep_flow() {
         wake_time: chrono::NaiveTime::from_hms_opt(6, 15, 0).unwrap(),
         latency_min: 10,
         awakenings: 1,
-        quality: 4,
+        quality: Quality(4),
     };
     let res = client
         .post(&format!("http://{}/sleep", addr))
@@ -55,10 +53,10 @@ async fn test_sleep_flow() {
     assert_eq!(session.id, id);
     assert_eq!(session.wake_time, input.wake_time);
     assert_eq!(session.latency_min, input.latency_min);
-    assert_eq!(session.quality, input.quality);
+    assert_eq!(session.quality, input.quality.value() as i32);
 
     let updated = SleepInput {
-        quality: 5,
+        quality: Quality(5),
         ..input.clone()
     };
     let res = client

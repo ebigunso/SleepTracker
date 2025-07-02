@@ -6,6 +6,7 @@ use axum::{
 use serde_json::json;
 use thiserror::Error;
 use tracing::error;
+use crate::domain::DomainError;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
@@ -37,5 +38,11 @@ impl IntoResponse for ApiError {
             )
                 .into_response(),
         }
+    }
+}
+
+impl From<DomainError> for ApiError {
+    fn from(err: DomainError) -> Self {
+        ApiError::InvalidInput(err.to_string())
     }
 }

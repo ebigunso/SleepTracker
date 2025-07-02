@@ -1,10 +1,19 @@
 use chrono::{NaiveDate, NaiveTime};
 use serde::Deserialize;
+use crate::domain::DomainError;
+use super::intensity::Intensity;
 
 #[derive(Deserialize, Clone)]
 pub struct ExerciseInput {
     pub date: NaiveDate,
-    pub intensity: String,
+    pub intensity: Intensity,
     pub start_time: Option<NaiveTime>,
     pub duration_min: Option<i32>,
+}
+
+impl ExerciseInput {
+    pub fn validate(&self) -> Result<(), DomainError> {
+        // intensity is validated by deserialization
+        Ok(())
+    }
 }

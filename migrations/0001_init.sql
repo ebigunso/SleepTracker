@@ -1,10 +1,6 @@
-CREATE TABLE days (
-    date            DATE PRIMARY KEY
-);
-
 CREATE TABLE sleep_sessions (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    date            DATE NOT NULL REFERENCES days(date) ON DELETE CASCADE,
+    date            DATE NOT NULL,
     bed_time        TIME NOT NULL,
     wake_time       TIME NOT NULL
 );
@@ -18,7 +14,7 @@ CREATE TABLE sleep_metrics (
 
 CREATE TABLE exercise_events (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    date            DATE NOT NULL REFERENCES days(date) ON DELETE CASCADE,
+    date            DATE NOT NULL,
     intensity       TEXT NOT NULL CHECK (intensity IN ('none','light','hard')),
     start_time      TIME,
     duration_min    INTEGER
@@ -26,6 +22,6 @@ CREATE TABLE exercise_events (
 
 CREATE TABLE notes (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    date            DATE NOT NULL REFERENCES days(date) ON DELETE CASCADE,
+    date            DATE NOT NULL,
     body            TEXT
 );
