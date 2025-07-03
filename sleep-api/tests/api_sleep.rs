@@ -1,5 +1,5 @@
 use reqwest::Client;
-use sleep_api::models::{SleepInput, SleepSession, Quality};
+use sleep_api::models::{Quality, SleepInput, SleepSession};
 use sleep_api::{app, db};
 
 #[tokio::test]
@@ -27,8 +27,8 @@ async fn test_sleep_flow() {
     assert!(ready, "Server did not become ready in time");
     let input = SleepInput {
         date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
-        bed_time: chrono::NaiveTime::from_hms_opt(23, 5, 0).unwrap(),
-        wake_time: chrono::NaiveTime::from_hms_opt(6, 15, 0).unwrap(),
+        bed_time: chrono::NaiveTime::from_hms_opt(22, 5, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(23, 15, 0).unwrap(),
         latency_min: 10,
         awakenings: 1,
         quality: Quality(4),

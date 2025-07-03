@@ -40,8 +40,8 @@ pub async fn create_note(db: &Db, input: NoteInput) -> Result<i64, ApiError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sqlx::sqlite::SqlitePoolOptions;
     use crate::models::Quality;
+    use sqlx::sqlite::SqlitePoolOptions;
 
     async fn setup() -> Db {
         let db = SqlitePoolOptions::new()
@@ -57,8 +57,8 @@ mod tests {
         let db = setup().await;
         let input = SleepInput {
             date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
-            bed_time: chrono::NaiveTime::from_hms_opt(23, 0, 0).unwrap(),
-            wake_time: chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap(),
+            bed_time: chrono::NaiveTime::from_hms_opt(22, 0, 0).unwrap(),
+            wake_time: chrono::NaiveTime::from_hms_opt(23, 0, 0).unwrap(),
             latency_min: 10,
             awakenings: 1,
             quality: Quality(4),

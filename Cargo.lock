@@ -1667,6 +1667,7 @@ dependencies = [
  "axum",
  "chrono",
  "dotenvy",
+ "hyper",
  "reqwest",
  "serde",
  "serde_json",

@@ -1,8 +1,8 @@
+use super::quality::Quality;
+use crate::domain::DomainError;
 use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use crate::domain::DomainError;
-use super::quality::Quality;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SleepInput {
@@ -16,7 +16,7 @@ pub struct SleepInput {
 
 impl SleepInput {
     pub fn validate(&self) -> Result<(), DomainError> {
-        if self.wake_time == self.bed_time {
+        if self.wake_time <= self.bed_time {
             return Err(DomainError::InvalidSleepTimes);
         }
         Ok(())
