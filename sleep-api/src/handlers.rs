@@ -48,7 +48,12 @@ mod tests {
             .connect("sqlite::memory:")
             .await
             .unwrap();
-        sqlx::migrate!("../migrations").run(&db).await.unwrap();
+        sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+            .await
+            .unwrap()
+            .run(&db)
+            .await
+            .unwrap();
         db
     }
 
