@@ -48,6 +48,12 @@ paths:
           name: id
           schema:
             type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SleepInput'
       responses:
         '204':
           description: Updated

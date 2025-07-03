@@ -9,6 +9,6 @@ pub enum DomainError {
     InvalidQuality,
     #[error("wake_time must be after bed_time")]
     InvalidSleepTimes,
-    #[error("invalid input: {0}")]
+    #[error("{0}")]
     InvalidInput(String),
 }
