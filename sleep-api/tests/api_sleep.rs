@@ -7,7 +7,12 @@ use sqlx::Row;
 async fn test_sleep_flow() {
     unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
     let pool = db::connect().await.unwrap();
-    sqlx::migrate!("../migrations").run(&pool).await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
     let app = app::router(pool.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -99,7 +104,12 @@ async fn test_sleep_flow() {
 async fn test_exercise_and_note() {
     unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
     let pool = db::connect().await.unwrap();
-    sqlx::migrate!("../migrations").run(&pool).await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
     let app = app::router(pool.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
