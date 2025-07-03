@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::domain::DomainError;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

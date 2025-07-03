@@ -1,5 +1,5 @@
-use serde::{Deserialize, Deserializer, Serialize};
 use crate::domain::DomainError;
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Quality(pub u8);

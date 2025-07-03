@@ -1,11 +1,14 @@
+use crate::{
+    db::Db,
+    models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
+};
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
-use crate::{db::Db, models::{SleepInput, SleepSession, ExerciseInput, NoteInput}};
 
 pub async fn insert_sleep(db: &Db, input: &SleepInput) -> Result<i64, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
-        "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)"
+        "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)",
     )
     .bind(input.date)
     .bind(input.bed_time)
@@ -26,7 +29,10 @@ pub async fn insert_sleep(db: &Db, input: &SleepInput) -> Result<i64, sqlx::Erro
     Ok(id)
 }
 
-pub async fn find_sleep_by_date(db: &Db, date: NaiveDate) -> Result<Option<SleepSession>, sqlx::Error> {
+pub async fn find_sleep_by_date(
+    db: &Db,
+    date: NaiveDate,
+) -> Result<Option<SleepSession>, sqlx::Error> {
     sqlx::query_as::<Sqlite, SleepSession>(
         r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
            FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.date = ?"#,
@@ -45,13 +51,15 @@ pub async fn update_sleep(db: &Db, id: i64, input: &SleepInput) -> Result<(), sq
         .bind(id)
         .execute(&mut *tx)
         .await?;
-    sqlx::query::<Sqlite>("UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=? WHERE session_id=?")
-        .bind(input.latency_min)
-        .bind(input.awakenings)
-        .bind(input.quality.value() as i32)
-        .bind(id)
-        .execute(&mut *tx)
-        .await?;
+    sqlx::query::<Sqlite>(
+        "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=? WHERE session_id=?",
+    )
+    .bind(input.latency_min)
+    .bind(input.awakenings)
+    .bind(input.quality.value() as i32)
+    .bind(id)
+    .execute(&mut *tx)
+    .await?;
     tx.commit().await?;
     Ok(())
 }

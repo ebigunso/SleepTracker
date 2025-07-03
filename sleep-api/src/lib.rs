@@ -1,7 +1,7 @@
 pub mod app;
 pub mod db;
+pub mod domain;
 mod error;
 mod handlers;
-pub mod repository;
-pub mod domain;
 pub mod models;
+pub mod repository;
