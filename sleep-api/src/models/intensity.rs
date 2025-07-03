@@ -16,7 +16,7 @@ impl std::fmt::Display for Intensity {
             Intensity::Light => "light",
             Intensity::Hard => "hard",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
