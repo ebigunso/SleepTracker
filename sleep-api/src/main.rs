@@ -1,10 +1,10 @@
 mod app;
 mod db;
-mod domain;
 mod error;
 mod handlers;
 mod models;
 mod repository;
+mod domain;
 
 use crate::db::connect;
 use tokio::net::TcpListener;

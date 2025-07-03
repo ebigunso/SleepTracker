@@ -1,4 +1,3 @@
-use crate::domain::DomainError;
 use axum::{
     Json,
     http::StatusCode,
@@ -7,6 +6,7 @@ use axum::{
 use serde_json::json;
 use thiserror::Error;
 use tracing::error;
+use crate::domain::DomainError;
 
 #[derive(Error, Debug)]
 pub enum ApiError {

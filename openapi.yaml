@@ -41,6 +41,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SleepSession'
+        '404':
+          description: Not Found
   /sleep/{id}:
     put:
       parameters:

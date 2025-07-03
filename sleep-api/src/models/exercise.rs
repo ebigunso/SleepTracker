@@ -1,9 +1,9 @@
 use super::intensity::Intensity;
 use crate::domain::DomainError;
 use chrono::{NaiveDate, NaiveTime};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ExerciseInput {
     pub date: NaiveDate,
     pub intensity: Intensity,

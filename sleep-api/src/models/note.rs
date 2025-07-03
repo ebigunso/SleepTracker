@@ -1,8 +1,8 @@
 use crate::domain::DomainError;
 use chrono::NaiveDate;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct NoteInput {
     pub date: NaiveDate,
     pub body: Option<String>,
