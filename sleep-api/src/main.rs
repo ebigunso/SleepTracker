@@ -13,7 +13,7 @@ use tokio::net::TcpListener;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     let pool = connect().await?;
-    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+    sqlx::migrate::Migrator::new(std::path::Path::new("./migrations"))
         .await?
         .run(&pool)
         .await?;

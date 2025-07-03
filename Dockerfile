@@ -4,9 +4,9 @@ COPY . .
 RUN cargo build --release
 
 FROM gcr.io/distroless/cc
-WORKDIR /data
-COPY --from=builder /app/target/release/sleep-api /sleep-api
+WORKDIR /app
+COPY --from=builder /app/target/release/sleep-api /app/sleep-api
+COPY --from=builder /app/migrations /app/migrations
 ENV DATABASE_URL=/data/sleep.db
-WORKDIR /
-CMD ["/sleep-api"]
+CMD ["/app/sleep-api"]
 EXPOSE 8080
