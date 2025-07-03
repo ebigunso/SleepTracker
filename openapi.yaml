@@ -1,0 +1,157 @@
+openapi: 3.0.0
+info:
+  title: Sleep API
+  version: '0.1'
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: OK
+  /sleep:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SleepInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+  /sleep/date/{date}:
+    get:
+      parameters:
+        - in: path
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SleepSession'
+        '404':
+          description: Not Found
+  /sleep/{id}:
+    put:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SleepInput'
+      responses:
+        '204':
+          description: Updated
+    delete:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
+  /exercise:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExerciseInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+  /note:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+
+components:
+  schemas:
+    SleepInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        bed_time:
+          type: string
+          format: time
+        wake_time:
+          type: string
+          format: time
+        latency_min:
+          type: integer
+        awakenings:
+          type: integer
+        quality:
+          type: integer
+    SleepSession:
+      allOf:
+        - $ref: '#/components/schemas/SleepInput'
+        - type: object
+          properties:
+            id:
+              type: integer
+    ExerciseInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        intensity:
+          type: string
+          enum: [none, light, hard]
+        start_time:
+          type: string
+          format: time
+        duration_min:
+          type: integer
+    NoteInput:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        body:
+          type: string
+          nullable: true
