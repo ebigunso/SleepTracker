@@ -201,8 +201,15 @@ pub async fn summary(
             // For even n, select the upper middle, then average with max of lower partition
             let mid = n / 2;
             let (low, nth, _high) = latencies.select_nth_unstable(mid);
-            debug_assert!(mid > 0 && !low.is_empty(), "select_nth_unstable invariant: low partition must be non-empty for even n");
-            let lower_max = *low.iter().max().expect("median: low partition empty (unexpected for even n)") as f64;
+            debug_assert!(
+                mid > 0 && !low.is_empty(),
+                "select_nth_unstable invariant: low partition must be non-empty for even n"
+            );
+            let lower_max = *low
+                .iter()
+                .max()
+                .expect("median: low partition empty (unexpected for even n)")
+                as f64;
             let upper_min = *nth as f64;
             (lower_max + upper_min) / 2.0
         };
