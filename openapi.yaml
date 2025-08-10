@@ -104,6 +104,110 @@ paths:
                 properties:
                   id:
                     type: integer
+  /api/trends/sleep-bars:
+    get:
+      summary: Sleep bars time range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of sleep bar entries for the range (wake date semantics)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                      format: date
+                    bed_time:
+                      type: string
+                      format: time
+                    wake_time:
+                      type: string
+                      format: time
+                    quality:
+                      type: integer
+                      minimum: 1
+                      maximum: 5
+                      nullable: true
+                    duration_min:
+                      type: integer
+                      nullable: true
+  /api/trends/summary:
+    get:
+      summary: Aggregated metrics for a time range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: bucket
+          required: false
+          schema:
+            type: string
+            enum: [day, week]
+      responses:
+        '200':
+          description: Aggregates for duration, quality, latency by bucket
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  duration_by_bucket:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bucket:
+                          type: string
+                        avg_min:
+                          type: number
+                        min_min:
+                          type: integer
+                        max_min:
+                          type: integer
+                  quality_by_bucket:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bucket:
+                          type: string
+                        avg:
+                          type: number
+                  latency_by_bucket:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        bucket:
+                          type: string
+                        median:
+                          type: number
 
 components:
   schemas:
@@ -144,8 +248,10 @@ components:
         start_time:
           type: string
           format: time
+          nullable: true
         duration_min:
           type: integer
+          nullable: true
     NoteInput:
       type: object
       properties:
