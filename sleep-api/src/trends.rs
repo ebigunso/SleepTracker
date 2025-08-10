@@ -185,9 +185,7 @@ pub async fn summary(
 
         // median latency
         latencies.sort_unstable();
-        let median = if latencies.is_empty() {
-            0.0
-        } else if latencies.len() % 2 == 1 {
+        let median = if latencies.len() % 2 == 1 {
             latencies[latencies.len() / 2] as f64
         } else {
             let a = latencies[latencies.len() / 2 - 1] as f64;

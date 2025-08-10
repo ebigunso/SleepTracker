@@ -86,8 +86,11 @@ async fn create_note(
 
 async fn trends_page() -> Html<String> {
     let tpl = super::views::TrendsTemplate;
-    Html(
-        tpl.render()
-            .unwrap_or_else(|_| "Template error".to_string()),
-    )
+    match tpl.render() {
+        Ok(html) => Html(html),
+        Err(e) => {
+            tracing::error!("Template rendering error: {}", e);
+            Html(format!("Template error: {}", e))
+        }
+    }
 }

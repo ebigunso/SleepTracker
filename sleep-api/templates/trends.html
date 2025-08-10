@@ -97,7 +97,7 @@
       const to = $('#to').value;
       const data = await fetchJSON(`/api/trends/sleep-bars?from=${from}&to=${to}`);
       const labels = data.map(d => d.date);
-      const durations = data.map(d => (d.duration_min ?? null) / 60.0);
+      const durations = data.map(d => d.duration_min != null ? d.duration_min / 60.0 : null);
       upsertChart('bars', {
         type: 'bar',
         data: {
