@@ -187,14 +187,19 @@ pub async fn summary(
         let avg_min = (sum_dur as f64) / (count as f64);
         let avg_quality = (sum_quality as f64) / (count as f64);
 
-        // median latency (sort once and index)
+        // median latency in O(n) expected time using selection instead of full sort
         let n = latencies.len();
-        latencies.sort_unstable();
         let median = if n % 2 == 1 {
-            latencies[n / 2] as f64
-        } else {
             let mid = n / 2;
-            (latencies[mid - 1] as f64 + latencies[mid] as f64) / 2.0
+            let (_low, nth, _high) = latencies.select_nth_unstable(mid);
+            *nth as f64
+        } else {
+            // For even n, select the upper middle, then average with max of lower partition
+            let mid = n / 2;
+            let (low, nth, _high) = latencies.select_nth_unstable(mid);
+            let lower_max = *low.iter().max().unwrap() as f64;
+            let upper_min = *nth as f64;
+            (lower_max + upper_min) / 2.0
         };
 
         duration_buckets.push(DurationBucket {

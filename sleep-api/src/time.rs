@@ -8,10 +8,23 @@ use chrono_tz::Tz;
 /// Maximum minutes to scan forward to bridge DST "spring forward" gaps
 const MAX_DST_GAP_MINUTES: usize = 3 * 60;
 
-/// Resolve a local naive datetime in a timezone to a concrete instant,
-/// handling DST gaps/overlaps:
-/// - Ambiguous: pick the earliest instant
-/// - Non-existent (spring forward gap): advance in 1-minute steps until valid (max ~3 hours)
+/// Resolve a local naive datetime in a timezone to a concrete instant.
+///
+/// Handling of DST gaps/overlaps:
+/// - Ambiguous: pick the earliest instant.
+/// - Non-existent (spring-forward gap): advance in 1-minute steps until valid (up to MAX_DST_GAP_MINUTES).
+///
+/// Fallback behavior:
+/// If, after scanning forward, no valid local time can be resolved, this function falls back to
+/// interpreting the naive datetime as a UTC wall time and then projecting it into `tz`
+/// (best-effort). A warning is logged when this fallback is taken:
+/// `resolve_local fallback: projecting naive datetime as UTC`.
+///
+/// Important:
+/// This fallback deviates from strict local-time semantics and can affect duration calculations
+/// across DST transitions and other edge cases. Callers that require strict handling should
+/// validate inputs and handle ambiguous/non-existent local times explicitly, or consider an API that
+/// returns an error instead of applying the best-effort fallback.
 fn resolve_local(tz: Tz, ndt: NaiveDateTime) -> DateTime<Tz> {
     match tz.from_local_datetime(&ndt) {
         LocalResult::Single(dt) => dt,
