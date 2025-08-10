@@ -3,5 +3,7 @@ pub mod db;
 pub mod domain;
 mod error;
 mod handlers;
+pub mod config;
+pub mod time;
 pub mod models;
 pub mod repository;

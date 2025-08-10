@@ -7,7 +7,12 @@ use crate::{
 
 pub async fn create_sleep(db: &Db, input: SleepInput) -> Result<i64, ApiError> {
     input.validate()?;
-    Ok(repository::insert_sleep(db, &input).await?)
+    let tz = crate::config::app_tz();
+    let duration = crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
+    if !(120..=840).contains(&duration) {
+        return Err(ApiError::InvalidInput("Duration must be between 2–14 hours".into()));
+    }
+    Ok(repository::insert_sleep(db, &input, duration).await?)
 }
 
 pub async fn get_sleep_by_date(
@@ -19,7 +24,12 @@ pub async fn get_sleep_by_date(
 
 pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), ApiError> {
     input.validate()?;
-    repository::update_sleep(db, id, &input).await?;
+    let tz = crate::config::app_tz();
+    let duration = crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
+    if !(120..=840).contains(&duration) {
+        return Err(ApiError::InvalidInput("Duration must be between 2–14 hours".into()));
+    }
+    repository::update_sleep(db, id, &input, duration).await?;
     Ok(())
 }
 
