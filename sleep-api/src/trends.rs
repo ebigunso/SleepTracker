@@ -8,6 +8,22 @@ use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Sqlite};
 use std::collections::BTreeMap;
 
+/// Helper to parse a date string and return ApiError with field name
+fn parse_date_field(s: &str, field: &str) -> Result<NaiveDate, ApiError> {
+    NaiveDate::parse_from_str(s, "%Y-%m-%d")
+        .map_err(|_| ApiError::InvalidInput(format!("invalid {} date", field)))
+}
+
+/// Helper to parse and validate a from/to date range (YYYY-MM-DD)
+fn parse_and_validate_date_range(from: &str, to: &str) -> Result<(NaiveDate, NaiveDate), ApiError> {
+    let from_date = parse_date_field(from, "from")?;
+    let to_date = parse_date_field(to, "to")?;
+    if to_date < from_date {
+        return Err(ApiError::InvalidInput("to must be >= from".into()));
+    }
+    Ok((from_date, to_date))
+}
+
 #[derive(Deserialize)]
 pub struct RangeQuery {
     pub from: String,
@@ -37,13 +53,7 @@ pub async fn sleep_bars(
     State(db): State<Db>,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<Vec<SleepBar>>, ApiError> {
-    let from = NaiveDate::parse_from_str(&q.from, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput("invalid from date".into()))?;
-    let to = NaiveDate::parse_from_str(&q.to, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput("invalid to date".into()))?;
-    if to < from {
-        return Err(ApiError::InvalidInput("to must be >= from".into()));
-    }
+    let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;
 
     // Pull from view; rely on server-computed duration_min
     let rows = sqlx::query_as::<Sqlite, SleepBarRow>(
@@ -112,13 +122,7 @@ pub async fn summary(
     State(db): State<Db>,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<SummaryResponse>, ApiError> {
-    let from = NaiveDate::parse_from_str(&q.from, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput("invalid from date".into()))?;
-    let to = NaiveDate::parse_from_str(&q.to, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput("invalid to date".into()))?;
-    if to < from {
-        return Err(ApiError::InvalidInput("to must be >= from".into()));
-    }
+    let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;
 
     let bucket = q.bucket.as_deref().unwrap_or("day");
     if bucket != "day" && bucket != "week" {
