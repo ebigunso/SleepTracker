@@ -1,3 +1,11 @@
+#![doc = r#"Time handling utilities
+
+Provides DST-aware resolution and helpers for computing sleep durations
+using "wake-date" semantics. See [`compute_duration_min`].
+
+[`compute_duration_min`]: crate::time::compute_duration_min
+"#]
+
 use crate::domain::DomainError;
 use chrono::{
     DateTime, Duration as ChronoDuration, LocalResult, NaiveDate, NaiveDateTime, NaiveTime,
@@ -42,10 +50,40 @@ fn resolve_local(tz: Tz, ndt: NaiveDateTime) -> DateTime<Tz> {
     }
 }
 
-/// Compute duration minutes using wake-date semantics in the provided timezone:
-/// bed_dt = (wake_date at bed_time) − (1 day if bed_time > wake_time else 0)
-/// wake_dt = (wake_date at wake_time)
-/// duration = wake_dt − bed_dt
+#[doc = r#"Compute duration minutes using wake-date semantics in the provided timezone.
+
+Given a target `wake_date`, `bed_time` and `wake_time`, the bed datetime may belong to the
+previous calendar day when `bed_time > wake_time` (crossing midnight).
+
+DST handling:
+- Ambiguous local times (fall back) choose the earliest instant.
+- Non-existent times (spring forward gap) advance minute-by-minute until valid.
+
+# Example
+
+```rust
+# use std::error::Error;
+# use chrono::{NaiveDate, NaiveTime};
+# use chrono_tz::Asia::Tokyo;
+# fn main() -> Result<(), Box<dyn Error>> {
+// Cross-midnight: bed 23:00, wake 07:00 next day
+let mins = sleep_api::time::compute_duration_min(
+    NaiveDate::from_ymd_opt(2025, 6, 1).unwrap(),
+    NaiveTime::from_hms_opt(23, 0, 0).unwrap(),
+    NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+    Tokyo,
+)?;
+assert_eq!(mins, 8 * 60);
+# Ok(()) }
+```
+
+# Errors
+
+Returns [`DomainError::InvalidInput`] if the computed duration is non-positive,
+exceeds `i32::MAX`, or if the computed bed date would underflow.
+
+[`DomainError::InvalidInput`]: crate::domain::DomainError::InvalidInput
+"#]
 pub fn compute_duration_min(
     wake_date: NaiveDate,
     bed_time: NaiveTime,
