@@ -12,7 +12,6 @@ RUN install -d -o 1000 -g 1000 /data
 WORKDIR /app
 ENV DATABASE_URL=sqlite:///data/sleep.db
 COPY --from=builder /app/target/release/sleep-api /app/sleep-api
-COPY --from=builder /app/migrations /app/migrations
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
