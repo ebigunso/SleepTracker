@@ -2,6 +2,7 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
+    trends,
     models::{ExerciseInput, NoteInput, SleepInput},
 };
 use axum::http::StatusCode;
@@ -20,6 +21,8 @@ pub fn router(db: Db) -> Router {
         .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
         .route("/exercise", post(create_exercise))
         .route("/note", post(create_note))
+        .route("/api/trends/sleep-bars", get(trends::sleep_bars))
+        .route("/api/trends/summary", get(trends::summary))
         .with_state(db)
 }
 

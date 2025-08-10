@@ -6,4 +6,5 @@ mod handlers;
 pub mod config;
 pub mod time;
 pub mod models;
+pub mod trends;
 pub mod repository;

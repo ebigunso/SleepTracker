@@ -3,7 +3,10 @@ mod db;
 mod domain;
 mod error;
 mod handlers;
+mod config;
+mod time;
 mod models;
+mod trends;
 mod repository;
 
 use crate::db::connect;
