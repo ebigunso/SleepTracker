@@ -12,6 +12,8 @@ use axum::{
     routing::{get, post, put},
 };
 use serde_json::json;
+use axum::response::Html;
+use askama::Template;
 
 pub fn router(db: Db) -> Router {
     Router::new()
@@ -23,6 +25,7 @@ pub fn router(db: Db) -> Router {
         .route("/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
+        .route("/trends", get(trends_page))
         .with_state(db)
 }
 
@@ -79,4 +82,9 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+async fn trends_page() -> Html<String> {
+    let tpl = crate::views::TrendsTemplate;
+    Html(tpl.render().unwrap_or_else(|_| "Template error".to_string()))
 }
