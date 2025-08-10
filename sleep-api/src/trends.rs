@@ -160,7 +160,10 @@ pub async fn summary(
     let mut latency_buckets = Vec::new();
 
     for (bucket_key, vals) in by_bucket {
-        let count = vals.len().max(1); // avoid div by zero
+        if vals.is_empty() {
+            continue;
+        }
+        let count = vals.len();
         let mut sum_dur = 0i64;
         let mut min_dur = i32::MAX;
         let mut max_dur = i32::MIN;
@@ -195,8 +198,8 @@ pub async fn summary(
         duration_buckets.push(DurationBucket {
             bucket: bucket_key.clone(),
             avg_min,
-            min_min: if min_dur == i32::MAX { 0 } else { min_dur },
-            max_min: if max_dur == i32::MIN { 0 } else { max_dur },
+            min_min: min_dur,
+            max_min: max_dur,
         });
         quality_buckets.push(QualityBucket {
             bucket: bucket_key.clone(),
