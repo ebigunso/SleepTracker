@@ -1,3 +1,14 @@
+#![doc = r#"Trends API
+
+Aggregations over recorded sleep data, exposed as Axum handlers.
+
+Endpoints:
+- `GET /api/trends/sleep-bars`
+- `GET /api/trends/summary`
+
+For HTTP examples, see `docs/api_examples.md` and the OpenAPI spec.
+"#]
+
 use crate::{db::Db, error::ApiError};
 use axum::{
     Json,
@@ -25,6 +36,11 @@ fn parse_and_validate_date_range(from: &str, to: &str) -> Result<(NaiveDate, Nai
 }
 
 #[derive(Deserialize)]
+#[doc = r#"Query parameters for trends endpoints.
+
+- `from`, `to`: inclusive date range `YYYY-MM-DD`.
+- `bucket`: optional `"day"` or `"week"` (summary only). Defaults to `"day"`.
+"#]
 pub struct RangeQuery {
     pub from: String,
     pub to: String,
@@ -32,6 +48,7 @@ pub struct RangeQuery {
 }
 
 #[derive(Serialize)]
+#[doc = r#"Bar data point for per-day sleep: local bed/wake times, optional quality/duration."#]
 pub struct SleepBar {
     pub date: NaiveDate, // wake date
     pub bed_time: NaiveTime,
@@ -49,6 +66,17 @@ struct SleepBarRow {
     duration_min: Option<i32>,
 }
 
+#[doc = r#"Return per-day sleep bars over a date range.
+
+Validates the date range and fetches rows from the `v_daily_sleep` view.
+
+Examples:
+- HTTP usage: see `docs/api_examples.md` and the OpenAPI spec.
+
+Errors:
+- Returns an API error for invalid dates or if `to < from`.
+- Returns an API error on database failures.
+"#]
 pub async fn sleep_bars(
     State(db): State<Db>,
     Query(q): Query<RangeQuery>,
@@ -84,6 +112,7 @@ pub async fn sleep_bars(
 }
 
 #[derive(Serialize, Clone)]
+#[doc = r#"Aggregated duration statistics per bucket (`bucket` is a date or ISO week)."#]
 pub struct DurationBucket {
     pub bucket: String,
     pub avg_min: f64,
@@ -92,18 +121,21 @@ pub struct DurationBucket {
 }
 
 #[derive(Serialize, Clone)]
+#[doc = r#"Average quality per bucket."#]
 pub struct QualityBucket {
     pub bucket: String,
     pub avg: f64,
 }
 
 #[derive(Serialize, Clone)]
+#[doc = r#"Median latency per bucket (computed via selection)."#]
 pub struct LatencyBucket {
     pub bucket: String,
     pub median: f64,
 }
 
 #[derive(Serialize)]
+#[doc = r#"Aggregated trends response combining duration, quality, and latency buckets."#]
 pub struct SummaryResponse {
     pub duration_by_bucket: Vec<DurationBucket>,
     pub quality_by_bucket: Vec<QualityBucket>,
@@ -118,6 +150,17 @@ struct SummaryRow {
     latency_min: i32,
 }
 
+#[doc = r#"Return aggregated summary statistics over a date range.
+
+When `bucket` is `"day"` (default), groups by date; when `"week"`, groups by ISO week (YYYY-Www).
+
+Examples:
+- HTTP usage: see `docs/api_examples.md` and the OpenAPI spec.
+
+Errors:
+- Returns an API error for invalid dates or invalid `bucket` values.
+- Returns an API error on database failures.
+"#]
 pub async fn summary(
     State(db): State<Db>,
     Query(q): Query<RangeQuery>,

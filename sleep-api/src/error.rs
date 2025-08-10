@@ -41,6 +41,7 @@ impl IntoResponse for ApiError {
     }
 }
 
+#[doc(hidden)]
 impl From<DomainError> for ApiError {
     fn from(err: DomainError) -> Self {
         ApiError::InvalidInput(err.to_string())

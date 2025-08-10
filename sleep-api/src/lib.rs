@@ -31,6 +31,7 @@ let app = sleep_api::app::router(db);
 Additional references:
 - OpenAPI specification: https://github.com/ebigunso/SleepTracker/blob/main/openapi.yaml
 - API examples: https://github.com/ebigunso/SleepTracker/blob/main/docs/api_examples.md
+- Release notes: https://github.com/ebigunso/SleepTracker/blob/main/CHANGELOG.md
 
 See also: [`time`], [`repository`], and [`models`].
 

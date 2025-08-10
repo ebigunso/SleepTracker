@@ -62,15 +62,15 @@ DST handling:
 # Example
 
 ```rust
-# use std::error::Error;
+# use sleep_api::domain::DomainError;
 # use chrono::{NaiveDate, NaiveTime};
 # use chrono_tz::Asia::Tokyo;
-# fn main() -> Result<(), Box<dyn Error>> {
+# fn main() -> Result<(), DomainError> {
 // Cross-midnight: bed 23:00, wake 07:00 next day
 let mins = sleep_api::time::compute_duration_min(
-    NaiveDate::from_ymd_opt(2025, 6, 1).ok_or("invalid date")?,
-    NaiveTime::from_hms_opt(23, 0, 0).ok_or("invalid time")?,
-    NaiveTime::from_hms_opt(7, 0, 0).ok_or("invalid time")?,
+    NaiveDate::from_ymd_opt(2025, 6, 1).ok_or_else(|| DomainError::InvalidInput("invalid date".into()))?,
+    NaiveTime::from_hms_opt(23, 0, 0).ok_or_else(|| DomainError::InvalidInput("invalid time".into()))?,
+    NaiveTime::from_hms_opt(7, 0, 0).ok_or_else(|| DomainError::InvalidInput("invalid time".into()))?,
     Tokyo,
 )?;
 assert_eq!(mins, 8 * 60);

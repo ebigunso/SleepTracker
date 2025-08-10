@@ -2,6 +2,12 @@
 name = "sleep-api"
 version = "0.1.0"
 edition = "2024"
+description = "SleepTracker API components: Axum router, models, SQLx repository, and DST-aware time helpers."
+license = "MIT"
+repository = "https://github.com/ebigunso/SleepTracker"
+authors = ["ebigunso"]
+keywords = ["sleep", "axum", "sqlx", "sqlite", "api"]
+categories = ["web-programming::http-server", "database", "api-bindings"]
 
 [dependencies]
 axum = "0.8.4"
