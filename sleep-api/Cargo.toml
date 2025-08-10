@@ -22,6 +22,8 @@ askama_web = { version = "0.14", features = ["axum-0.8"] }
 axum-extra = { version = "0.10", features = ["cookie"] }
 tower-http = { version = "0.6", features = ["set-header", "fs"] }
 argon2 = "0.5"
+cookie = "0.18"
+base64 = "0.22"
 
 [dev-dependencies]
 reqwest = { version = "0.12", features = ["json"] }
