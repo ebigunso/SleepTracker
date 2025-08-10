@@ -8,7 +8,8 @@ use crate::{
 pub async fn create_sleep(db: &Db, input: SleepInput) -> Result<i64, ApiError> {
     input.validate()?;
     let tz = crate::config::app_tz();
-    let duration = crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
+    let duration =
+        crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
     Ok(repository::insert_sleep(db, &input, duration).await?)
 }
 
@@ -22,7 +23,8 @@ pub async fn get_sleep_by_date(
 pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), ApiError> {
     input.validate()?;
     let tz = crate::config::app_tz();
-    let duration = crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
+    let duration =
+        crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
     repository::update_sleep(db, id, &input, duration).await?;
     Ok(())
 }

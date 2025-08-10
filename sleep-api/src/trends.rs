@@ -1,7 +1,7 @@
 use crate::{db::Db, error::ApiError};
 use axum::{
-    extract::{Query, State},
     Json,
+    extract::{Query, State},
 };
 use chrono::{Datelike, NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,7 @@ pub struct RangeQuery {
 
 #[derive(Serialize)]
 pub struct SleepBar {
-    pub date: NaiveDate,           // wake date
+    pub date: NaiveDate, // wake date
     pub bed_time: NaiveTime,
     pub wake_time: NaiveTime,
     pub quality: Option<i32>,      // optional for coloring

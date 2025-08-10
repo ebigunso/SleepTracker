@@ -5,7 +5,11 @@ use crate::{
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
 
-pub async fn insert_sleep(db: &Db, input: &SleepInput, duration_min: i32) -> Result<i64, sqlx::Error> {
+pub async fn insert_sleep(
+    db: &Db,
+    input: &SleepInput,
+    duration_min: i32,
+) -> Result<i64, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
         "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)",
@@ -43,7 +47,12 @@ pub async fn find_sleep_by_date(
     .await
 }
 
-pub async fn update_sleep(db: &Db, id: i64, input: &SleepInput, duration_min: i32) -> Result<(), sqlx::Error> {
+pub async fn update_sleep(
+    db: &Db,
+    id: i64,
+    input: &SleepInput,
+    duration_min: i32,
+) -> Result<(), sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     sqlx::query::<Sqlite>("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
         .bind(input.date)

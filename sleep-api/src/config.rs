@@ -1,7 +1,7 @@
-use base64::engine::general_purpose::STANDARD as BASE64_STD;
 use base64::Engine;
-use cookie::Key;
+use base64::engine::general_purpose::STANDARD as BASE64_STD;
 use chrono_tz::Tz;
+use cookie::Key;
 use std::str::FromStr;
 
 /// Returns the application timezone from APP_TZ or defaults to Asia/Tokyo.
@@ -17,8 +17,7 @@ pub fn app_tz() -> Tz {
 /// Generate securely, e.g.:
 ///   openssl rand -base64 64
 pub fn cookie_key_from_b64() -> Result<Key, String> {
-    let b64 = std::env::var("APP_SECRET_B64")
-        .map_err(|_| "APP_SECRET_B64 not set".to_string())?;
+    let b64 = std::env::var("APP_SECRET_B64").map_err(|_| "APP_SECRET_B64 not set".to_string())?;
     let bytes = BASE64_STD
         .decode(b64)
         .map_err(|_| "APP_SECRET_B64 is not valid base64".to_string())?;

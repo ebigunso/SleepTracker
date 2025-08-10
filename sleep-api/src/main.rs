@@ -1,14 +1,14 @@
 mod app;
+mod config;
 mod db;
 mod domain;
 mod error;
 mod handlers;
-mod config;
-mod time;
 mod models;
-mod views;
-mod trends;
 mod repository;
+mod time;
+mod trends;
+mod views;
 
 use crate::db::connect;
 use tokio::net::TcpListener;

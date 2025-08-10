@@ -1,6 +1,6 @@
 use reqwest::Client;
-use sleep_api::{app, db};
 use sleep_api::models::{Quality, SleepInput};
+use sleep_api::{app, db};
 
 #[tokio::test]
 async fn test_trends_sleep_bars_basic() {

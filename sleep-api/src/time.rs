@@ -1,6 +1,9 @@
-use chrono::{DateTime, Duration as ChronoDuration, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use chrono_tz::Tz;
 use crate::domain::DomainError;
+use chrono::{
+    DateTime, Duration as ChronoDuration, LocalResult, NaiveDate, NaiveDateTime, NaiveTime,
+    TimeZone, Utc,
+};
+use chrono_tz::Tz;
 
 /// Resolve a local naive datetime in a timezone to a concrete instant,
 /// handling DST gaps/overlaps:

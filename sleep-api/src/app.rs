@@ -2,18 +2,18 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
-    trends,
     models::{ExerciseInput, NoteInput, SleepInput},
+    trends,
 };
+use askama::Template;
 use axum::http::StatusCode;
+use axum::response::Html;
 use axum::{
     Json, Router,
     extract::{Path, State},
     routing::{get, post, put},
 };
 use serde_json::json;
-use axum::response::Html;
-use askama::Template;
 
 pub fn router(db: Db) -> Router {
     Router::new()
@@ -86,5 +86,8 @@ async fn create_note(
 
 async fn trends_page() -> Html<String> {
     let tpl = super::views::TrendsTemplate;
-    Html(tpl.render().unwrap_or_else(|_| "Template error".to_string()))
+    Html(
+        tpl.render()
+            .unwrap_or_else(|_| "Template error".to_string()),
+    )
 }
