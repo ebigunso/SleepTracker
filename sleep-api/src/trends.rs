@@ -188,6 +188,10 @@ pub async fn summary(
         let avg_quality = (sum_quality as f64) / (count as f64);
 
         // median latency in O(n) expected time using selection instead of full sort
+        // Note: select_nth_unstable permutes the contents of `latencies`. This is acceptable here
+        // because `latencies` is built per-bucket and not used after computing the median.
+        // Cloning to avoid mutation would add O(n) time and memory per bucket and reduce the
+        // performance benefit of using selection.
         let n = latencies.len();
         let median = if n % 2 == 1 {
             let mid = n / 2;
