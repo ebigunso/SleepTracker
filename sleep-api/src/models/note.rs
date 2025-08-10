@@ -10,7 +10,9 @@ pub struct NoteInput {
 
 impl NoteInput {
     pub fn validate(&self) -> Result<(), DomainError> {
-        if let Some(ref b) = self.body && (b.len() > 1000) {
+        if let Some(ref b) = self.body
+            && (b.len() > 1000)
+        {
             return Err(DomainError::InvalidInput("body too long".into()));
         }
         Ok(())
