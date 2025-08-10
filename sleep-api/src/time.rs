@@ -29,7 +29,11 @@ fn resolve_local(tz: Tz, ndt: NaiveDateTime) -> DateTime<Tz> {
                 }
             }
             // Fallback: interpret as UTC wall time then project to tz (best-effort)
-            tracing::warn!("resolve_local fallback: projecting naive datetime as UTC; tz={:?}, ndt={}", tz, ndt);
+            tracing::warn!(
+                "resolve_local fallback: projecting naive datetime as UTC; tz={:?}, ndt={}",
+                tz,
+                ndt
+            );
             tz.from_utc_datetime(&ndt)
         }
     }
