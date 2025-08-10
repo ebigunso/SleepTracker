@@ -5,7 +5,11 @@ use crate::{
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
 
-pub async fn insert_sleep(db: &Db, input: &SleepInput) -> Result<i64, sqlx::Error> {
+pub async fn insert_sleep(
+    db: &Db,
+    input: &SleepInput,
+    duration_min: i32,
+) -> Result<i64, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
         "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)",
@@ -17,12 +21,13 @@ pub async fn insert_sleep(db: &Db, input: &SleepInput) -> Result<i64, sqlx::Erro
     .await?;
     let id = res.last_insert_rowid();
     sqlx::query::<Sqlite>(
-        "INSERT INTO sleep_metrics(session_id, latency_min, awakenings, quality) VALUES (?, ?, ?, ?)"
+        "INSERT INTO sleep_metrics(session_id, latency_min, awakenings, quality, duration_min) VALUES (?, ?, ?, ?, ?)"
     )
     .bind(id)
     .bind(input.latency_min)
     .bind(input.awakenings)
     .bind(input.quality.value() as i32)
+    .bind(duration_min)
     .execute(&mut *tx)
     .await?;
     tx.commit().await?;
@@ -42,7 +47,12 @@ pub async fn find_sleep_by_date(
     .await
 }
 
-pub async fn update_sleep(db: &Db, id: i64, input: &SleepInput) -> Result<(), sqlx::Error> {
+pub async fn update_sleep(
+    db: &Db,
+    id: i64,
+    input: &SleepInput,
+    duration_min: i32,
+) -> Result<(), sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     sqlx::query::<Sqlite>("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
         .bind(input.date)
@@ -52,11 +62,12 @@ pub async fn update_sleep(db: &Db, id: i64, input: &SleepInput) -> Result<(), sq
         .execute(&mut *tx)
         .await?;
     sqlx::query::<Sqlite>(
-        "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=? WHERE session_id=?",
+        "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=?, duration_min=? WHERE session_id=?",
     )
     .bind(input.latency_min)
     .bind(input.awakenings)
     .bind(input.quality.value() as i32)
+    .bind(duration_min)
     .bind(id)
     .execute(&mut *tx)
     .await?;

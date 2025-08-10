@@ -3,8 +3,11 @@ use crate::{
     error::ApiError,
     handlers,
     models::{ExerciseInput, NoteInput, SleepInput},
+    trends,
 };
+use askama::Template;
 use axum::http::StatusCode;
+use axum::response::Html;
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -16,10 +19,13 @@ pub fn router(db: Db) -> Router {
     Router::new()
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
         .route("/sleep", post(create_sleep))
-        .route("/sleep/date/:date", get(get_sleep))
-        .route("/sleep/:id", put(update_sleep).delete(delete_sleep))
+        .route("/sleep/date/{date}", get(get_sleep))
+        .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
         .route("/exercise", post(create_exercise))
         .route("/note", post(create_note))
+        .route("/api/trends/sleep-bars", get(trends::sleep_bars))
+        .route("/api/trends/summary", get(trends::summary))
+        .route("/trends", get(trends_page))
         .with_state(db)
 }
 
@@ -76,4 +82,15 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+async fn trends_page() -> Html<String> {
+    let tpl = super::views::TrendsTemplate;
+    match tpl.render() {
+        Ok(html) => Html(html),
+        Err(e) => {
+            tracing::error!("Template rendering error: {}", e);
+            Html("An internal error occurred while rendering the page.".to_string())
+        }
+    }
 }

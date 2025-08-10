@@ -16,9 +16,17 @@ pub struct SleepInput {
 
 impl SleepInput {
     pub fn validate(&self) -> Result<(), DomainError> {
-        if self.wake_time <= self.bed_time {
-            return Err(DomainError::InvalidSleepTimes);
+        if !(0..=180).contains(&self.latency_min) {
+            return Err(DomainError::InvalidInput(
+                "latency_min must be between 0 and 180".into(),
+            ));
         }
+        if !(0..=10).contains(&self.awakenings) {
+            return Err(DomainError::InvalidInput(
+                "awakenings must be between 0 and 10".into(),
+            ));
+        }
+        // quality validated by type; time relationship validated via duration computation in handlers
         Ok(())
     }
 }

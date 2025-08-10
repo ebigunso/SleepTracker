@@ -1,7 +1,11 @@
 pub mod app;
+pub mod config;
 pub mod db;
 pub mod domain;
 mod error;
 mod handlers;
 pub mod models;
 pub mod repository;
+pub mod time;
+pub mod trends;
+pub mod views;
