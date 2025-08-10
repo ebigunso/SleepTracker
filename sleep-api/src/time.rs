@@ -5,6 +5,9 @@ use chrono::{
 };
 use chrono_tz::Tz;
 
+/// Maximum minutes to scan forward to bridge DST "spring forward" gaps
+const MAX_DST_GAP_MINUTES: usize = 3 * 60;
+
 /// Resolve a local naive datetime in a timezone to a concrete instant,
 /// handling DST gaps/overlaps:
 /// - Ambiguous: pick the earliest instant
@@ -16,7 +19,7 @@ fn resolve_local(tz: Tz, ndt: NaiveDateTime) -> DateTime<Tz> {
         LocalResult::None => {
             // advance forward until it becomes valid
             let mut cur = ndt;
-            for _ in 0..(3 * 60) {
+            for _ in 0..MAX_DST_GAP_MINUTES {
                 match tz.from_local_datetime(&cur) {
                     LocalResult::Single(dt) => return dt,
                     LocalResult::Ambiguous(earliest, _latest) => return earliest,

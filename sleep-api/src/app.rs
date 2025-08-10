@@ -90,7 +90,7 @@ async fn trends_page() -> Html<String> {
         Ok(html) => Html(html),
         Err(e) => {
             tracing::error!("Template rendering error: {}", e);
-            Html(format!("Template error: {}", e))
+            Html("An internal error occurred while rendering the page.".to_string())
         }
     }
 }
