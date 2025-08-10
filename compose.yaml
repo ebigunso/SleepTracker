@@ -1,6 +1,9 @@
 services:
   api:
     build: .
+    working_dir: /data
+    environment:
+      - DATABASE_URL=sqlite://sleep.db
     ports:
       - "8080:8080"
     volumes:

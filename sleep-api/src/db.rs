@@ -10,6 +10,7 @@ pub async fn connect() -> Result<Db, sqlx::Error> {
             io::Error::new(io::ErrorKind::NotFound, "DATABASE_URL missing").into(),
         )
     })?;
+
     let pool = SqlitePoolOptions::new().connect(&url).await?;
     sqlx::query("PRAGMA foreign_keys = ON")
         .execute(&pool)
