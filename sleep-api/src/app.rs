@@ -1,3 +1,16 @@
+#![doc = r#"HTTP routing
+
+Defines the Axum [`Router`] that exposes the SleepTracker API. This module wires
+all HTTP routes (health check, sleep CRUD, exercise, notes, and trends).
+
+See the OpenAPI specification for request/response details:
+- <https://github.com/ebigunso/SleepTracker/blob/main/openapi.yaml>
+
+For an end-to-end server setup example, see [`router`].
+
+[`Router`]: axum::Router
+"#]
+
 use crate::{
     db::Db,
     error::ApiError,
@@ -15,6 +28,37 @@ use axum::{
 };
 use serde_json::json;
 
+#[doc = r#"Build the application [`Router`].
+
+Routes:
+- `GET /health`
+- `POST /sleep`
+- `GET /sleep/date/{date}`
+- `PUT /sleep/{id}`
+- `DELETE /sleep/{id}`
+- `POST /exercise`
+- `POST /note`
+- `GET /api/trends/sleep-bars`
+- `GET /api/trends/summary`
+- `GET /trends`
+
+# Example
+
+```rust,no_run
+# use std::error::Error;
+# async fn demo() -> Result<(), Box<dyn Error>> {
+# // Acquire a database connection pool (for demonstration only).
+let db = sleep_api::db::connect().await?;
+let app = sleep_api::app::router(db);
+
+// Now serve `app` with Axum/Hyper (listener creation elided).
+// hyper::Server::bind(&addr).serve(app.into_make_service()).await?;
+# Ok(())
+# }
+```
+
+[`Router`]: axum::Router
+"#]
 pub fn router(db: Db) -> Router {
     Router::new()
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))

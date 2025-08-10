@@ -68,9 +68,9 @@ DST handling:
 # fn main() -> Result<(), Box<dyn Error>> {
 // Cross-midnight: bed 23:00, wake 07:00 next day
 let mins = sleep_api::time::compute_duration_min(
-    NaiveDate::from_ymd_opt(2025, 6, 1).unwrap(),
-    NaiveTime::from_hms_opt(23, 0, 0).unwrap(),
-    NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+    NaiveDate::from_ymd_opt(2025, 6, 1).ok_or("invalid date")?,
+    NaiveTime::from_hms_opt(23, 0, 0).ok_or("invalid time")?,
+    NaiveTime::from_hms_opt(7, 0, 0).ok_or("invalid time")?,
     Tokyo,
 )?;
 assert_eq!(mins, 8 * 60);
