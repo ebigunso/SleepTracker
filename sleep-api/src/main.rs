@@ -6,6 +6,7 @@ mod handlers;
 mod config;
 mod time;
 mod models;
+mod views;
 mod trends;
 mod repository;
 

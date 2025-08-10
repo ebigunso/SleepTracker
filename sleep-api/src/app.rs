@@ -85,6 +85,6 @@ async fn create_note(
 }
 
 async fn trends_page() -> Html<String> {
-    let tpl = crate::views::TrendsTemplate;
+    let tpl = super::views::TrendsTemplate;
     Html(tpl.render().unwrap_or_else(|_| "Template error".to_string()))
 }
