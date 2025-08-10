@@ -7,8 +7,6 @@ pub enum DomainError {
     InvalidIntensity(String),
     #[error("quality must be between 1 and 5")]
     InvalidQuality,
-    #[error("wake_time must be after bed_time")]
-    InvalidSleepTimes,
     #[error("{0}")]
     InvalidInput(String),
 }
