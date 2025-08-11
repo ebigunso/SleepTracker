@@ -11,6 +11,9 @@ For an end-to-end server setup example, see [`router`].
 [`Router`]: axum::Router
 "#]
 
+use crate::auth::{self, LoginPayload};
+use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+use crate::security::csrf::{CSRF_COOKIE, CsrfGuard, issue_csrf_cookie};
 use crate::{
     db::Db,
     error::ApiError,
@@ -20,17 +23,14 @@ use crate::{
 };
 use askama::Template;
 use axum::http::StatusCode;
-use axum::response::{Html, Redirect, IntoResponse};
+use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
     extract::{Path, State},
     routing::{get, post, put},
 };
+use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;
-use axum_extra::extract::cookie::{PrivateCookieJar, Key, Cookie, SameSite};
-use crate::auth::{self, LoginPayload};
-use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
-use crate::security::csrf::{issue_csrf_cookie, CSRF_COOKIE, CsrfGuard};
 
 #[doc = r#"Build the application [`Router`].
 
@@ -70,18 +70,25 @@ pub struct AppState {
 }
 
 impl axum::extract::FromRef<AppState> for Db {
-    fn from_ref(s: &AppState) -> Db { s.db.clone() }
+    fn from_ref(s: &AppState) -> Db {
+        s.db.clone()
+    }
 }
 
 impl axum::extract::FromRef<AppState> for Key {
-    fn from_ref(s: &AppState) -> Key { s.key.clone() }
+    fn from_ref(s: &AppState) -> Key {
+        s.key.clone()
+    }
 }
 
 pub fn router(db: Db) -> Router {
     let key: Key = crate::config::session_key();
     let enable_hsts = crate::config::hsts_enabled();
 
-    let state = AppState { db, key: key.clone() };
+    let state = AppState {
+        db,
+        key: key.clone(),
+    };
     let router = Router::new()
         .route("/", get(root))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
@@ -129,7 +136,11 @@ async fn post_login(
         let jar = jar.add(issue_csrf_cookie());
         (jar, Json(json!({"ok": true}))).into_response()
     } else {
-        (StatusCode::UNAUTHORIZED, Json(json!({"error":"unauthorized"}))).into_response()
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error":"unauthorized"})),
+        )
+            .into_response()
     }
 }
 
@@ -210,7 +221,9 @@ async fn create_note(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
-async fn trends_page(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Html<String> {
+async fn trends_page(
+    RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
+) -> Html<String> {
     let tpl = super::views::TrendsTemplate;
     match tpl.render() {
         Ok(html) => Html(html),

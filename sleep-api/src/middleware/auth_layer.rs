@@ -1,18 +1,22 @@
-use axum::extract::{FromRequestParts, FromRef};
+use axum::extract::{FromRef, FromRequestParts};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum_extra::extract::cookie::{PrivateCookieJar, Key};
+use axum_extra::extract::cookie::{Key, PrivateCookieJar};
 use serde_json::json;
 
-use crate::auth::{current_user_from_cookie, UserId};
+use crate::auth::{UserId, current_user_from_cookie};
 
 /// Extractor that requires an authenticated session for JSON APIs.
 /// On failure, returns 401 with a JSON error payload.
-pub struct RequireSessionJson { pub _user_id: UserId }
+pub struct RequireSessionJson {
+    pub _user_id: UserId,
+}
 
 /// Extractor that requires an authenticated session for UI routes.
 /// On failure, redirects to /login.
-pub struct RequireSessionRedirect { pub _user_id: UserId }
+pub struct RequireSessionRedirect {
+    pub _user_id: UserId,
+}
 
 impl<S> FromRequestParts<S> for RequireSessionJson
 where
@@ -57,7 +61,11 @@ where
 }
 
 fn unauthorized() -> Response {
-    (StatusCode::UNAUTHORIZED, axum::Json(json!({"error":"unauthorized"}))).into_response()
+    (
+        StatusCode::UNAUTHORIZED,
+        axum::Json(json!({"error":"unauthorized"})),
+    )
+        .into_response()
 }
 
 fn redirect_login() -> Response {

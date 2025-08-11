@@ -1,17 +1,17 @@
 mod app;
+mod auth;
 mod config;
 mod db;
 mod domain;
 mod error;
 mod handlers;
+mod middleware;
 mod models;
 mod repository;
+mod security;
 mod time;
 mod trends;
 mod views;
-mod auth;
-mod middleware;
-mod security;
 
 use crate::db::connect;
 use tokio::net::TcpListener;

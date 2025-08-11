@@ -38,7 +38,10 @@ pub fn current_user_from_cookie(jar: &PrivateCookieJar) -> Option<UserId> {
 
 /// Verify provided email + password against configured ADMIN_EMAIL + ADMIN_PASSWORD_HASH.
 pub fn verify_login(email: &str, password: &str) -> bool {
-    use argon2::{password_hash::{PasswordHash, PasswordVerifier}, Argon2};
+    use argon2::{
+        Argon2,
+        password_hash::{PasswordHash, PasswordVerifier},
+    };
 
     let admin_email = crate::config::admin_email();
     if email != admin_email {
