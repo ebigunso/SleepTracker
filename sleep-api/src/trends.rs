@@ -10,6 +10,7 @@ For HTTP examples, see `docs/api_examples.md` and the OpenAPI spec.
 "#]
 
 use crate::{db::Db, error::ApiError};
+use crate::middleware::auth_layer::RequireSessionJson;
 use axum::{
     Json,
     extract::{Query, State},
@@ -79,6 +80,7 @@ Errors:
 "#]
 pub async fn sleep_bars(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<Vec<SleepBar>>, ApiError> {
     let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;
@@ -163,6 +165,7 @@ Errors:
 "#]
 pub async fn summary(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<SummaryResponse>, ApiError> {
     let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;

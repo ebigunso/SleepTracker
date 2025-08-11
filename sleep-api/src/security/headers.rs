@@ -4,7 +4,7 @@ Adds common security headers to all responses:
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - `Referrer-Policy: strict-origin-when-cross-origin`
-- Content Security Policy (baseline): `default-src 'self'; script-src 'self' 'unsafe-inline'`
+- Content Security Policy (baseline): `default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self'`
 - Strict-Transport-Security when `ENABLE_HSTS=1/true`
 
 # Example
@@ -44,7 +44,7 @@ where
         ))
         .layer(SetResponseHeaderLayer::if_not_present(
             HeaderName::from_static("content-security-policy"),
-            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'"),
+            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self'"),
         ));
 
     if enable_hsts {

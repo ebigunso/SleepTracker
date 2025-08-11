@@ -26,7 +26,7 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
-    extract::{Form, Path, State},
+    extract::{Form, Path, State, Either},
     routing::{get, post, put},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
@@ -115,7 +115,7 @@ pub fn router(db: Db) -> Router {
     let router = Router::new()
         .route("/", get(root))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
-        .route("/login", get(get_login).post(post_login_form))
+        .route("/login", get(get_login).post(post_login))
         .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
         .route("/sleep", post(create_sleep))
@@ -151,20 +151,35 @@ async fn get_login() -> Html<String> {
     Html(html.to_string())
 }
 
-async fn post_login_form(
+async fn post_login(
     jar: PrivateCookieJar,
-    Form(creds): Form<LoginPayload>,
+    payload: Either<Form<LoginPayload>, Json<LoginPayload>>,
 ) -> axum::response::Response {
+    let creds = match &payload {
+        Either::Left(Form(c)) => c,
+        Either::Right(Json(c)) => c,
+    };
+
     if auth::verify_login(&creds.email, &creds.password) {
         let jar = auth::create_session_cookie(jar, "admin");
         let jar = jar.add(issue_csrf_cookie());
-        (jar, Json(json!({"ok": true}))).into_response()
+        match payload {
+            Either::Left(_) => (jar, Redirect::to("/")).into_response(),
+            Either::Right(_) => (jar, Json(json!({"ok": true}))).into_response(),
+        }
     } else {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({"error":"unauthorized"})),
-        )
-            .into_response()
+        match payload {
+            Either::Left(_) => (
+                StatusCode::UNAUTHORIZED,
+                Html("Invalid credentials".to_string()),
+            )
+                .into_response(),
+            Either::Right(_) => (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({"error":"unauthorized"})),
+            )
+                .into_response(),
+        }
     }
 }
 
@@ -186,7 +201,7 @@ async fn post_login_json(
 }
 
 
-async fn post_logout(mut jar: PrivateCookieJar) -> axum::response::Response {
+async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::response::Response {
     jar = auth::clear_session_cookie(jar);
     let csrf = Cookie::build((crate::config::csrf_cookie_name(), String::new()))
         .path("/")
@@ -210,6 +225,7 @@ async fn create_sleep(
 
 async fn get_sleep(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Path(date): Path<chrono::NaiveDate>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     match handlers::get_sleep_by_date(&db, date).await? {
