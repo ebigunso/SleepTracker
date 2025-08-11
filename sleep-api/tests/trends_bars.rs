@@ -1,8 +1,8 @@
+use argon2::password_hash::rand_core::OsRng;
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString},
 };
-use argon2::password_hash::rand_core::OsRng;
 use reqwest::Client;
 use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
