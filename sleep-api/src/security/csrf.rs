@@ -102,12 +102,12 @@ where
         }
 
         // Basic same-site heuristic via Sec-Fetch-Site if provided
-        if let Some(h) = parts.headers.get("sec-fetch-site") {
-            if let Ok(v) = h.to_str() {
-                let v = v.to_ascii_lowercase();
-                if v != "same-origin" && v != "same-site" {
-                    return Err(forbidden("csrf: cross-site request rejected"));
-                }
+        if let Some(h) = parts.headers.get("sec-fetch-site")
+            && let Ok(v) = h.to_str()
+        {
+            let v = v.to_ascii_lowercase();
+            if v != "same-origin" && v != "same-site" {
+                return Err(forbidden("csrf: cross-site request rejected"));
             }
         }
 
