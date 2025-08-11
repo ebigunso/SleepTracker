@@ -42,6 +42,8 @@ use serde_json::json;
 - Not HttpOnly (so a UI can echo the value into `X-CSRF-Token` when needed)"#]
 pub const CSRF_COOKIE: &str = "__Host-csrf";
 
+static X_CSRF_TOKEN: HeaderName = HeaderName::from_static("x-csrf-token");
+
 /// Issue a CSRF cookie with a random 32-byte base64 value.
 /// - Secure
 /// - SameSite=Lax
@@ -119,7 +121,6 @@ where
         };
 
         // Compare against header X-CSRF-Token
-        static X_CSRF_TOKEN: HeaderName = HeaderName::from_static("x-csrf-token");
         let hdr = parts
             .headers
             .get(&X_CSRF_TOKEN)
