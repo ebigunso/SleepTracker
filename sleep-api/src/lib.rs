@@ -46,16 +46,13 @@ See also: [`time`], [`repository`], and [`models`].
 "#]
 
 pub mod app;
-pub mod auth;
 pub mod config;
 pub mod db;
 pub mod domain;
 mod error;
 mod handlers;
-pub mod middleware;
 pub mod models;
 pub mod repository;
-pub mod security;
 pub mod time;
 pub mod trends;
 pub mod views;
