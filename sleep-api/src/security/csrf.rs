@@ -27,12 +27,12 @@ See also:
 - [`issue_csrf_cookie`] for issuing the CSRF cookie on login
 "#]
 
+use argon2::password_hash::rand_core::{OsRng, RngCore};
 use axum::extract::FromRequestParts;
 use axum::http::{Method, StatusCode, header::HeaderName};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
-use argon2::password_hash::rand_core::{OsRng, RngCore};
 use serde_json::json;
 
 #[doc = r#"CSRF cookie name.

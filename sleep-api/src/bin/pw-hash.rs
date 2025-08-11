@@ -10,11 +10,11 @@
 //!
 //! Note: Input is echoed. For non-echoing input, consider the `rpassword` crate.
 
+use argon2::password_hash::rand_core::OsRng;
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString},
 };
-use argon2::password_hash::rand_core::OsRng;
 use std::io::{self, Read};
 
 fn main() {
