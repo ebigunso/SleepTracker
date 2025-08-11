@@ -133,3 +133,30 @@ pub fn csrf_cookie_name() -> &'static str {
         "csrf"
     }
 }
+
+/// Optional session TTL (Max-Age) for the session cookie.
+/// - Controlled by `SESSION_TTL_HOURS`
+/// - Defaults to 12 hours when unset or invalid
+/// - Set to "0" to disable Max-Age (session-only cookie)
+pub fn session_ttl() -> Option<time::Duration> {
+    match std::env::var("SESSION_TTL_HOURS") {
+        Ok(v) => {
+            let v = v.trim();
+            if v.is_empty() {
+                return Some(time::Duration::hours(12));
+            }
+            if v == "0" {
+                return None;
+            }
+            match v.parse::<i64>() {
+                Ok(h) if h > 0 => Some(time::Duration::hours(h)),
+                Ok(_) => None,
+                Err(e) => {
+                    tracing::warn!(error=?e, value=%v, "Invalid SESSION_TTL_HOURS; using default 12h");
+                    Some(time::Duration::hours(12))
+                }
+            }
+        }
+        Err(_) => Some(time::Duration::hours(12)),
+    }
+}

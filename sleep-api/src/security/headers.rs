@@ -44,7 +44,7 @@ where
         ))
         .layer(SetResponseHeaderLayer::if_not_present(
             HeaderName::from_static("content-security-policy"),
-            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline'"),
+            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'"),
         ));
 
     if enable_hsts {

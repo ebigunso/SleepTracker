@@ -35,12 +35,6 @@ use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
 use serde_json::json;
 
-#[doc = r#"CSRF cookie name.
-
-- Name: `__Host-csrf`
-- Attributes: Secure, SameSite=Lax, Path=/
-- Not HttpOnly (so a UI can echo the value into `X-CSRF-Token` when needed)"#]
-pub const CSRF_COOKIE: &str = "__Host-csrf";
 
 const X_CSRF_TOKEN: &str = "x-csrf-token";
 
@@ -123,7 +117,7 @@ where
         // Compare against header X-CSRF-Token
         let hdr = parts
             .headers
-            .get(&X_CSRF_TOKEN)
+            .get(X_CSRF_TOKEN)
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_string());
 

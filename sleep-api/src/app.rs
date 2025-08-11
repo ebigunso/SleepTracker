@@ -30,7 +30,6 @@ use axum::{
     routing::{get, post, put},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
-use axum_extra::either::Either;
 use serde_json::json;
 
 #[doc = r#"Build the application [`Router`].
@@ -116,7 +115,8 @@ pub fn router(db: Db) -> Router {
     let router = Router::new()
         .route("/", get(root))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
-        .route("/login", get(get_login).post(post_login))
+        .route("/login", get(get_login).post(post_login_form))
+        .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
@@ -151,14 +151,10 @@ async fn get_login() -> Html<String> {
     Html(html.to_string())
 }
 
-async fn post_login(
+async fn post_login_form(
     jar: PrivateCookieJar,
-    payload: Either<Form<LoginPayload>, Json<LoginPayload>>,
+    Form(creds): Form<LoginPayload>,
 ) -> axum::response::Response {
-    let creds = match payload {
-        Either::Left(Form(c)) => c,
-        Either::Right(Json(c)) => c,
-    };
     if auth::verify_login(&creds.email, &creds.password) {
         let jar = auth::create_session_cookie(jar, "admin");
         let jar = jar.add(issue_csrf_cookie());
@@ -171,6 +167,24 @@ async fn post_login(
             .into_response()
     }
 }
+
+async fn post_login_json(
+    jar: PrivateCookieJar,
+    Json(creds): Json<LoginPayload>,
+) -> axum::response::Response {
+    if auth::verify_login(&creds.email, &creds.password) {
+        let jar = auth::create_session_cookie(jar, "admin");
+        let jar = jar.add(issue_csrf_cookie());
+        (jar, Json(json!({"ok": true}))).into_response()
+    } else {
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error":"unauthorized"})),
+        )
+            .into_response()
+    }
+}
+
 
 async fn post_logout(mut jar: PrivateCookieJar) -> axum::response::Response {
     jar = auth::clear_session_cookie(jar);

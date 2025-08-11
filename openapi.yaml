@@ -26,6 +26,26 @@ paths:
                 properties:
                   ok:
                     type: boolean
+  /login.json:
+    post:
+      summary: Login (JSON)
+      description: Issues session and CSRF cookies via Set-Cookie. JSON variant of login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
   /logout:
     post:
       summary: Logout
