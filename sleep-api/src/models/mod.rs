@@ -1,3 +1,14 @@
+#![doc = r#"Data models
+
+Structures and enums used as request/response payloads and DB projections.
+
+Key types: [`SleepInput`], [`SleepSession`], [`ExerciseInput`], [`NoteInput`], [`Quality`], [`Intensity`].
+
+See also: [`repository`] for persistence operations and [`time::compute_duration_min`] for DST-aware duration computation.
+
+[`repository`]: crate::repository
+"#]
+
 pub mod exercise;
 pub mod intensity;
 pub mod note;

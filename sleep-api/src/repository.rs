@@ -1,3 +1,20 @@
+#![doc = r#"Persistence layer
+
+Wraps SQLx statements for inserting, updating, fetching, and deleting domain records.
+Operations that touch multiple tables use a single transaction to keep data consistent.
+
+Why: prefer using these helpers over ad-hoc queries to ensure invariants and transactional correctness.
+
+See also:
+- [`models`] for data shapes
+- [`time::compute_duration_min`] for deriving duration values
+- Examples on [`insert_sleep`] demonstrating end-to-end usage.
+
+[`models`]: crate::models
+[`time::compute_duration_min`]: crate::time::compute_duration_min
+[`insert_sleep`]: crate::repository::insert_sleep
+"#]
+
 use crate::{
     db::Db,
     models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
@@ -5,6 +22,42 @@ use crate::{
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
 
+#[doc = r#"Insert a sleep session and its metrics in a single transaction.
+
+The session row is written to `sleep_sessions` and the metrics to `sleep_metrics`.
+Pass a precomputed `duration_min` (see [`time::compute_duration_min`]).
+
+# Example
+
+```rust,no_run
+# use sleep_api::domain::DomainError;
+# use std::error::Error;
+# use sleep_api::{db, repository, models::{SleepInput, Quality}};
+# use chrono::{NaiveDate, NaiveTime};
+# async fn demo() -> Result<(), Box<dyn Error>> {
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+let db = db::connect().await?;
+sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
+
+let input = SleepInput {
+    date: NaiveDate::from_ymd_opt(2025, 6, 1).ok_or_else(|| DomainError::InvalidInput("invalid date".into()))?,
+    bed_time: NaiveTime::from_hms_opt(23, 0, 0).ok_or_else(|| DomainError::InvalidInput("invalid time".into()))?,
+    wake_time: NaiveTime::from_hms_opt(7, 0, 0).ok_or_else(|| DomainError::InvalidInput("invalid time".into()))?,
+    latency_min: 10,
+    awakenings: 1,
+    quality: Quality(4),
+};
+let tz = sleep_api::config::app_tz();
+let dur = sleep_api::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
+let id = repository::insert_sleep(&db, &input, dur).await?;
+# Ok(()) }
+```
+
+# Errors
+- Returns [`sqlx::Error`] on database connection or execution errors.
+
+[`time::compute_duration_min`]: crate::time::compute_duration_min
+"#]
 pub async fn insert_sleep(
     db: &Db,
     input: &SleepInput,
@@ -34,6 +87,15 @@ pub async fn insert_sleep(
     Ok(id)
 }
 
+#[doc = r#"Find a sleep session by wake date.
+
+Returns `Ok(None)` if no session exists for the provided date.
+
+See the example on [`insert_sleep`].
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
 pub async fn find_sleep_by_date(
     db: &Db,
     date: NaiveDate,
@@ -47,6 +109,14 @@ pub async fn find_sleep_by_date(
     .await
 }
 
+#[doc = r#"Update a sleep session and its metrics in a single transaction.
+
+Requires a recomputed `duration_min`; see [`time::compute_duration_min`].
+See the example on [`insert_sleep`].
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
 pub async fn update_sleep(
     db: &Db,
     id: i64,
@@ -75,6 +145,15 @@ pub async fn update_sleep(
     Ok(())
 }
 
+#[doc = r#"Delete a sleep session by id.
+
+Returns the number of rows affected (0 if no such id exists).
+
+See the example on [`insert_sleep`].
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
 pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, sqlx::Error> {
     let res = sqlx::query::<Sqlite>("DELETE FROM sleep_sessions WHERE id = ?")
         .bind(id)
@@ -83,6 +162,34 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, sqlx::Error> {
     Ok(res.rows_affected())
 }
 
+#[doc = r#"Insert an exercise event.
+
+# Example (minimal)
+
+```rust,no_run
+# use sleep_api::domain::DomainError;
+# use std::error::Error;
+# use sleep_api::{db, repository, models::{ExerciseInput, Intensity}};
+# use chrono::NaiveDate;
+# async fn demo() -> Result<(), Box<dyn Error>> {
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+let db = db::connect().await?;
+sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
+
+let input = ExerciseInput {
+    date: NaiveDate::from_ymd_opt(2025, 6, 1).ok_or_else(|| DomainError::InvalidInput("invalid date".into()))?,
+    intensity: Intensity::Light,
+    start_time: None,
+    duration_min: Some(30),
+};
+input.validate()?;
+let id = repository::insert_exercise(&db, &input).await?;
+# Ok(()) }
+```
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
 pub async fn insert_exercise(db: &Db, input: &ExerciseInput) -> Result<i64, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
@@ -98,6 +205,34 @@ pub async fn insert_exercise(db: &Db, input: &ExerciseInput) -> Result<i64, sqlx
     Ok(res.last_insert_rowid())
 }
 
+#[doc = r#"Insert a note for a particular date.
+
+A `None` body is stored as NULL.
+
+# Example
+
+```rust,no_run
+# use sleep_api::domain::DomainError;
+# use std::error::Error;
+# use sleep_api::{db, repository, models::NoteInput};
+# use chrono::NaiveDate;
+# async fn demo() -> Result<(), Box<dyn Error>> {
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+let db = db::connect().await?;
+sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
+
+let input = NoteInput {
+    date: NaiveDate::from_ymd_opt(2025, 6, 1).ok_or_else(|| DomainError::InvalidInput("invalid date".into()))?,
+    body: Some("Slept well".to_string()),
+};
+input.validate()?;
+let id = repository::insert_note(&db, &input).await?;
+# Ok(()) }
+```
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
 pub async fn insert_note(db: &Db, input: &NoteInput) -> Result<i64, sqlx::Error> {
     let res = sqlx::query::<Sqlite>("INSERT INTO notes(date, body) VALUES (?, ?)")
         .bind(input.date)
