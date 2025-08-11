@@ -4,10 +4,10 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString},
 };
 use reqwest::Client;
+use serial_test::serial;
 use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
 use tokio::time::{Duration, sleep};
-use serial_test::serial;
 
 fn set_admin_env(email: &str, password: &str) {
     // Generate an argon2id hash for the given password and set envs

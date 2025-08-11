@@ -35,7 +35,6 @@ use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
 use serde_json::json;
 
-
 const X_CSRF_TOKEN: &str = "x-csrf-token";
 
 /// Issue a CSRF cookie with a random 32-byte base64 value.

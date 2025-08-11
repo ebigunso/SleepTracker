@@ -25,7 +25,6 @@ use serde::Deserialize;
 This project supports a single admin user; `UserId` is typically `"admin"` or the configured `ADMIN_EMAIL`."#]
 pub type UserId = String;
 
-
 /// Create a secure, HttpOnly session cookie storing the user id (encrypted via PrivateCookieJar).
 #[doc = r#"Create a secure, HttpOnly session cookie storing the user id.
 
