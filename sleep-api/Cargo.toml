@@ -25,7 +25,7 @@ thiserror = "2.0.12"
 hyper = "1"
 askama = "0.14"
 askama_web = { version = "0.14", features = ["axum-0.8"] }
-axum-extra = { version = "0.10", features = ["cookie", "cookie-signed"] }
+axum-extra = { version = "0.10", features = ["cookie", "cookie-signed", "cookie-private"] }
 tower-http = { version = "0.6", features = ["set-header", "fs"] }
 argon2 = "0.5"
 cookie = { version = "0.18", features = ["secure"] }
@@ -33,4 +33,4 @@ base64 = "0.22"
 rand = "0.8"
 
 [dev-dependencies]
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "cookies"] }

@@ -40,3 +40,39 @@ pub fn app_tz() -> Tz {
     let name = std::env::var("APP_TZ").unwrap_or_else(|_| "Asia/Tokyo".to_string());
     Tz::from_str(&name).unwrap_or(chrono_tz::Asia::Tokyo)
 }
+
+/// Return the admin email from ADMIN_EMAIL (defaults to admin@example.com).
+pub fn admin_email() -> String {
+    std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@example.com".to_string())
+}
+
+/// Return the admin password hash from ADMIN_PASSWORD_HASH (argon2id string).
+/// Returns empty string if unset, causing login to fail.
+pub fn admin_password_hash() -> String {
+    std::env::var("ADMIN_PASSWORD_HASH").unwrap_or_default()
+}
+
+/// Build a cookie Key from SESSION_SECRET if provided (base64), otherwise generate a random key.
+/// A stable key is recommended for production to allow restarting without invalidating sessions.
+pub fn session_key() -> axum_extra::extract::cookie::Key {
+    use base64::{engine::general_purpose, Engine as _};
+    if let Ok(val) = std::env::var("SESSION_SECRET") {
+        match general_purpose::STANDARD.decode(val.as_bytes()) {
+            Ok(bytes) => {
+                return axum_extra::extract::cookie::Key::derive_from(&bytes);
+            }
+            Err(e) => {
+                tracing::warn!(error = ?e, "Invalid base64 in SESSION_SECRET, generating random key");
+            }
+        }
+    }
+    axum_extra::extract::cookie::Key::generate()
+}
+
+/// Whether to enable the HSTS header. Controlled by ENABLE_HSTS=1/true.
+pub fn hsts_enabled() -> bool {
+    match std::env::var("ENABLE_HSTS") {
+        Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),
+        Err(_) => false,
+    }
+}
