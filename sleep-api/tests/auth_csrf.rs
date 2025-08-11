@@ -112,7 +112,7 @@ async fn test_auth_and_csrf_flow() {
         "password": "password123"
     });
     let res = client
-        .post(format!("http://{addr}/login"))
+        .post(format!("http://{addr}/login.json"))
         .json(&login_body)
         .send()
         .await

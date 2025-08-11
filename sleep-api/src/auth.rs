@@ -25,12 +25,6 @@ use serde::Deserialize;
 This project supports a single admin user; `UserId` is typically `"admin"` or the configured `ADMIN_EMAIL`."#]
 pub type UserId = String;
 
-#[doc = r#"Session cookie name.
-
-- Name: `__Host-session`
-- Attributes: Secure, HttpOnly, SameSite=Lax, Path=/
-- Must use `__Host-` prefix requirements (Secure, Path=/, no Domain) in browsers."#]
-pub const SESSION_COOKIE: &str = "__Host-session";
 
 /// Create a secure, HttpOnly session cookie storing the user id (encrypted via PrivateCookieJar).
 #[doc = r#"Create a secure, HttpOnly session cookie storing the user id.
@@ -46,12 +40,15 @@ sleep_api::auth::create_session_cookie(jar, "admin")
 # }
 ```"#]
 pub fn create_session_cookie(mut jar: PrivateCookieJar, user_id: &str) -> PrivateCookieJar {
-    let cookie = Cookie::build((crate::config::session_cookie_name(), user_id.to_owned()))
+    let mut builder = Cookie::build((crate::config::session_cookie_name(), user_id.to_owned()))
         .path("/")
         .secure(crate::config::cookie_secure())
         .http_only(true)
-        .same_site(SameSite::Lax)
-        .build();
+        .same_site(SameSite::Lax);
+    if let Some(ttl) = crate::config::session_ttl() {
+        builder = builder.max_age(ttl);
+    }
+    let cookie = builder.build();
     jar = jar.add(cookie);
     jar
 }

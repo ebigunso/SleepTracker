@@ -57,7 +57,7 @@ async fn login_and_get_auth(
     password: &str,
 ) -> (String, String) {
     let res = client
-        .post(format!("http://{addr}/login"))
+        .post(format!("http://{addr}/login.json"))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
