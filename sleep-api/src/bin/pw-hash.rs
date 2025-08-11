@@ -1,3 +1,15 @@
+//! Password hash generator (Argon2id)
+//!
+//! Reads a password from stdin and prints an `$argon2id$...` hash suitable for
+//! the `ADMIN_PASSWORD_HASH` environment variable.
+//!
+//! Usage (examples):
+//! ```text
+//! cargo run -p sleep-api --bin pw-hash
+//! ```
+//!
+//! Note: Input is echoed. For non-echoing input, consider the `rpassword` crate.
+
 use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString},

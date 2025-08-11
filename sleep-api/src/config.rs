@@ -42,18 +42,41 @@ pub fn app_tz() -> Tz {
 }
 
 /// Return the admin email from ADMIN_EMAIL (defaults to admin@example.com).
+#[doc = r#"Return the admin email from the `ADMIN_EMAIL` environment variable.
+
+Defaults to `admin@example.com` if unset.
+
+# Example
+
+```rust,no_run
+# unsafe {
+std::env::set_var("ADMIN_EMAIL", "owner@example.com");
+assert_eq!(sleep_api::config::admin_email(), "owner@example.com");
+# }
+```"#]
 pub fn admin_email() -> String {
     std::env::var("ADMIN_EMAIL").unwrap_or_else(|_| "admin@example.com".to_string())
 }
 
 /// Return the admin password hash from ADMIN_PASSWORD_HASH (argon2id string).
 /// Returns empty string if unset, causing login to fail.
+#[doc = r#"Return the admin password hash from `ADMIN_PASSWORD_HASH`.
+
+Expected format is an Argon2id hash string (e.g., `$argon2id$...`). Returns empty string if unset,
+which causes login verification to fail."#]
 pub fn admin_password_hash() -> String {
     std::env::var("ADMIN_PASSWORD_HASH").unwrap_or_default()
 }
 
 /// Build a cookie Key from SESSION_SECRET if provided (base64), otherwise generate a random key.
 /// A stable key is recommended for production to allow restarting without invalidating sessions.
+#[doc = r#"Build a cookie [`Key`] from `SESSION_SECRET` (base64) or generate a random key.
+
+A stable `SESSION_SECRET` is recommended for production to avoid invalidating sessions on restart.
+If the environment variable is absent or invalid, a new random key is generated.
+
+[`Key`]: axum_extra::extract::cookie::Key
+"#]
 pub fn session_key() -> axum_extra::extract::cookie::Key {
     use base64::{Engine as _, engine::general_purpose};
     if let Ok(val) = std::env::var("SESSION_SECRET") {
@@ -70,6 +93,10 @@ pub fn session_key() -> axum_extra::extract::cookie::Key {
 }
 
 /// Whether to enable the HSTS header. Controlled by ENABLE_HSTS=1/true.
+#[doc = r#"Return whether to enable the HSTS header.
+
+Reads `ENABLE_HSTS` and treats `1` or `true` (case-insensitive) as enabled.
+Only enable when serving over HTTPS or behind TLS-terminating proxy."#]
 pub fn hsts_enabled() -> bool {
     match std::env::var("ENABLE_HSTS") {
         Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),

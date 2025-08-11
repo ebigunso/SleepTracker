@@ -64,6 +64,29 @@ let app = sleep_api::app::router(db);
 [`Router`]: axum::Router
 "#]
 #[derive(Clone)]
+#[doc = r#"Application state for the Axum router.
+
+Holds shared components that extractors rely on:
+- [`Db`] — SQLx pool
+- [`Key`] — cookie crypto key for [`PrivateCookieJar`]
+
+Implements `FromRef` for `Db` and `Key` so handlers can extract them via `State<Db>` and extractors like `PrivateCookieJar`.
+
+# Example
+
+```rust,no_run
+# use axum::Router;
+# use axum_extra::extract::cookie::Key;
+# async fn demo(db: sleep_api::db::Db) {
+let state = sleep_api::app::AppState { db, key: sleep_api::config::session_key() };
+let app = Router::new().with_state(state);
+# }
+```
+
+[`Db`]: crate::db::Db
+[`Key`]: axum_extra::extract::cookie::Key
+[`PrivateCookieJar`]: axum_extra::extract::cookie::PrivateCookieJar
+"#]
 pub struct AppState {
     pub db: Db,
     pub key: Key,

@@ -1,3 +1,32 @@
+#![doc = r#"CSRF protection (double-submit)
+
+Implements double-submit cookie protection for mutating requests:
+
+- Cookie `__Host-csrf` (Secure, SameSite=Lax, Path=/, not HttpOnly), value: URL-safe base64 token
+- Header `X-CSRF-Token` must match the cookie value (header is percent-decoded before comparison)
+- For mutating requests (POST, PUT, DELETE), [`CsrfGuard`] enforces:
+  - Same-site heuristic using `Sec-Fetch-Site` if present (`same-origin` or `same-site`)
+  - Exact match of header token to cookie value (after percent-decoding)
+
+# Example
+
+```rust,no_run
+# use axum::{Json, response::IntoResponse};
+# use sleep_api::middleware::auth_layer::RequireSessionJson;
+# use sleep_api::security::csrf::CsrfGuard;
+async fn post_thing(
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
+    Json(_): Json<serde_json::Value>,
+) -> impl IntoResponse {
+    axum::http::StatusCode::NO_CONTENT
+}
+```
+
+See also:
+- [`issue_csrf_cookie`] for issuing the CSRF cookie on login
+"#]
+
 use axum::extract::FromRequestParts;
 use axum::http::{Method, StatusCode, header::HeaderName};
 use axum::response::{IntoResponse, Response};
@@ -6,6 +35,11 @@ use base64::Engine;
 use rand::RngCore;
 use serde_json::json;
 
+#[doc = r#"CSRF cookie name.
+
+- Name: `__Host-csrf`
+- Attributes: Secure, SameSite=Lax, Path=/
+- Not HttpOnly (so a UI can echo the value into `X-CSRF-Token` when needed)"#]
 pub const CSRF_COOKIE: &str = "__Host-csrf";
 
 /// Issue a CSRF cookie with a random 32-byte base64 value.
@@ -13,6 +47,15 @@ pub const CSRF_COOKIE: &str = "__Host-csrf";
 /// - SameSite=Lax
 /// - Path=/
 /// - Not HttpOnly (so a future UI may read and echo it via X-CSRF-Token)
+#[doc = r#"Issue a CSRF cookie with a random 32-byte URL-safe base64 value.
+
+Cookie attributes:
+- Secure
+- SameSite=Lax
+- Path=/
+- Not HttpOnly
+
+Returns a cookie ready to be added to a [`CookieJar`]."#]
 pub fn issue_csrf_cookie() -> Cookie<'static> {
     let mut bytes = [0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut bytes);
@@ -30,6 +73,13 @@ pub fn issue_csrf_cookie() -> Cookie<'static> {
 /// - Requires a cookie "__Host-csrf"
 /// - Requires header "X-CSRF-Token" matching the cookie value
 /// - If "Sec-Fetch-Site" header is present, it must be "same-origin" or "same-site"
+#[doc = r#"Extractor that enforces double-submit CSRF for mutating methods (POST/PUT/DELETE).
+
+Enforcement:
+- If `Sec-Fetch-Site` header is present, it must be `same-origin` or `same-site`
+- Reads `__Host-csrf` cookie and compares it to `X-CSRF-Token` header (header is percent-decoded before comparison)
+- On failure, returns `403` with JSON payload: `{"error":"forbidden","detail":"csrf: ..."}`
+"#]
 pub struct CsrfGuard;
 
 impl<S> FromRequestParts<S> for CsrfGuard
