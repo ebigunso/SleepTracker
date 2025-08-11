@@ -56,3 +56,6 @@ pub mod repository;
 pub mod time;
 pub mod trends;
 pub mod views;
+pub mod auth;
+pub mod middleware;
+pub mod security;

@@ -20,13 +20,17 @@ use crate::{
 };
 use askama::Template;
 use axum::http::StatusCode;
-use axum::response::Html;
+use axum::response::{Html, Redirect, IntoResponse};
 use axum::{
     Json, Router,
     extract::{Path, State},
     routing::{get, post, put},
 };
 use serde_json::json;
+use axum_extra::extract::cookie::{PrivateCookieJar, Key, Cookie, SameSite};
+use crate::auth::{self, LoginPayload};
+use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+use crate::security::csrf::{issue_csrf_cookie, CSRF_COOKIE, CsrfGuard};
 
 #[doc = r#"Build the application [`Router`].
 
@@ -59,9 +63,30 @@ let app = sleep_api::app::router(db);
 
 [`Router`]: axum::Router
 "#]
+#[derive(Clone)]
+pub struct AppState {
+    pub db: Db,
+    pub key: Key,
+}
+
+impl axum::extract::FromRef<AppState> for Db {
+    fn from_ref(s: &AppState) -> Db { s.db.clone() }
+}
+
+impl axum::extract::FromRef<AppState> for Key {
+    fn from_ref(s: &AppState) -> Key { s.key.clone() }
+}
+
 pub fn router(db: Db) -> Router {
-    Router::new()
+    let key: Key = crate::config::session_key();
+    let enable_hsts = crate::config::hsts_enabled();
+
+    let state = AppState { db, key: key.clone() };
+    let router = Router::new()
+        .route("/", get(root))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
+        .route("/login", get(get_login).post(post_login))
+        .route("/logout", post(post_logout))
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
         .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
@@ -70,11 +95,60 @@ pub fn router(db: Db) -> Router {
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
         .route("/trends", get(trends_page))
-        .with_state(db)
+        .with_state(state);
+
+    crate::security::headers::apply(router, enable_hsts)
+}
+
+async fn root(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Redirect {
+    Redirect::to("/trends")
+}
+
+async fn get_login() -> Html<String> {
+    let html = r#"<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Login</title></head>
+<body>
+  <h1>Login</h1>
+  <form method="post" action="/login">
+    <label>Email <input type="email" name="email" /></label><br/>
+    <label>Password <input type="password" name="password" /></label><br/>
+    <button type="submit">Login</button>
+  </form>
+</body>
+</html>"#;
+    Html(html.to_string())
+}
+
+async fn post_login(
+    jar: PrivateCookieJar,
+    Json(creds): Json<LoginPayload>,
+) -> axum::response::Response {
+    if auth::verify_login(&creds.email, &creds.password) {
+        let jar = auth::create_session_cookie(jar, "admin");
+        let jar = jar.add(issue_csrf_cookie());
+        (jar, Json(json!({"ok": true}))).into_response()
+    } else {
+        (StatusCode::UNAUTHORIZED, Json(json!({"error":"unauthorized"}))).into_response()
+    }
+}
+
+async fn post_logout(mut jar: PrivateCookieJar) -> axum::response::Response {
+    jar = auth::clear_session_cookie(jar);
+    let csrf = Cookie::build((CSRF_COOKIE, String::new()))
+        .path("/")
+        .secure(true)
+        .http_only(false)
+        .same_site(SameSite::Lax)
+        .build();
+    jar = jar.remove(csrf);
+    (jar, StatusCode::NO_CONTENT).into_response()
 }
 
 async fn create_sleep(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
     Json(input): Json<SleepInput>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_sleep(&db, input).await?;
@@ -94,6 +168,8 @@ async fn get_sleep(
 async fn update_sleep(
     State(db): State<Db>,
     Path(id): Path<i64>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
     Json(input): Json<SleepInput>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     handlers::update_sleep(&db, id, input).await?;
@@ -103,6 +179,8 @@ async fn update_sleep(
 async fn delete_sleep(
     State(db): State<Db>,
     Path(id): Path<i64>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let affected = handlers::delete_sleep(&db, id).await?;
     if affected == 0 {
@@ -114,6 +192,8 @@ async fn delete_sleep(
 
 async fn create_exercise(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
     Json(input): Json<ExerciseInput>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_exercise(&db, input).await?;
@@ -122,13 +202,15 @@ async fn create_exercise(
 
 async fn create_note(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
     Json(input): Json<NoteInput>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
-async fn trends_page() -> Html<String> {
+async fn trends_page(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Html<String> {
     let tpl = super::views::TrendsTemplate;
     match tpl.render() {
         Ok(html) => Html(html),

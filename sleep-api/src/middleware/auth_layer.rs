@@ -1,22 +1,23 @@
-use axum::extract::FromRequestParts;
+use axum::extract::{FromRequestParts, FromRef};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};
-use axum_extra::extract::cookie::PrivateCookieJar;
+use axum_extra::extract::cookie::{PrivateCookieJar, Key};
 use serde_json::json;
 
 use crate::auth::{current_user_from_cookie, UserId};
 
 /// Extractor that requires an authenticated session for JSON APIs.
 /// On failure, returns 401 with a JSON error payload.
-pub struct RequireSessionJson(pub UserId);
+pub struct RequireSessionJson { pub _user_id: UserId }
 
 /// Extractor that requires an authenticated session for UI routes.
 /// On failure, redirects to /login.
-pub struct RequireSessionRedirect(pub UserId);
+pub struct RequireSessionRedirect { pub _user_id: UserId }
 
 impl<S> FromRequestParts<S> for RequireSessionJson
 where
     S: Send + Sync,
+    Key: FromRef<S>,
 {
     type Rejection = Response;
 
@@ -28,7 +29,7 @@ where
             .await
             .map_err(|_| unauthorized())?;
         match current_user_from_cookie(&jar) {
-            Some(uid) => Ok(Self(uid)),
+            Some(uid) => Ok(Self { _user_id: uid }),
             None => Err(unauthorized()),
         }
     }
@@ -37,6 +38,7 @@ where
 impl<S> FromRequestParts<S> for RequireSessionRedirect
 where
     S: Send + Sync,
+    Key: FromRef<S>,
 {
     type Rejection = Response;
 
@@ -48,7 +50,7 @@ where
             .await
             .map_err(|_| redirect_login())?;
         match current_user_from_cookie(&jar) {
-            Some(uid) => Ok(Self(uid)),
+            Some(uid) => Ok(Self { _user_id: uid }),
             None => Err(redirect_login()),
         }
     }

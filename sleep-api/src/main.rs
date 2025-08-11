@@ -9,6 +9,9 @@ mod repository;
 mod time;
 mod trends;
 mod views;
+mod auth;
+mod middleware;
+mod security;
 
 use crate::db::connect;
 use tokio::net::TcpListener;

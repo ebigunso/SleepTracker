@@ -11,5 +11,5 @@ fn main() {
     let salt = SaltString::generate(rand::rngs::OsRng);
     let argon2 = Argon2::default();
     let hash = argon2.hash_password(password, &salt).expect("hashing failed");
-    println!("{}", hash.to_string());
+    println!("{hash}");
 }

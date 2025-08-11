@@ -22,7 +22,7 @@ use std::collections::BTreeMap;
 /// Helper to parse a date string and return ApiError with field name
 fn parse_date_field(s: &str, field: &str) -> Result<NaiveDate, ApiError> {
     NaiveDate::parse_from_str(s, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput(format!("invalid {} date", field)))
+        .map_err(|_| ApiError::InvalidInput(format!("invalid {field} date")))
 }
 
 /// Helper to parse and validate a from/to date range (YYYY-MM-DD)
