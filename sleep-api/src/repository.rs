@@ -35,7 +35,7 @@ Pass a precomputed `duration_min` (see [`time::compute_duration_min`]).
 # use sleep_api::{db, repository, models::{SleepInput, Quality}};
 # use chrono::{NaiveDate, NaiveTime};
 # async fn demo() -> Result<(), Box<dyn Error>> {
-//// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
 let db = db::connect().await?;
 sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
 
@@ -172,7 +172,7 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, sqlx::Error> {
 # use sleep_api::{db, repository, models::{ExerciseInput, Intensity}};
 # use chrono::NaiveDate;
 # async fn demo() -> Result<(), Box<dyn Error>> {
-//// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
 let db = db::connect().await?;
 sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
 
@@ -217,7 +217,7 @@ A `None` body is stored as NULL.
 # use sleep_api::{db, repository, models::NoteInput};
 # use chrono::NaiveDate;
 # async fn demo() -> Result<(), Box<dyn Error>> {
-//// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
+// Ensure DATABASE_URL is set in the environment (e.g., sqlite::memory:).
 let db = db::connect().await?;
 sqlx::migrate::Migrator::new(std::path::Path::new("../migrations")).await?.run(&db).await?;
 
