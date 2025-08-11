@@ -149,8 +149,7 @@ async fn test_trends_sleep_bars_basic() {
     assert_eq!(res.status(), 201);
 
     // Call sleep-bars
-    let bars_url =
-        format!("http://{addr}/api/trends/sleep-bars?from=2025-06-16&to=2025-06-19");
+    let bars_url = format!("http://{addr}/api/trends/sleep-bars?from=2025-06-16&to=2025-06-19");
     let res = client.get(&bars_url).send().await.unwrap();
     assert_eq!(res.status(), 200);
     let bars_json: serde_json::Value = res.json().await.unwrap();
