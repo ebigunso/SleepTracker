@@ -20,7 +20,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{}/health", addr);
+    let health_url = format!("http://{addr}/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -55,7 +55,7 @@ async fn login_and_get_auth(
     password: &str,
 ) -> (String, String) {
     let res = client
-        .post(&format!("http://{}/login", addr))
+        .post(format!("http://{addr}/login"))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
@@ -123,10 +123,10 @@ async fn test_trends_sleep_bars_basic() {
     };
 
     let res = client
-        .post(&format!("http://{}/sleep", addr))
+        .post(format!("http://{addr}/sleep"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session, csrf),
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&s1)
@@ -136,10 +136,10 @@ async fn test_trends_sleep_bars_basic() {
     assert_eq!(res.status(), 201);
 
     let res = client
-        .post(&format!("http://{}/sleep", addr))
+        .post(format!("http://{addr}/sleep"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session, csrf),
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&s2)
@@ -149,10 +149,8 @@ async fn test_trends_sleep_bars_basic() {
     assert_eq!(res.status(), 201);
 
     // Call sleep-bars
-    let bars_url = format!(
-        "http://{}/api/trends/sleep-bars?from=2025-06-16&to=2025-06-19",
-        addr
-    );
+    let bars_url =
+        format!("http://{addr}/api/trends/sleep-bars?from=2025-06-16&to=2025-06-19");
     let res = client.get(&bars_url).send().await.unwrap();
     assert_eq!(res.status(), 200);
     let bars_json: serde_json::Value = res.json().await.unwrap();

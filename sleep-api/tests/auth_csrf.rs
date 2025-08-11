@@ -22,7 +22,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{}/health", addr);
+    let health_url = format!("http://{addr}/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -85,7 +85,7 @@ async fn test_auth_and_csrf_flow() {
 
     // Unauthed UI route should redirect to /login
     let res = client
-        .get(&format!("http://{}/trends", addr))
+        .get(format!("http://{addr}/trends"))
         .send()
         .await
         .unwrap();
@@ -102,8 +102,7 @@ async fn test_auth_and_csrf_flow() {
         .unwrap();
     assert!(
         loc.ends_with("/login"),
-        "expected redirect to /login, got {}",
-        loc
+        "expected redirect to /login, got {loc}"
     );
 
     // Login with JSON
@@ -112,7 +111,7 @@ async fn test_auth_and_csrf_flow() {
         "password": "password123"
     });
     let res = client
-        .post(&format!("http://{}/login", addr))
+        .post(format!("http://{addr}/login"))
         .json(&login_body)
         .send()
         .await
@@ -141,7 +140,7 @@ async fn test_auth_and_csrf_flow() {
         quality: Quality(4),
     };
     let res = client
-        .post(&format!("http://{}/sleep", addr))
+        .post(format!("http://{addr}/sleep"))
         .json(&sample)
         .send()
         .await
@@ -154,10 +153,10 @@ async fn test_auth_and_csrf_flow() {
 
     // Mutating API with CSRF header should succeed
     let res = client
-        .post(&format!("http://{}/sleep", addr))
+        .post(format!("http://{addr}/sleep"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session, csrf),
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&sample)
@@ -174,14 +173,14 @@ async fn test_auth_and_csrf_flow() {
 
     // Logout clears session; subsequent mutating should be 401
     let res = client
-        .post(&format!("http://{}/logout", addr))
+        .post(format!("http://{addr}/logout"))
         .send()
         .await
         .unwrap();
     assert_eq!(res.status(), 204);
 
     let res = client
-        .delete(&format!("http://{}/sleep/{}", addr, id))
+        .delete(format!("http://{addr}/sleep/{id}"))
         .header("X-CSRF-Token", &csrf)
         .send()
         .await
