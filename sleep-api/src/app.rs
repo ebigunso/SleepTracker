@@ -79,7 +79,7 @@ Implements `FromRef` for `Db` and `Key` so handlers can extract them via `State<
 # use axum_extra::extract::cookie::Key;
 # async fn demo(db: sleep_api::db::Db) {
 let state = sleep_api::app::AppState { db, key: sleep_api::config::session_key() };
-let app = Router::new().with_state(state);
+let app: Router<sleep_api::app::AppState> = Router::new().with_state(state);
 # }
 ```
 
