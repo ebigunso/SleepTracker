@@ -7,6 +7,7 @@ use reqwest::Client;
 use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
 use tokio::time::{Duration, sleep};
+use serial_test::serial;
 
 fn set_admin_env(email: &str, password: &str) {
     // Generate an argon2id hash for the given password and set envs
@@ -54,9 +55,13 @@ fn parse_cookie<'a>(
 }
 
 #[tokio::test]
+#[serial]
 async fn test_auth_and_csrf_flow() {
     // Env & DB
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "1");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -199,9 +204,13 @@ async fn test_auth_and_csrf_flow() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_csrf_percent_encoded_header() {
     // Env & DB
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "1");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -280,6 +289,7 @@ async fn test_csrf_percent_encoded_header() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_dev_cookie_names_and_flags() {
     // Force dev-mode cookies (no Secure; names without __Host-)
     unsafe {
