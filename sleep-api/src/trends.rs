@@ -11,7 +11,6 @@ For HTTP examples, see `docs/api_examples.md` and the OpenAPI spec.
 
 use crate::middleware::auth_layer::RequireSessionJson;
 use crate::{db::Db, error::ApiError};
-use crate::middleware::auth_layer::RequireSessionJson;
 use axum::{
     Json,
     extract::{Query, State},

@@ -5,27 +5,15 @@ info:
 paths:
   /login:
     post:
-      summary: Login (JSON or form)
+      summary: Login (form)
       description: Issues session and CSRF cookies via Set-Cookie. Send subsequent mutating requests with X-CSRF-Token equal to the CSRF cookie value.
       requestBody:
         required: true
         content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginPayload'
           application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/LoginPayload'
       responses:
-        '200':
-          description: OK (JSON variant)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
         '303':
           description: See Other. Form login success redirects to "/".
         '401':
