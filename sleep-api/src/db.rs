@@ -23,7 +23,7 @@ establishes a connection pool, and enables foreign key constraints.
 # use std::error::Error;
 # async fn demo() -> Result<(), Box<dyn Error>> {
 // Use an in-memory database for demonstration.
-std::env::set_var("DATABASE_URL", "sqlite::memory:");
+# // DATABASE_URL should be configured in the environment for this example.
 let db = sleep_api::db::connect().await?;
 
 // Simple sanity query

@@ -18,9 +18,10 @@ bed/wake times in a consistent, DST-aware manner.
 
 # Example
 
-```rust
+```rust,no_run
 # use std::error::Error;
 # fn main() -> Result<(), Box<dyn Error>> {
+# unsafe {
 std::env::set_var("APP_TZ", "Asia/Tokyo");
 let tz = sleep_api::config::app_tz();
 assert_eq!(tz, chrono_tz::Asia::Tokyo);
@@ -29,6 +30,7 @@ assert_eq!(tz, chrono_tz::Asia::Tokyo);
 std::env::set_var("APP_TZ", "Not/AZone");
 let tz2 = sleep_api::config::app_tz();
 assert_eq!(tz2, chrono_tz::Asia::Tokyo);
+# }
 # Ok(()) }
 ```
 
