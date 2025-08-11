@@ -142,16 +142,16 @@ where
         };
 
         // Debug lengths to help diagnose mismatches during tests
-        eprintln!(
-            "csrf debug: cookie_len={}, token_len={}",
-            cookie_val.len(),
-            token.len()
+        tracing::debug!(
+            cookie_len = cookie_val.len(),
+            token_len = token.len(),
+            "csrf token length comparison"
         );
         if token != cookie_val {
-            eprintln!(
-                "csrf debug: cookie_prefix={:?}, token_prefix={:?}",
-                &cookie_val.chars().take(8).collect::<String>(),
-                &token.chars().take(8).collect::<String>()
+            tracing::debug!(
+                cookie_prefix = %cookie_val.chars().take(8).collect::<String>(),
+                token_prefix = %token.chars().take(8).collect::<String>(),
+                "csrf token prefix mismatch"
             );
             return Err(forbidden("csrf: token mismatch"));
         }

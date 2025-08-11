@@ -21,7 +21,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{}/health", addr);
+    let health_url = format!("http://{addr}/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -56,7 +56,7 @@ async fn login_and_get_auth(
     password: &str,
 ) -> (String, String) {
     let res = client
-        .post(&format!("http://{}/login", addr))
+        .post(format!("http://{addr}/login"))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
@@ -109,10 +109,10 @@ async fn test_sleep_flow() {
         quality: Quality(4),
     };
     let res = client
-        .post(&format!("http://{}/sleep", addr))
+        .post(format!("http://{addr}/sleep"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf),
+            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&input)
@@ -124,7 +124,7 @@ async fn test_sleep_flow() {
     let id = id["id"].as_i64().unwrap();
 
     let res = client
-        .get(&format!("http://{}/sleep/date/{}", addr, input.date))
+        .get(format!("http://{addr}/sleep/date/{}", input.date))
         .send()
         .await
         .unwrap();
@@ -140,10 +140,10 @@ async fn test_sleep_flow() {
         ..input.clone()
     };
     let res = client
-        .put(&format!("http://{}/sleep/{}", addr, id))
+        .put(format!("http://{addr}/sleep/{id}"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf),
+            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&updated)
@@ -153,7 +153,7 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 204);
 
     let res = client
-        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
+        .get(format!("http://{addr}/sleep/date/{}", updated.date))
         .send()
         .await
         .unwrap();
@@ -163,10 +163,10 @@ async fn test_sleep_flow() {
     assert_eq!(session.latency_min, updated.latency_min);
 
     let res = client
-        .delete(&format!("http://{}/sleep/{}", addr, id))
+        .delete(format!("http://{addr}/sleep/{id}"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf),
+            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .send()
@@ -175,7 +175,7 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 204);
 
     let res = client
-        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
+        .get(format!("http://{addr}/sleep/date/{}", updated.date))
         .send()
         .await
         .unwrap();
@@ -222,10 +222,10 @@ async fn test_exercise_and_note() {
         duration_min: Some(30),
     };
     let res = client
-        .post(&format!("http://{}/exercise", addr))
+        .post(format!("http://{addr}/exercise"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf),
+            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&exercise)
@@ -251,10 +251,10 @@ async fn test_exercise_and_note() {
         body: Some("Great workout".to_string()),
     };
     let res = client
-        .post(&format!("http://{}/note", addr))
+        .post(format!("http://{addr}/note"))
         .header(
             "Cookie",
-            format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf),
+            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&note)
