@@ -3,6 +3,35 @@ info:
   title: Sleep API
   version: '0.1'
 paths:
+  /login:
+    post:
+      summary: Login (JSON or form)
+      description: Issues session and CSRF cookies via Set-Cookie. Send subsequent mutating requests with X-CSRF-Token equal to the CSRF cookie value.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /logout:
+    post:
+      summary: Logout
+      responses:
+        '204':
+          description: No Content. Clears session and CSRF cookies.
   /health:
     get:
       responses:
@@ -16,6 +45,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SleepInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -56,6 +88,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SleepInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '204':
           description: Updated
@@ -65,6 +100,9 @@ paths:
           name: id
           schema:
             type: integer
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '204':
           description: Deleted
@@ -76,6 +114,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExerciseInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -94,6 +135,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NoteInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -210,6 +254,17 @@ paths:
                           type: number
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-session
+      description: Session cookie "__Host-session" (or "session" when COOKIE_SECURE=false)
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Must equal the CSRF cookie value ("__Host-csrf" or "csrf" in dev)
   schemas:
     SleepInput:
       type: object
@@ -261,3 +316,10 @@ components:
         body:
           type: string
           nullable: true
+    LoginPayload:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
