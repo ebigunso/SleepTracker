@@ -5,32 +5,15 @@ info:
 paths:
   /login:
     post:
-      summary: Login (form)
+      summary: Login (JSON or form)
       description: Issues session and CSRF cookies via Set-Cookie. Send subsequent mutating requests with X-CSRF-Token equal to the CSRF cookie value.
       requestBody:
         required: true
         content:
-          application/x-www-form-urlencoded:
+          application/json:
             schema:
               $ref: '#/components/schemas/LoginPayload'
-      responses:
-        '303':
-          description: See Other. Form login success redirects to "/".
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  /login.json:
-    post:
-      summary: Login (JSON)
-      deprecated: true
-      description: Issues session and CSRF cookies via Set-Cookie. JSON variant of login.
-      requestBody:
-        required: true
-        content:
-          application/json:
+          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/LoginPayload'
       responses:
@@ -46,24 +29,9 @@ paths:
   /logout:
     post:
       summary: Logout
-      security:
-        - cookieAuth: []
-          csrfHeader: []
       responses:
         '204':
           description: No Content. Clears session and CSRF cookies.
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /health:
     get:
       responses:
@@ -90,18 +58,6 @@ paths:
                 properties:
                   id:
                     type: integer
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /sleep/date/{date}:
     get:
       parameters:
@@ -110,8 +66,6 @@ paths:
           schema:
             type: string
             format: date
-      security:
-        - cookieAuth: []
       responses:
         '200':
           description: OK
@@ -119,12 +73,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SleepSession'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '404':
           description: Not Found
   /sleep/{id}:
@@ -146,18 +94,6 @@ paths:
       responses:
         '204':
           description: Updated
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
     delete:
       parameters:
         - in: path
@@ -170,18 +106,6 @@ paths:
       responses:
         '204':
           description: Deleted
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /exercise:
     post:
       requestBody:
@@ -203,18 +127,6 @@ paths:
                 properties:
                   id:
                     type: integer
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /note:
     post:
       requestBody:
@@ -236,18 +148,6 @@ paths:
                 properties:
                   id:
                     type: integer
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Forbidden (CSRF)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /api/trends/sleep-bars:
     get:
       summary: Sleep bars time range
@@ -264,8 +164,6 @@ paths:
           schema:
             type: string
             format: date
-      security:
-        - cookieAuth: []
       responses:
         '200':
           description: List of sleep bar entries for the range (wake date semantics)
@@ -293,12 +191,6 @@ paths:
                     duration_min:
                       type: integer
                       nullable: true
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /api/trends/summary:
     get:
       summary: Aggregated metrics for a time range
@@ -321,8 +213,6 @@ paths:
           schema:
             type: string
             enum: [day, week]
-      security:
-        - cookieAuth: []
       responses:
         '200':
           description: Aggregates for duration, quality, latency by bucket
@@ -362,12 +252,6 @@ paths:
                           type: string
                         median:
                           type: number
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
@@ -439,11 +323,3 @@ components:
           type: string
         password:
           type: string
-    Error:
-      type: object
-      properties:
-        error:
-          type: string
-        detail:
-          type: string
-          nullable: true
