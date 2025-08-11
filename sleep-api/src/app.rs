@@ -26,7 +26,7 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{Either, Form, Path, State},
     routing::{get, post, put},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
@@ -152,8 +152,12 @@ async fn get_login() -> Html<String> {
 
 async fn post_login(
     jar: PrivateCookieJar,
-    Json(creds): Json<LoginPayload>,
+    payload: Either<Form<LoginPayload>, Json<LoginPayload>>,
 ) -> axum::response::Response {
+    let creds = match payload {
+        Either::Left(Form(c)) => c,
+        Either::Right(Json(c)) => c,
+    };
     if auth::verify_login(&creds.email, &creds.password) {
         let jar = auth::create_session_cookie(jar, "admin");
         let jar = jar.add(issue_csrf_cookie());
