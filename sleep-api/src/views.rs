@@ -21,7 +21,7 @@ Renders the trends page used by the `/trends` route.
 ```rust,no_run
 # use askama::Template;
 # fn main() -> Result<(), askama::Error> {
-let html = crate::views::TrendsTemplate.render()?;
+let html = sleep_api::views::TrendsTemplate.render()?;
 assert!(!html.is_empty());
 # Ok(()) }
 ```
