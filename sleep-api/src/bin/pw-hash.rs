@@ -14,6 +14,7 @@ use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString},
 };
+use argon2::password_hash::rand_core::OsRng;
 use std::io::{self, Read};
 
 fn main() {
@@ -27,7 +28,7 @@ fn main() {
         .expect("failed to read stdin");
     let password = buf.trim_end_matches(&['\n', '\r'][..]).as_bytes();
 
-    let salt = SaltString::generate(rand::rngs::OsRng);
+    let salt = SaltString::generate(OsRng);
     let argon2 = Argon2::default();
     let hash = argon2
         .hash_password(password, &salt)

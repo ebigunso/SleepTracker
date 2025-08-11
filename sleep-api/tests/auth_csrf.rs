@@ -2,6 +2,7 @@ use argon2::{
     Argon2,
     password_hash::{PasswordHasher, SaltString},
 };
+use argon2::password_hash::rand_core::OsRng;
 use reqwest::Client;
 use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
@@ -9,7 +10,7 @@ use tokio::time::{Duration, sleep};
 
 fn set_admin_env(email: &str, password: &str) {
     // Generate an argon2id hash for the given password and set envs
-    let salt = SaltString::generate(rand::rngs::OsRng);
+    let salt = SaltString::generate(OsRng);
     let argon2 = Argon2::default();
     let hash = argon2
         .hash_password(password.as_bytes(), &salt)
