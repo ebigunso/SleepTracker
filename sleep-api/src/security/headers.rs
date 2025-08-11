@@ -10,7 +10,7 @@ Adds common security headers to all responses:
 # Example
 
 ```rust,no_run
-# let router = axum::Router::new();
+# let router: axum::Router<()> = axum::Router::new();
 let router = sleep_api::security::headers::apply(router, sleep_api::config::hsts_enabled());
 ```
 "#]
