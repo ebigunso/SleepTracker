@@ -131,10 +131,30 @@ pub fn router(db: Db) -> Router {
     crate::security::headers::apply(router, enable_hsts)
 }
 
+#[doc = r#"Redirect root to /trends.
+
+Security:
+- Requires an authenticated session (via [`RequireSessionRedirect`]). Unauthenticated users are redirected to `/login`.
+
+Responses:
+- 303 See Other — redirects to `/trends`
+
+See also: [`trends_page`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
+"#]
 async fn root(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Redirect {
     Redirect::to("/trends")
 }
 
+#[doc = r#"Render a minimal HTML login form.
+
+Accepts: `GET /login`
+- Returns an HTML page with a form that POSTs to `/login`.
+
+Responses:
+- 200 OK — HTML page
+
+See also: [`post_login`], [`crate::auth::verify_login`]
+"#]
 async fn get_login() -> Html<String> {
     let html = r#"<!doctype html>
 <html>
@@ -151,6 +171,33 @@ async fn get_login() -> Html<String> {
     Html(html.to_string())
 }
 
+#[doc = r#"Login (form) and issue session + CSRF cookies.
+
+Accepts: `POST /login` (`application/x-www-form-urlencoded`)
+- Body: `{ email, password }`
+- On success:
+  - Issues encrypted session cookie (see [`crate::config::session_cookie_name`])
+  - Issues CSRF cookie (see [`crate::config::csrf_cookie_name`])
+  - Redirects to `/`
+
+Security:
+- Verifies credentials against `ADMIN_EMAIL` + `ADMIN_PASSWORD_HASH`
+- Cookie names/flags vary with `COOKIE_SECURE`; see [`crate::config::session_cookie_name`] / [`crate::config::csrf_cookie_name`]
+
+Responses:
+- 303 See Other — on success (redirect to `/`)
+- 401 Unauthorized — on invalid credentials (HTML body)
+
+Example:
+```bash
+curl -i -X POST http://localhost:8080/login \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'email=admin@example.com&password=...' \
+  -c cookies.txt
+```
+
+See also: [`crate::auth::{verify_login, create_session_cookie}`], [`crate::security::csrf::issue_csrf_cookie`]
+"#]
 async fn post_login(
     jar: PrivateCookieJar,
     Form(creds): Form<LoginPayload>,
@@ -168,6 +215,29 @@ async fn post_login(
     }
 }
 
+#[doc = r#"Login (JSON) and issue session + CSRF cookies.
+
+Accepts: `POST /login.json` (`application/json`)
+- Body: `{ "email": "...", "password": "..." }`
+- On success: `{"ok": true}` and `Set-Cookie` headers for session + CSRF
+
+Responses:
+- 200 OK — on success
+- 401 Unauthorized — `{"error":"unauthorized"}`
+
+Note:
+- JSON route is functionally equivalent to the form `/login`. Prefer `/login` for browser-based flows.
+
+Example:
+```bash
+curl -i -X POST http://localhost:8080/login.json \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"..."}' \
+  -c cookies.txt
+```
+
+See also: [`crate::auth::{verify_login, create_session_cookie}`], [`crate::security::csrf::issue_csrf_cookie`]
+"#]
 async fn post_login_json(
     jar: PrivateCookieJar,
     Json(creds): Json<LoginPayload>,
@@ -185,6 +255,26 @@ async fn post_login_json(
     }
 }
 
+#[doc = r#"Logout and clear cookies.
+
+Accepts: `POST /logout`
+
+Security:
+- Requires a valid CSRF header (double-submit) via [`CsrfGuard`]
+- Session is cleared if present; operation is idempotent
+
+Responses:
+- 204 No Content — session + CSRF cookies cleared
+
+Example:
+```bash
+curl -i -X POST http://localhost:8080/logout \
+  -H "Cookie: __Host-session=...; __Host-csrf=..." \
+  -H "X-CSRF-Token: <csrf cookie value>"
+```
+
+See also: [`crate::auth::clear_session_cookie`], [`crate::security::csrf::CsrfGuard`]
+"#]
 async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::response::Response {
     jar = auth::clear_session_cookie(jar);
     let csrf = Cookie::build((crate::config::csrf_cookie_name(), String::new()))
@@ -197,6 +287,31 @@ async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::respo
     (jar, StatusCode::NO_CONTENT).into_response()
 }
 
+#[doc = r#"Create a sleep session.
+
+Accepts: `POST /sleep` (`application/json`)
+- Body: [`SleepInput`]
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF header equal to CSRF cookie ([`CsrfGuard`])
+
+Responses:
+- 201 Created — `{"id": <number>}`
+- 401 Unauthorized — no/invalid session
+- 403 Forbidden — CSRF failure
+
+Example:
+```bash
+curl -i -X POST http://localhost:8080/sleep \
+  -H "Cookie: __Host-session=...; __Host-csrf=..." \
+  -H "X-CSRF-Token: <csrf cookie value>" \
+  -H "Content-Type: application/json" \
+  -d '{"date":"2025-06-17","bed_time":"22:05:00","wake_time":"06:30:00","latency_min":10,"awakenings":0,"quality":4}'
+```
+
+See also: [`crate::handlers::create_sleep`], [`crate::middleware::auth_layer::RequireSessionJson`], [`crate::security::csrf::CsrfGuard`]
+"#]
 async fn create_sleep(
     State(db): State<Db>,
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
@@ -207,6 +322,21 @@ async fn create_sleep(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
+#[doc = r#"Get a sleep session for a wake date.
+
+Accepts: `GET /sleep/date/{date}`
+- Path param `date`: `YYYY-MM-DD` (wake date)
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — [`SleepSession`]
+- 401 Unauthorized — no/invalid session
+- 404 Not Found — no entry for date
+
+See also: [`crate::handlers::get_sleep_by_date`]
+"#]
 async fn get_sleep(
     State(db): State<Db>,
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
@@ -218,6 +348,22 @@ async fn get_sleep(
     }
 }
 
+#[doc = r#"Update a sleep session by id.
+
+Accepts: `PUT /sleep/{id}` (`application/json`)
+- Body: [`SleepInput`]
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF ([`CsrfGuard`])
+
+Responses:
+- 204 No Content — updated
+- 401 Unauthorized — no/invalid session
+- 403 Forbidden — CSRF failure
+
+See also: [`crate::handlers::update_sleep`]
+"#]
 async fn update_sleep(
     State(db): State<Db>,
     Path(id): Path<i64>,
@@ -229,6 +375,21 @@ async fn update_sleep(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[doc = r#"Delete a sleep session by id.
+
+Accepts: `DELETE /sleep/{id}`
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF ([`CsrfGuard`])
+
+Responses:
+- 204 No Content — deleted or already absent
+- 401 Unauthorized — no/invalid session
+- 403 Forbidden — CSRF failure
+
+See also: [`crate::handlers::delete_sleep`]
+"#]
 async fn delete_sleep(
     State(db): State<Db>,
     Path(id): Path<i64>,
@@ -243,6 +404,22 @@ async fn delete_sleep(
     }
 }
 
+#[doc = r#"Create an exercise entry.
+
+Accepts: `POST /exercise` (`application/json`)
+- Body: [`ExerciseInput`]
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF ([`CsrfGuard`])
+
+Responses:
+- 201 Created — `{"id": <number>}`
+- 401 Unauthorized
+- 403 Forbidden — CSRF failure
+
+See also: [`crate::handlers::create_exercise`]
+"#]
 async fn create_exercise(
     State(db): State<Db>,
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
@@ -253,6 +430,22 @@ async fn create_exercise(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
+#[doc = r#"Create a note.
+
+Accepts: `POST /note` (`application/json`)
+- Body: [`NoteInput`]
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF ([`CsrfGuard`])
+
+Responses:
+- 201 Created — `{"id": <number>}`
+- 401 Unauthorized
+- 403 Forbidden — CSRF failure
+
+See also: [`crate::handlers::create_note`]
+"#]
 async fn create_note(
     State(db): State<Db>,
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
@@ -263,6 +456,17 @@ async fn create_note(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
+#[doc = r#"Render the trends page (Askama template).
+
+Security:
+- Requires authenticated session ([`RequireSessionRedirect`]); unauthenticated users are redirected to `/login`.
+
+Responses:
+- 200 OK — HTML page
+- Redirect — when not authenticated
+
+See also: [`crate::views::TrendsTemplate`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
+"#]
 async fn trends_page(
     RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
 ) -> Html<String> {
