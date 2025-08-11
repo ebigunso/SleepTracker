@@ -85,7 +85,7 @@ This type aggregates fields from `sleep_sessions` and `sleep_metrics` for a give
 
 Note: `quality` is stored as `i32` in the DB layer; use [`Quality::try_from`] to convert into the strong type if needed.
 
-[`Quality::try_from`]: crate::models::Quality#impl-TryFrom%3Cu8%3E
+[`Quality::try_from`]: crate::models::Quality::try_from
 "#]
 #[derive(Serialize, Deserialize, Debug, PartialEq, FromRow)]
 pub struct SleepSession {
