@@ -1,10 +1,10 @@
 use axum::extract::FromRequestParts;
-use axum::http::{header::HeaderName, Method, StatusCode};
+use axum::http::{Method, StatusCode, header::HeaderName};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
-use serde_json::json;
-use rand::RngCore;
 use base64::Engine;
+use rand::RngCore;
+use serde_json::json;
 
 pub const CSRF_COOKIE: &str = "__Host-csrf";
 
@@ -38,7 +38,10 @@ where
 {
     type Rejection = Response;
 
-    async fn from_request_parts(parts: &mut axum::http::request::Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &S,
+    ) -> Result<Self, Self::Rejection> {
         // Only enforce on mutating methods
         let method = parts.method.clone();
         let is_mutating = matches!(method, Method::POST | Method::PUT | Method::DELETE);
@@ -67,7 +70,9 @@ where
 
         // Compare against header X-CSRF-Token
         static X_CSRF_TOKEN: HeaderName = HeaderName::from_static("x-csrf-token");
-        let hdr = parts.headers.get(&X_CSRF_TOKEN)
+        let hdr = parts
+            .headers
+            .get(&X_CSRF_TOKEN)
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_string());
 
@@ -87,9 +92,14 @@ where
         };
 
         // Debug lengths to help diagnose mismatches during tests
-        eprintln!("csrf debug: cookie_len={}, token_len={}", cookie_val.len(), token.len());
+        eprintln!(
+            "csrf debug: cookie_len={}, token_len={}",
+            cookie_val.len(),
+            token.len()
+        );
         if token != cookie_val {
-            eprintln!("csrf debug: cookie_prefix={:?}, token_prefix={:?}",
+            eprintln!(
+                "csrf debug: cookie_prefix={:?}, token_prefix={:?}",
                 &cookie_val.chars().take(8).collect::<String>(),
                 &token.chars().take(8).collect::<String>()
             );
@@ -123,5 +133,9 @@ fn percent_decode(s: &str) -> Option<String> {
 }
 
 fn forbidden(detail: &str) -> Response {
-    (StatusCode::FORBIDDEN, axum::Json(json!({"error":"forbidden","detail": detail}))).into_response()
+    (
+        StatusCode::FORBIDDEN,
+        axum::Json(json!({"error":"forbidden","detail": detail})),
+    )
+        .into_response()
 }

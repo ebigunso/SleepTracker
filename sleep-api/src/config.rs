@@ -55,7 +55,7 @@ pub fn admin_password_hash() -> String {
 /// Build a cookie Key from SESSION_SECRET if provided (base64), otherwise generate a random key.
 /// A stable key is recommended for production to allow restarting without invalidating sessions.
 pub fn session_key() -> axum_extra::extract::cookie::Key {
-    use base64::{engine::general_purpose, Engine as _};
+    use base64::{Engine as _, engine::general_purpose};
     if let Ok(val) = std::env::var("SESSION_SECRET") {
         match general_purpose::STANDARD.decode(val.as_bytes()) {
             Ok(bytes) => {

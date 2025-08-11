@@ -1,12 +1,18 @@
+use argon2::{
+    Argon2,
+    password_hash::{PasswordHasher, SaltString},
+};
 use reqwest::Client;
 use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
-use argon2::{password_hash::{PasswordHasher, SaltString}, Argon2};
 
 fn set_admin_env(email: &str, password: &str) {
     let salt = SaltString::generate(rand::rngs::OsRng);
     let argon2 = Argon2::default();
-    let hash = argon2.hash_password(password.as_bytes(), &salt).unwrap().to_string();
+    let hash = argon2
+        .hash_password(password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
     unsafe {
         std::env::set_var("ADMIN_EMAIL", email);
         std::env::set_var("ADMIN_PASSWORD_HASH", hash);
@@ -16,13 +22,18 @@ fn set_admin_env(email: &str, password: &str) {
 async fn wait_ready(client: &Client, addr: &str) {
     let health_url = format!("http://{}/health", addr);
     for _ in 0..20 {
-        if client.get(&health_url).send().await.is_ok() { return; }
+        if client.get(&health_url).send().await.is_ok() {
+            return;
+        }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
     panic!("server did not become ready");
 }
 
-fn parse_cookie<'a>(headers: impl Iterator<Item = &'a reqwest::header::HeaderValue>, name_with_eq: &str) -> Option<String> {
+fn parse_cookie<'a>(
+    headers: impl Iterator<Item = &'a reqwest::header::HeaderValue>,
+    name_with_eq: &str,
+) -> Option<String> {
     for hv in headers {
         if let Ok(s) = hv.to_str() {
             if s.starts_with(name_with_eq) {
@@ -37,7 +48,12 @@ fn parse_cookie<'a>(headers: impl Iterator<Item = &'a reqwest::header::HeaderVal
     None
 }
 
-async fn login_and_get_auth(client: &Client, addr: &str, email: &str, password: &str) -> (String, String) {
+async fn login_and_get_auth(
+    client: &Client,
+    addr: &str,
+    email: &str,
+    password: &str,
+) -> (String, String) {
     let res = client
         .post(&format!("http://{}/login", addr))
         .json(&serde_json::json!({ "email": email, "password": password }))
@@ -47,7 +63,8 @@ async fn login_and_get_auth(client: &Client, addr: &str, email: &str, password: 
     assert_eq!(res.status(), 200, "login failed: {}", res.status());
     let headers = res.headers().get_all(reqwest::header::SET_COOKIE);
     let csrf = parse_cookie(headers.iter(), "__Host-csrf=").expect("missing __Host-csrf cookie");
-    let session = parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
+    let session =
+        parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
     (csrf, session)
 }
 
@@ -79,7 +96,13 @@ async fn test_trends_sleep_bars_basic() {
     wait_ready(&client, &addr.to_string()).await;
 
     // Login and get CSRF + session
-    let (csrf, session) = login_and_get_auth(&client, &addr.to_string(), "admin@example.com", "password123").await;
+    let (csrf, session) = login_and_get_auth(
+        &client,
+        &addr.to_string(),
+        "admin@example.com",
+        "password123",
+    )
+    .await;
 
     // Seed two sleep entries (wake-date semantics)
     let s1 = SleepInput {
@@ -101,7 +124,10 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(&format!("http://{}/sleep", addr))
-        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session, csrf))
+        .header(
+            "Cookie",
+            format!("__Host-session={}; __Host-csrf={}", session, csrf),
+        )
         .header("X-CSRF-Token", &csrf)
         .json(&s1)
         .send()
@@ -111,7 +137,10 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(&format!("http://{}/sleep", addr))
-        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session, csrf))
+        .header(
+            "Cookie",
+            format!("__Host-session={}; __Host-csrf={}", session, csrf),
+        )
         .header("X-CSRF-Token", &csrf)
         .json(&s2)
         .send()
