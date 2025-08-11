@@ -46,9 +46,9 @@ sleep_api::auth::create_session_cookie(jar, "admin")
 # }
 ```"#]
 pub fn create_session_cookie(mut jar: PrivateCookieJar, user_id: &str) -> PrivateCookieJar {
-    let cookie = Cookie::build((SESSION_COOKIE, user_id.to_owned()))
+    let cookie = Cookie::build((crate::config::session_cookie_name(), user_id.to_owned()))
         .path("/")
-        .secure(true)
+        .secure(crate::config::cookie_secure())
         .http_only(true)
         .same_site(SameSite::Lax)
         .build();
@@ -62,9 +62,9 @@ pub fn create_session_cookie(mut jar: PrivateCookieJar, user_id: &str) -> Privat
 Sets a removal cookie (matching name + path) and returns the updated jar."#]
 pub fn clear_session_cookie(mut jar: PrivateCookieJar) -> PrivateCookieJar {
     // Removal needs to match name + path
-    let cookie = Cookie::build((SESSION_COOKIE, String::new()))
+    let cookie = Cookie::build((crate::config::session_cookie_name(), String::new()))
         .path("/")
-        .secure(true)
+        .secure(crate::config::cookie_secure())
         .http_only(true)
         .same_site(SameSite::Lax)
         .build();
@@ -75,7 +75,8 @@ pub fn clear_session_cookie(mut jar: PrivateCookieJar) -> PrivateCookieJar {
 /// Return the current user id from the session cookie if present/valid.
 #[doc = r#"Return the current user id from the encrypted session cookie, if present."#]
 pub fn current_user_from_cookie(jar: &PrivateCookieJar) -> Option<UserId> {
-    jar.get(SESSION_COOKIE).map(|c| c.value().to_string())
+    jar.get(crate::config::session_cookie_name())
+        .map(|c| c.value().to_string())
 }
 
 /// Verify provided email + password against configured ADMIN_EMAIL + ADMIN_PASSWORD_HASH.

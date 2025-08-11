@@ -103,3 +103,33 @@ pub fn hsts_enabled() -> bool {
         Err(_) => false,
     }
 }
+
+/// Whether to mark cookies as Secure. Controlled by COOKIE_SECURE=1/true (default: true).
+pub fn cookie_secure() -> bool {
+    match std::env::var("COOKIE_SECURE") {
+        Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),
+        Err(_) => true, // default secure for safety
+    }
+}
+
+/// Session cookie name, varies in dev-mode to support HTTP.
+/// - When cookie_secure() is true: "__Host-session"
+/// - Otherwise: "session"
+pub fn session_cookie_name() -> &'static str {
+    if cookie_secure() {
+        "__Host-session"
+    } else {
+        "session"
+    }
+}
+
+/// CSRF cookie name, varies in dev-mode to support HTTP.
+/// - When cookie_secure() is true: "__Host-csrf"
+/// - Otherwise: "csrf"
+pub fn csrf_cookie_name() -> &'static str {
+    if cookie_secure() {
+        "__Host-csrf"
+    } else {
+        "csrf"
+    }
+}

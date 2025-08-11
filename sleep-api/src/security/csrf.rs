@@ -29,7 +29,7 @@ See also:
 
 use argon2::password_hash::rand_core::{OsRng, RngCore};
 use axum::extract::FromRequestParts;
-use axum::http::{Method, StatusCode, header::HeaderName};
+use axum::http::{Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
@@ -42,7 +42,7 @@ use serde_json::json;
 - Not HttpOnly (so a UI can echo the value into `X-CSRF-Token` when needed)"#]
 pub const CSRF_COOKIE: &str = "__Host-csrf";
 
-static X_CSRF_TOKEN: HeaderName = HeaderName::from_static("x-csrf-token");
+const X_CSRF_TOKEN: &str = "x-csrf-token";
 
 /// Issue a CSRF cookie with a random 32-byte base64 value.
 /// - Secure
@@ -63,9 +63,9 @@ pub fn issue_csrf_cookie() -> Cookie<'static> {
     OsRng.fill_bytes(&mut bytes);
     let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes);
 
-    Cookie::build((CSRF_COOKIE, token))
+    Cookie::build((crate::config::csrf_cookie_name(), token))
         .path("/")
-        .secure(true)
+        .secure(crate::config::cookie_secure())
         .http_only(false)
         .same_site(SameSite::Lax)
         .build()
@@ -115,7 +115,7 @@ where
         let jar = CookieJar::from_request_parts(parts, state)
             .await
             .unwrap_or_else(|_| CookieJar::new());
-        let cookie_val = match jar.get(CSRF_COOKIE) {
+        let cookie_val = match jar.get(crate::config::csrf_cookie_name()) {
             Some(c) => c.value().to_string(),
             None => return Err(forbidden("csrf: missing cookie")),
         };

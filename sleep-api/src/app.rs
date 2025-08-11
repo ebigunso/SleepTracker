@@ -13,7 +13,7 @@ For an end-to-end server setup example, see [`router`].
 
 use crate::auth::{self, LoginPayload};
 use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
-use crate::security::csrf::{CSRF_COOKIE, CsrfGuard, issue_csrf_cookie};
+use crate::security::csrf::{CsrfGuard, issue_csrf_cookie};
 use crate::{
     db::Db,
     error::ApiError,
@@ -26,10 +26,11 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
-    extract::{Either, Form, Path, State},
+    extract::{Form, Path, State},
     routing::{get, post, put},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
+use axum_extra::either::Either;
 use serde_json::json;
 
 #[doc = r#"Build the application [`Router`].
@@ -173,9 +174,9 @@ async fn post_login(
 
 async fn post_logout(mut jar: PrivateCookieJar) -> axum::response::Response {
     jar = auth::clear_session_cookie(jar);
-    let csrf = Cookie::build((CSRF_COOKIE, String::new()))
+    let csrf = Cookie::build((crate::config::csrf_cookie_name(), String::new()))
         .path("/")
-        .secure(true)
+        .secure(crate::config::cookie_secure())
         .http_only(false)
         .same_site(SameSite::Lax)
         .build();
