@@ -8,7 +8,10 @@ use tower_http::set_header::SetResponseHeaderLayer;
 /// - Referrer-Policy: strict-origin-when-cross-origin
 /// - Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'
 /// - Strict-Transport-Security (optional when enable_hsts=true)
-pub fn apply(mut router: Router, enable_hsts: bool) -> Router {
+pub fn apply<S>(mut router: Router<S>, enable_hsts: bool) -> Router<S>
+where
+    S: Clone + Send + Sync + 'static,
+{
     router = router
         .layer(SetResponseHeaderLayer::if_not_present(
             HeaderName::from_static("x-content-type-options"),

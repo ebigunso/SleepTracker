@@ -1,20 +1,13 @@
-use argon2::password_hash::rand_core::OsRng;
-use argon2::{
-    Argon2,
-    password_hash::{PasswordHasher, SaltString},
-};
 use reqwest::Client;
 use sleep_api::models::{Quality, SleepInput, SleepSession};
 use sleep_api::{app, db};
 use sqlx::Row;
+use argon2::{password_hash::{PasswordHasher, SaltString}, Argon2};
 
 fn set_admin_env(email: &str, password: &str) {
-    let salt = SaltString::generate(OsRng);
+    let salt = SaltString::generate(rand::rngs::OsRng);
     let argon2 = Argon2::default();
-    let hash = argon2
-        .hash_password(password.as_bytes(), &salt)
-        .unwrap()
-        .to_string();
+    let hash = argon2.hash_password(password.as_bytes(), &salt).unwrap().to_string();
     unsafe {
         std::env::set_var("ADMIN_EMAIL", email);
         std::env::set_var("ADMIN_PASSWORD_HASH", hash);
@@ -22,7 +15,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{addr}/health");
+    let health_url = format!("http://{}/health", addr);
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -32,10 +25,7 @@ async fn wait_ready(client: &Client, addr: &str) {
     panic!("Server did not become ready in time");
 }
 
-fn parse_cookie<'a>(
-    headers: impl Iterator<Item = &'a reqwest::header::HeaderValue>,
-    name_with_eq: &str,
-) -> Option<String> {
+fn parse_cookie<'a>(headers: impl Iterator<Item = &'a reqwest::header::HeaderValue>, name_with_eq: &str) -> Option<String> {
     for hv in headers {
         if let Ok(s) = hv.to_str() {
             if s.starts_with(name_with_eq) {
@@ -50,14 +40,9 @@ fn parse_cookie<'a>(
     None
 }
 
-async fn login_and_get_auth(
-    client: &Client,
-    addr: &str,
-    email: &str,
-    password: &str,
-) -> (String, String) {
+async fn login_and_get_auth(client: &Client, addr: &str, email: &str, password: &str) -> (String, String) {
     let res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(&format!("http://{}/login", addr))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
@@ -65,8 +50,7 @@ async fn login_and_get_auth(
     assert_eq!(res.status(), 200, "login failed: {}", res.status());
     let headers = res.headers().get_all(reqwest::header::SET_COOKIE);
     let csrf = parse_cookie(headers.iter(), "__Host-csrf=").expect("missing __Host-csrf cookie");
-    let session =
-        parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
+    let session = parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
     (csrf, session)
 }
 
@@ -93,13 +77,7 @@ async fn test_sleep_flow() {
     wait_ready(&client, &addr.to_string()).await;
 
     // Login and get CSRF token
-    let (csrf, session_cookie) = login_and_get_auth(
-        &client,
-        &addr.to_string(),
-        "admin@example.com",
-        "password123",
-    )
-    .await;
+    let (csrf, session_cookie) = login_and_get_auth(&client, &addr.to_string(), "admin@example.com", "password123").await;
 
     let input = SleepInput {
         date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
@@ -110,11 +88,8 @@ async fn test_sleep_flow() {
         quality: Quality(4),
     };
     let res = client
-        .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .post(&format!("http://{}/sleep", addr))
+        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf))
         .header("X-CSRF-Token", &csrf)
         .json(&input)
         .send()
@@ -125,7 +100,7 @@ async fn test_sleep_flow() {
     let id = id["id"].as_i64().unwrap();
 
     let res = client
-        .get(format!("http://{addr}/sleep/date/{}", input.date))
+        .get(&format!("http://{}/sleep/date/{}", addr, input.date))
         .send()
         .await
         .unwrap();
@@ -141,11 +116,8 @@ async fn test_sleep_flow() {
         ..input.clone()
     };
     let res = client
-        .put(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .put(&format!("http://{}/sleep/{}", addr, id))
+        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf))
         .header("X-CSRF-Token", &csrf)
         .json(&updated)
         .send()
@@ -154,7 +126,7 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 204);
 
     let res = client
-        .get(format!("http://{addr}/sleep/date/{}", updated.date))
+        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
         .send()
         .await
         .unwrap();
@@ -164,11 +136,8 @@ async fn test_sleep_flow() {
     assert_eq!(session.latency_min, updated.latency_min);
 
     let res = client
-        .delete(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .delete(&format!("http://{}/sleep/{}", addr, id))
+        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf))
         .header("X-CSRF-Token", &csrf)
         .send()
         .await
@@ -176,7 +145,7 @@ async fn test_sleep_flow() {
     assert_eq!(res.status(), 204);
 
     let res = client
-        .get(format!("http://{addr}/sleep/date/{}", updated.date))
+        .get(&format!("http://{}/sleep/date/{}", addr, updated.date))
         .send()
         .await
         .unwrap();
@@ -208,13 +177,7 @@ async fn test_exercise_and_note() {
     wait_ready(&client, &addr.to_string()).await;
 
     // Login and get CSRF token
-    let (csrf, session_cookie) = login_and_get_auth(
-        &client,
-        &addr.to_string(),
-        "admin@example.com",
-        "password123",
-    )
-    .await;
+    let (csrf, session_cookie) = login_and_get_auth(&client, &addr.to_string(), "admin@example.com", "password123").await;
 
     let exercise = sleep_api::models::ExerciseInput {
         date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
@@ -223,11 +186,8 @@ async fn test_exercise_and_note() {
         duration_min: Some(30),
     };
     let res = client
-        .post(format!("http://{addr}/exercise"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .post(&format!("http://{}/exercise", addr))
+        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf))
         .header("X-CSRF-Token", &csrf)
         .json(&exercise)
         .send()
@@ -252,11 +212,8 @@ async fn test_exercise_and_note() {
         body: Some("Great workout".to_string()),
     };
     let res = client
-        .post(format!("http://{addr}/note"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .post(&format!("http://{}/note", addr))
+        .header("Cookie", format!("__Host-session={}; __Host-csrf={}", session_cookie, csrf))
         .header("X-CSRF-Token", &csrf)
         .json(&note)
         .send()

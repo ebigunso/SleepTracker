@@ -3,6 +3,8 @@ use axum::http::{header::HeaderName, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use serde_json::json;
+use rand::RngCore;
+use base64::Engine;
 
 pub const CSRF_COOKIE: &str = "__Host-csrf";
 
@@ -14,7 +16,7 @@ pub const CSRF_COOKIE: &str = "__Host-csrf";
 pub fn issue_csrf_cookie() -> Cookie<'static> {
     let mut bytes = [0u8; 32];
     rand::rngs::OsRng.fill_bytes(&mut bytes);
-    let token = base64::engine::general_purpose::STANDARD.encode(bytes);
+    let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes);
 
     Cookie::build((CSRF_COOKIE, token))
         .path("/")
@@ -69,16 +71,55 @@ where
             .and_then(|v| v.to_str().ok())
             .map(|s| s.to_string());
 
-        let Some(token) = hdr else {
+        let Some(token_raw) = hdr else {
             return Err(forbidden("csrf: missing header token"));
         };
 
+        // Some intermediaries/clients percent-encode cookie values like "/" as "%2F".
+        // Decode percent-encodings in the header token before comparing.
+        let token = if token_raw.contains('%') {
+            match percent_decode(&token_raw) {
+                Some(s) => s,
+                None => token_raw.clone(),
+            }
+        } else {
+            token_raw.clone()
+        };
+
+        // Debug lengths to help diagnose mismatches during tests
+        eprintln!("csrf debug: cookie_len={}, token_len={}", cookie_val.len(), token.len());
         if token != cookie_val {
+            eprintln!("csrf debug: cookie_prefix={:?}, token_prefix={:?}",
+                &cookie_val.chars().take(8).collect::<String>(),
+                &token.chars().take(8).collect::<String>()
+            );
             return Err(forbidden("csrf: token mismatch"));
         }
 
         Ok(Self)
     }
+}
+
+fn percent_decode(s: &str) -> Option<String> {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' {
+            if i + 2 >= bytes.len() {
+                return None;
+            }
+            let h1 = (bytes[i + 1] as char).to_digit(16)?;
+            let h2 = (bytes[i + 2] as char).to_digit(16)?;
+            let val = ((h1 << 4) + h2) as u8;
+            out.push(val);
+            i += 3;
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).ok()
 }
 
 fn forbidden(detail: &str) -> Response {

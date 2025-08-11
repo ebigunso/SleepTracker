@@ -11,9 +11,6 @@ For an end-to-end server setup example, see [`router`].
 [`Router`]: axum::Router
 "#]
 
-use crate::auth::{self, LoginPayload};
-use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
-use crate::security::csrf::{CsrfGuard, issue_csrf_cookie};
 use crate::{
     db::Db,
     error::ApiError,
@@ -23,14 +20,17 @@ use crate::{
 };
 use askama::Template;
 use axum::http::StatusCode;
-use axum::response::{Html, IntoResponse, Redirect};
+use axum::response::{Html, Redirect, IntoResponse};
 use axum::{
     Json, Router,
-    extract::{Form, Path, State},
+    extract::{Path, State},
     routing::{get, post, put},
 };
-use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;
+use axum_extra::extract::cookie::{PrivateCookieJar, Key, Cookie, SameSite};
+use crate::auth::{self, LoginPayload};
+use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+use crate::security::csrf::{issue_csrf_cookie, CSRF_COOKIE, CsrfGuard};
 
 #[doc = r#"Build the application [`Router`].
 
@@ -64,59 +64,28 @@ let app = sleep_api::app::router(db);
 [`Router`]: axum::Router
 "#]
 #[derive(Clone)]
-#[doc = r#"Application state for the Axum router.
-
-Holds shared components that extractors rely on:
-- [`Db`] — SQLx pool
-- [`Key`] — cookie crypto key for [`PrivateCookieJar`]
-
-Implements `FromRef` for `Db` and `Key` so handlers can extract them via `State<Db>` and extractors like `PrivateCookieJar`.
-
-# Example
-
-```rust,no_run
-# use axum::Router;
-# use axum_extra::extract::cookie::Key;
-# async fn demo(db: sleep_api::db::Db) {
-let state = sleep_api::app::AppState { db, key: sleep_api::config::session_key() };
-let app: Router<sleep_api::app::AppState> = Router::new().with_state(state);
-# }
-```
-
-[`Db`]: crate::db::Db
-[`Key`]: axum_extra::extract::cookie::Key
-[`PrivateCookieJar`]: axum_extra::extract::cookie::PrivateCookieJar
-"#]
 pub struct AppState {
     pub db: Db,
     pub key: Key,
 }
 
 impl axum::extract::FromRef<AppState> for Db {
-    fn from_ref(s: &AppState) -> Db {
-        s.db.clone()
-    }
+    fn from_ref(s: &AppState) -> Db { s.db.clone() }
 }
 
 impl axum::extract::FromRef<AppState> for Key {
-    fn from_ref(s: &AppState) -> Key {
-        s.key.clone()
-    }
+    fn from_ref(s: &AppState) -> Key { s.key.clone() }
 }
 
 pub fn router(db: Db) -> Router {
     let key: Key = crate::config::session_key();
     let enable_hsts = crate::config::hsts_enabled();
 
-    let state = AppState {
-        db,
-        key: key.clone(),
-    };
+    let state = AppState { db, key: key.clone() };
     let router = Router::new()
         .route("/", get(root))
         .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
         .route("/login", get(get_login).post(post_login))
-        .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
@@ -153,23 +122,6 @@ async fn get_login() -> Html<String> {
 
 async fn post_login(
     jar: PrivateCookieJar,
-    Form(creds): Form<LoginPayload>,
-) -> axum::response::Response {
-    if auth::verify_login(&creds.email, &creds.password) {
-        let jar = auth::create_session_cookie(jar, "admin");
-        let jar = jar.add(issue_csrf_cookie());
-        (jar, Redirect::to("/")).into_response()
-    } else {
-        (
-            StatusCode::UNAUTHORIZED,
-            Html("Invalid credentials".to_string()),
-        )
-            .into_response()
-    }
-}
-
-async fn post_login_json(
-    jar: PrivateCookieJar,
     Json(creds): Json<LoginPayload>,
 ) -> axum::response::Response {
     if auth::verify_login(&creds.email, &creds.password) {
@@ -177,19 +129,15 @@ async fn post_login_json(
         let jar = jar.add(issue_csrf_cookie());
         (jar, Json(json!({"ok": true}))).into_response()
     } else {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({"error":"unauthorized"})),
-        )
-            .into_response()
+        (StatusCode::UNAUTHORIZED, Json(json!({"error":"unauthorized"}))).into_response()
     }
 }
 
-async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::response::Response {
+async fn post_logout(mut jar: PrivateCookieJar) -> axum::response::Response {
     jar = auth::clear_session_cookie(jar);
-    let csrf = Cookie::build((crate::config::csrf_cookie_name(), String::new()))
+    let csrf = Cookie::build((CSRF_COOKIE, String::new()))
         .path("/")
-        .secure(crate::config::cookie_secure())
+        .secure(true)
         .http_only(false)
         .same_site(SameSite::Lax)
         .build();
@@ -209,7 +157,6 @@ async fn create_sleep(
 
 async fn get_sleep(
     State(db): State<Db>,
-    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Path(date): Path<chrono::NaiveDate>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     match handlers::get_sleep_by_date(&db, date).await? {
@@ -263,9 +210,7 @@ async fn create_note(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
-async fn trends_page(
-    RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
-) -> Html<String> {
+async fn trends_page(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Html<String> {
     let tpl = super::views::TrendsTemplate;
     match tpl.render() {
         Ok(html) => Html(html),
