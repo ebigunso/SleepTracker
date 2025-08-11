@@ -32,7 +32,7 @@ use axum::http::{Method, StatusCode, header::HeaderName};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Cookie, CookieJar, SameSite};
 use base64::Engine;
-use rand::RngCore;
+use argon2::password_hash::rand_core::{OsRng, RngCore};
 use serde_json::json;
 
 #[doc = r#"CSRF cookie name.
@@ -58,7 +58,7 @@ Cookie attributes:
 Returns a cookie ready to be added to a [`CookieJar`]."#]
 pub fn issue_csrf_cookie() -> Cookie<'static> {
     let mut bytes = [0u8; 32];
-    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    OsRng.fill_bytes(&mut bytes);
     let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes);
 
     Cookie::build((CSRF_COOKIE, token))
@@ -161,25 +161,11 @@ where
 }
 
 fn percent_decode(s: &str) -> Option<String> {
-    let bytes = s.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' {
-            if i + 2 >= bytes.len() {
-                return None;
-            }
-            let h1 = (bytes[i + 1] as char).to_digit(16)?;
-            let h2 = (bytes[i + 2] as char).to_digit(16)?;
-            let val = ((h1 << 4) + h2) as u8;
-            out.push(val);
-            i += 3;
-        } else {
-            out.push(bytes[i]);
-            i += 1;
-        }
-    }
-    String::from_utf8(out).ok()
+    use percent_encoding::percent_decode_str;
+    percent_decode_str(s)
+        .decode_utf8()
+        .ok()
+        .map(|cow| cow.into_owned())
 }
 
 fn forbidden(detail: &str) -> Response {
