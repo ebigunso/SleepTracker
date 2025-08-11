@@ -1,3 +1,20 @@
+#![doc = r#"Security headers layer
+
+Adds common security headers to all responses:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- Content Security Policy (baseline): `default-src 'self'; script-src 'self' 'unsafe-inline'`
+- Strict-Transport-Security when `ENABLE_HSTS=1/true`
+
+# Example
+
+```rust,no_run
+# let router = axum::Router::new();
+let router = sleep_api::security::headers::apply(router, sleep_api::config::hsts_enabled());
+```
+"#]
+
 use axum::Router;
 use axum::http::{HeaderName, HeaderValue};
 use tower_http::set_header::SetResponseHeaderLayer;

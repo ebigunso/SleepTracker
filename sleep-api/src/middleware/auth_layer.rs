@@ -1,3 +1,34 @@
+#![doc = r#"Authentication extractors
+
+Provides extractors to require a valid session:
+- [`RequireSessionJson`] → returns `401` JSON (`{"error":"unauthorized"}`) on failure
+- [`RequireSessionRedirect`] → redirects to `/login` on failure (for UI routes)
+
+These extractors read the encrypted `__Host-session` cookie via [`PrivateCookieJar`]. They require that the application state implements [`FromRef`] for [`Key`], which is provided by [`app::AppState`].
+
+# Example
+
+```rust,no_run
+# use axum::{Json, response::IntoResponse};
+# use sleep_api::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+# async fn api_handler(
+#     RequireSessionJson { _user_id: _ }: RequireSessionJson,
+#     Json(_): Json<serde_json::Value>,
+# ) -> impl IntoResponse {
+#     axum::http::StatusCode::NO_CONTENT
+# }
+# async fn ui_handler(
+#     RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
+# ) -> axum::response::Html<String> {
+#     axum::response::Html(String::new())
+# }
+```
+
+See also:
+- [`crate::auth`] for creating/clearing session cookies
+- [`crate::security::csrf`] for CSRF protection guard
+"#]
+
 use axum::extract::{FromRef, FromRequestParts};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Redirect, Response};

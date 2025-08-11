@@ -1,12 +1,50 @@
+#![doc = r#"Authentication utilities
+
+Provides helpers for issuing and validating a session cookie (`__Host-session`) and verifying admin credentials.
+
+Cookie:
+- Name: `__Host-session`
+- Attributes: Secure, HttpOnly, SameSite=Lax, Path=/
+- Signed and encrypted via [`PrivateCookieJar`] using a key derived from `SESSION_SECRET`.
+
+Admin login:
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD_HASH` (`$argon2id$...`)
+
+See also:
+- [`security::csrf`] for CSRF token management and enforcement
+- [`middleware::auth_layer`] for session-required extractors
+"#]
+
 use axum_extra::extract::cookie::{Cookie, PrivateCookieJar, SameSite};
 use cookie as _;
 use serde::Deserialize;
 
+#[doc = r#"Single-user identifier.
+
+This project supports a single admin user; `UserId` is typically `"admin"` or the configured `ADMIN_EMAIL`."#]
 pub type UserId = String;
 
+#[doc = r#"Session cookie name.
+
+- Name: `__Host-session`
+- Attributes: Secure, HttpOnly, SameSite=Lax, Path=/
+- Must use `__Host-` prefix requirements (Secure, Path=/, no Domain) in browsers."#]
 pub const SESSION_COOKIE: &str = "__Host-session";
 
 /// Create a secure, HttpOnly session cookie storing the user id (encrypted via PrivateCookieJar).
+#[doc = r#"Create a secure, HttpOnly session cookie storing the user id.
+
+The cookie is signed and encrypted via [`PrivateCookieJar`]. Returns the updated jar.
+
+# Example
+
+```rust,no_run
+# use axum_extra::extract::cookie::PrivateCookieJar;
+# fn demo(mut jar: PrivateCookieJar) -> PrivateCookieJar {
+sleep_api::auth::create_session_cookie(jar, "admin")
+# }
+```"#]
 pub fn create_session_cookie(mut jar: PrivateCookieJar, user_id: &str) -> PrivateCookieJar {
     let cookie = Cookie::build((SESSION_COOKIE, user_id.to_owned()))
         .path("/")
@@ -19,6 +57,9 @@ pub fn create_session_cookie(mut jar: PrivateCookieJar, user_id: &str) -> Privat
 }
 
 /// Clear the session cookie.
+#[doc = r#"Clear the session cookie.
+
+Sets a removal cookie (matching name + path) and returns the updated jar."#]
 pub fn clear_session_cookie(mut jar: PrivateCookieJar) -> PrivateCookieJar {
     // Removal needs to match name + path
     let cookie = Cookie::build((SESSION_COOKIE, String::new()))
@@ -32,11 +73,19 @@ pub fn clear_session_cookie(mut jar: PrivateCookieJar) -> PrivateCookieJar {
 }
 
 /// Return the current user id from the session cookie if present/valid.
+#[doc = r#"Return the current user id from the encrypted session cookie, if present."#]
 pub fn current_user_from_cookie(jar: &PrivateCookieJar) -> Option<UserId> {
     jar.get(SESSION_COOKIE).map(|c| c.value().to_string())
 }
 
 /// Verify provided email + password against configured ADMIN_EMAIL + ADMIN_PASSWORD_HASH.
+#[doc = r#"Verify provided `email` and `password` against configured admin credentials.
+
+Reads:
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD_HASH` (`$argon2id$...`)
+
+Returns `true` on a valid match; otherwise `false`."#]
 pub fn verify_login(email: &str, password: &str) -> bool {
     use argon2::{
         Argon2,
@@ -65,6 +114,7 @@ pub fn verify_login(email: &str, password: &str) -> bool {
 }
 
 #[derive(Debug, Deserialize)]
+#[doc = r#"Login request payload (JSON or form)."#]
 pub struct LoginPayload {
     pub email: String,
     pub password: String,
