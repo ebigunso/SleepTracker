@@ -92,3 +92,17 @@ OpenAPI specification is in openapi.yaml and includes:
 
 - The cookie encryption Key is derived from SESSION_SECRET if present; otherwise a random key is generated (sessions will break on restart in that case).
 - Default database is sqlite::memory: for ephemeral dev/testing. For a persistent DB use DATABASE_URL=sqlite://./data/sleep.db and create the directory.
+
+## Environments
+
+- Local (cargo run):
+  - Use .env for local settings (e.g., COOKIE_SECURE=0 for http://).
+  - Start: `cargo run -p sleep-api`.
+
+- Docker Compose:
+  - Copy `.env.docker.example` to `.env.docker` and fill values (ADMIN_EMAIL, ADMIN_PASSWORD_HASH, SESSION_SECRET; optionally COOKIE_SECURE=1).
+  - Compose injects only `.env.docker` into the container; your local `.env` is not used inside the container.
+  - Start: `docker compose up --build`.
+
+- Paths in Docker:
+  - DATABASE_URL should point to the named volume path: `sqlite:///data/sleep.db`.
