@@ -3,6 +3,67 @@ info:
   title: Sleep API
   version: '0.1'
 paths:
+  /login:
+    post:
+      summary: Login (form)
+      description: Issues session and CSRF cookies via Set-Cookie. Send subsequent mutating requests with X-CSRF-Token equal to the CSRF cookie value.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+      responses:
+        '303':
+          description: See Other. Form login success redirects to "/".
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /login.json:
+    post:
+      summary: Login (JSON)
+      deprecated: true
+      description: Issues session and CSRF cookies via Set-Cookie. JSON variant of login.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginPayload'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+  /logout:
+    post:
+      summary: Logout
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: No Content. Clears session and CSRF cookies.
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /health:
     get:
       responses:
@@ -16,6 +77,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SleepInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -26,6 +90,18 @@ paths:
                 properties:
                   id:
                     type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /sleep/date/{date}:
     get:
       parameters:
@@ -34,6 +110,8 @@ paths:
           schema:
             type: string
             format: date
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: OK
@@ -41,6 +119,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SleepSession'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: Not Found
   /sleep/{id}:
@@ -56,18 +140,48 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SleepInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '204':
           description: Updated
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     delete:
       parameters:
         - in: path
           name: id
           schema:
             type: integer
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '204':
           description: Deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /exercise:
     post:
       requestBody:
@@ -76,6 +190,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExerciseInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -86,6 +203,18 @@ paths:
                 properties:
                   id:
                     type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /note:
     post:
       requestBody:
@@ -94,6 +223,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/NoteInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
       responses:
         '201':
           description: Created
@@ -104,6 +236,18 @@ paths:
                 properties:
                   id:
                     type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/trends/sleep-bars:
     get:
       summary: Sleep bars time range
@@ -120,6 +264,8 @@ paths:
           schema:
             type: string
             format: date
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: List of sleep bar entries for the range (wake date semantics)
@@ -147,6 +293,12 @@ paths:
                     duration_min:
                       type: integer
                       nullable: true
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/trends/summary:
     get:
       summary: Aggregated metrics for a time range
@@ -169,6 +321,8 @@ paths:
           schema:
             type: string
             enum: [day, week]
+      security:
+        - cookieAuth: []
       responses:
         '200':
           description: Aggregates for duration, quality, latency by bucket
@@ -208,8 +362,25 @@ paths:
                           type: string
                         median:
                           type: number
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __Host-session
+      description: Session cookie "__Host-session" (or "session" when COOKIE_SECURE=false)
+    csrfHeader:
+      type: apiKey
+      in: header
+      name: X-CSRF-Token
+      description: Must equal the CSRF cookie value ("__Host-csrf" or "csrf" in dev)
   schemas:
     SleepInput:
       type: object
@@ -259,5 +430,20 @@ components:
           type: string
           format: date
         body:
+          type: string
+          nullable: true
+    LoginPayload:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
           type: string
           nullable: true

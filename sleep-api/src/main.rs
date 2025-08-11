@@ -1,11 +1,14 @@
 mod app;
+mod auth;
 mod config;
 mod db;
 mod domain;
 mod error;
 mod handlers;
+mod middleware;
 mod models;
 mod repository;
+mod security;
 mod time;
 mod trends;
 mod views;

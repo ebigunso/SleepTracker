@@ -9,6 +9,7 @@ Endpoints:
 For HTTP examples, see `docs/api_examples.md` and the OpenAPI spec.
 "#]
 
+use crate::middleware::auth_layer::RequireSessionJson;
 use crate::{db::Db, error::ApiError};
 use axum::{
     Json,
@@ -22,7 +23,7 @@ use std::collections::BTreeMap;
 /// Helper to parse a date string and return ApiError with field name
 fn parse_date_field(s: &str, field: &str) -> Result<NaiveDate, ApiError> {
     NaiveDate::parse_from_str(s, "%Y-%m-%d")
-        .map_err(|_| ApiError::InvalidInput(format!("invalid {} date", field)))
+        .map_err(|_| ApiError::InvalidInput(format!("invalid {field} date")))
 }
 
 /// Helper to parse and validate a from/to date range (YYYY-MM-DD)
@@ -79,6 +80,7 @@ Errors:
 "#]
 pub async fn sleep_bars(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<Vec<SleepBar>>, ApiError> {
     let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;
@@ -163,6 +165,7 @@ Errors:
 "#]
 pub async fn summary(
     State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Query(q): Query<RangeQuery>,
 ) -> Result<Json<SummaryResponse>, ApiError> {
     let (from, to) = parse_and_validate_date_range(&q.from, &q.to)?;
