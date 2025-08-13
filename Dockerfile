@@ -13,6 +13,9 @@ WORKDIR /app
 ENV DATABASE_URL=sqlite:///data/sleep.db
 COPY --from=builder /app/target/release/sleep-api /app/sleep-api
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Normalize line endings in case the script was checked out with CRLF on Windows
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
+
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 EXPOSE 8080
