@@ -26,7 +26,7 @@ use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
     extract::{Form, Path, State},
-    routing::{get, post, put, head},
+    routing::{get, post, put},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;

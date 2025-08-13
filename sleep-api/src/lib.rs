@@ -10,7 +10,7 @@ Key modules:
 - [`models`] — input/output types with validation.
 - [`repository`] — persistence operations.
 - [`time`] — time and duration helpers including DST‑aware computations.
-- [`trends`] and [`views`] — aggregation endpoints and templates.
+- [`trends`] — aggregation endpoints.
 
 Why: use this crate to embed the API server in your binary, or reuse its types and helpers like [`compute_duration_min`].
 
@@ -41,7 +41,6 @@ See also: [`time`], [`repository`], and [`models`].
 [`repository`]: crate::repository
 [`time`]: crate::time
 [`trends`]: crate::trends
-[`views`]: crate::views
 [`compute_duration_min`]: crate::time::compute_duration_min
 "#]
 
@@ -58,4 +57,3 @@ pub mod repository;
 pub mod security;
 pub mod time;
 pub mod trends;
-pub mod views;

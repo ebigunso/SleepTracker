@@ -64,15 +64,19 @@ async fn login_and_get_auth(
         .expect("login request failed");
     assert_eq!(res.status(), 200, "login failed: {}", res.status());
     let headers = res.headers().get_all(reqwest::header::SET_COOKIE);
-    let csrf = parse_cookie(headers.iter(), "__Host-csrf=").expect("missing __Host-csrf cookie");
-    let session =
-        parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
+    // Accept both secure (__Host-*) and dev-mode (no prefix) cookie names
+    let csrf = parse_cookie(headers.iter(), "__Host-csrf=")
+        .or_else(|| parse_cookie(headers.iter(), "csrf="))
+        .expect("missing CSRF cookie in login response");
+    let session = parse_cookie(headers.iter(), "__Host-session=")
+        .or_else(|| parse_cookie(headers.iter(), "session="))
+        .expect("missing session cookie in login response");
     (csrf, session)
 }
 
 #[tokio::test]
 async fn test_sleep_flow() {
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var("COOKIE_SECURE", "0"); };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -113,7 +117,7 @@ async fn test_sleep_flow() {
         .post(format!("http://{addr}/sleep"))
         .header(
             "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
+            format!("session={session_cookie}; csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&input)
@@ -144,7 +148,7 @@ async fn test_sleep_flow() {
         .put(format!("http://{addr}/sleep/{id}"))
         .header(
             "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
+            format!("session={session_cookie}; csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&updated)
@@ -167,7 +171,7 @@ async fn test_sleep_flow() {
         .delete(format!("http://{addr}/sleep/{id}"))
         .header(
             "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
+            format!("session={session_cookie}; csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .send()
@@ -187,7 +191,7 @@ async fn test_sleep_flow() {
 
 #[tokio::test]
 async fn test_exercise_and_note() {
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var("COOKIE_SECURE", "0"); };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -226,7 +230,7 @@ async fn test_exercise_and_note() {
         .post(format!("http://{addr}/exercise"))
         .header(
             "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
+            format!("session={session_cookie}; csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&exercise)
@@ -255,7 +259,7 @@ async fn test_exercise_and_note() {
         .post(format!("http://{addr}/note"))
         .header(
             "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
+            format!("session={session_cookie}; csrf={csrf}"),
         )
         .header("X-CSRF-Token", &csrf)
         .json(&note)
