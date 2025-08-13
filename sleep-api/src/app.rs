@@ -11,7 +11,7 @@ For an end-to-end server setup example, see [`router`].
 [`Router`]: axum::Router
 "#]
 
-use crate::auth::{self, LoginPayload};
+use crate::auth::{self, LoginPayload, current_user_from_cookie};
 use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
 use crate::security::csrf::{CsrfGuard, issue_csrf_cookie};
 use crate::{
@@ -27,7 +27,7 @@ use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
     extract::{Form, Path, State},
-    routing::{get, post, put},
+    routing::{get, post, put, head},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;
@@ -114,10 +114,11 @@ pub fn router(db: Db) -> Router {
     };
     let router = Router::new()
         .route("/", get(root))
-        .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
+        .route("/health", get(health_get).head(health_head))
         .route("/login", get(get_login).post(post_login))
         .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
+        .route("/api/session", get(api_session))
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
         .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
@@ -129,6 +130,20 @@ pub fn router(db: Db) -> Router {
         .with_state(state);
 
     crate::security::headers::apply(router, enable_hsts)
+}
+
+// Health endpoints for SvelteKit UI
+async fn health_get() -> Json<serde_json::Value> {
+    Json(json!({"status":"ok"}))
+}
+async fn health_head() -> StatusCode {
+    StatusCode::OK
+}
+
+// Session probe for UI
+async fn api_session(jar: PrivateCookieJar) -> Json<serde_json::Value> {
+    let authed = current_user_from_cookie(&jar).is_some();
+    Json(json!({"authenticated": authed}))
 }
 
 #[doc = r#"Redirect root to /trends.
