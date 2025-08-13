@@ -9,7 +9,9 @@ SleepTracker is a small, single-user web API for tracking sleep sessions, built 
 - Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH
   - Generate a password hash:
     cargo run -p sleep-api --bin pw-hash
-  - Paste the $argon2id$... string into ADMIN_PASSWORD_HASH
+  - Paste the $argon2id$... string into ADMIN_PASSWORD_HASH (IMPORTANT: use single quotes in .env/.env.docker to prevent $-expansion by dotenv)
+    Example:
+      ADMIN_PASSWORD_HASH='$argon2id$v=19$m=19456,t=2,p=1$...$...'
 - Set SESSION_SECRET to a base64-encoded random value (32+ bytes recommended)
 - Optional: Set ENABLE_HSTS=1 when serving over HTTPS
 - Optional: See COOKIE_SECURE below for local HTTP development
