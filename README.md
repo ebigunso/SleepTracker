@@ -23,6 +23,30 @@ SleepTracker is a small, single-user web API for tracking sleep sessions, built 
 
 Server will listen on 0.0.0.0:8080.
 
+## Run with Docker
+
+Use Docker Compose to build and run the app.
+
+- Docker Compose (recommended)
+  - Copy .env.docker.example to .env.docker and fill values:
+    - ADMIN_EMAIL, ADMIN_PASSWORD_HASH (quote the $argon2id$... string with single quotes)
+    - SESSION_SECRET: base64-encoded random value (32+ bytes)
+    - For local HTTP development, set COOKIE_SECURE=0. For HTTPS/prod, use COOKIE_SECURE=1.
+  - Build and start:
+    docker compose up --build
+    - Add -d to run in the background.
+  - Access the API at http://localhost:8080
+  - Follow logs:
+    docker compose logs -f api
+  - Stop:
+    docker compose down
+  - Stop and delete the persistent data volume (DESTROYS DB):
+    docker compose down -v
+  - Notes:
+    - Data is stored at /data inside the container and persists in a named volume across restarts.
+    - Migrations run automatically on startup.
+
+
 ## Authentication and sessions
 
 - Single-user login based on ADMIN_EMAIL and ADMIN_PASSWORD_HASH.
