@@ -12,7 +12,7 @@ For an end-to-end server setup example, see [`router`].
 "#]
 
 use crate::auth::{self, LoginPayload, current_user_from_cookie};
-use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+use crate::middleware::auth_layer::RequireSessionJson;
 use crate::security::csrf::{CsrfGuard, issue_csrf_cookie};
 use crate::{
     db::Db,
@@ -21,7 +21,6 @@ use crate::{
     models::{ExerciseInput, NoteInput, SleepInput},
     trends,
 };
-use askama::Template;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
@@ -115,7 +114,7 @@ pub fn router(db: Db) -> Router {
     let router = Router::new()
         .route("/", get(root))
         .route("/health", get(health_get).head(health_head))
-        .route("/login", get(get_login).post(post_login))
+        .route("/login", post(post_login))
         .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
         .route("/api/session", get(api_session))
@@ -126,7 +125,6 @@ pub fn router(db: Db) -> Router {
         .route("/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
-        .route("/trends", get(trends_page))
         .with_state(state);
 
     crate::security::headers::apply(router, enable_hsts)
@@ -156,35 +154,10 @@ Responses:
 
 See also: [`trends_page`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
 "#]
-async fn root(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Redirect {
-    Redirect::to("/trends")
+async fn root() -> StatusCode {
+    StatusCode::NO_CONTENT
 }
 
-#[doc = r#"Render a minimal HTML login form.
-
-Accepts: `GET /login`
-- Returns an HTML page with a form that POSTs to `/login`.
-
-Responses:
-- 200 OK — HTML page
-
-See also: [`post_login`], [`crate::auth::verify_login`]
-"#]
-async fn get_login() -> Html<String> {
-    let html = r#"<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Login</title></head>
-<body>
-  <h1>Login</h1>
-  <form method="post" action="/login">
-    <label>Email <input type="email" name="email" /></label><br/>
-    <label>Password <input type="password" name="password" /></label><br/>
-    <button type="submit">Login</button>
-  </form>
-</body>
-</html>"#;
-    Html(html.to_string())
-}
 
 #[doc = r#"Login (form) and issue session + CSRF cookies.
 
@@ -469,28 +442,4 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
-}
-
-#[doc = r#"Render the trends page (Askama template).
-
-Security:
-- Requires authenticated session ([`RequireSessionRedirect`]); unauthenticated users are redirected to `/login`.
-
-Responses:
-- 200 OK — HTML page
-- Redirect — when not authenticated
-
-See also: [`crate::views::TrendsTemplate`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
-"#]
-async fn trends_page(
-    RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
-) -> Html<String> {
-    let tpl = super::views::TrendsTemplate;
-    match tpl.render() {
-        Ok(html) => Html(html),
-        Err(e) => {
-            tracing::error!("Template rendering error: {}", e);
-            Html("An internal error occurred while rendering the page.".to_string())
-        }
-    }
 }

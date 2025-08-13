@@ -89,27 +89,15 @@ async fn test_auth_and_csrf_flow() {
 
     wait_ready(&client, &addr.to_string()).await;
 
-    // Unauthed UI route should redirect to /login
+    // Unauthenticated session probe should be false
     let res = client
-        .get(format!("http://{addr}/trends"))
+        .get(format!("http://{addr}/api/session"))
         .send()
         .await
         .unwrap();
-    assert!(
-        res.status().is_redirection(),
-        "expected redirect status, got {}",
-        res.status()
-    );
-    let loc = res
-        .headers()
-        .get(reqwest::header::LOCATION)
-        .unwrap()
-        .to_str()
-        .unwrap();
-    assert!(
-        loc.ends_with("/login"),
-        "expected redirect to /login, got {loc}"
-    );
+    assert_eq!(res.status(), 200);
+    let v: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(v["authenticated"], false, "expected unauthenticated at start");
 
     // Login with JSON
     let login_body = serde_json::json!({
