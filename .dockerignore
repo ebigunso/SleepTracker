@@ -1,0 +1,19 @@
+# Exclude local env files from Docker build context
+.env
+.env.local
+.env.development
+.env.test
+.env.docker
+
+# Rust build artifacts
+target
+
+# Git
+.git
+.gitignore
+
+# Node/npm caches if any future UI gets added
+node_modules
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml

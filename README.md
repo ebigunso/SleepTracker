@@ -9,7 +9,9 @@ SleepTracker is a small, single-user web API for tracking sleep sessions, built 
 - Set ADMIN_EMAIL and ADMIN_PASSWORD_HASH
   - Generate a password hash:
     cargo run -p sleep-api --bin pw-hash
-  - Paste the $argon2id$... string into ADMIN_PASSWORD_HASH
+  - Paste the $argon2id$... string into ADMIN_PASSWORD_HASH (IMPORTANT: use single quotes in .env/.env.docker to prevent $-expansion by dotenv)
+    Example:
+      ADMIN_PASSWORD_HASH='$argon2id$v=19$m=19456,t=2,p=1$...$...'
 - Set SESSION_SECRET to a base64-encoded random value (32+ bytes recommended)
 - Optional: Set ENABLE_HSTS=1 when serving over HTTPS
 - Optional: See COOKIE_SECURE below for local HTTP development
@@ -20,6 +22,30 @@ SleepTracker is a small, single-user web API for tracking sleep sessions, built 
   cargo run -p sleep-api
 
 Server will listen on 0.0.0.0:8080.
+
+## Run with Docker
+
+Use Docker Compose to build and run the app.
+
+- Docker Compose (recommended)
+  - Copy .env.docker.example to .env.docker and fill values:
+    - ADMIN_EMAIL, ADMIN_PASSWORD_HASH (quote the $argon2id$... string with single quotes)
+    - SESSION_SECRET: base64-encoded random value (32+ bytes)
+    - For local HTTP development, set COOKIE_SECURE=0. For HTTPS/prod, use COOKIE_SECURE=1.
+  - Build and start:
+    docker compose up --build
+    - Add -d to run in the background.
+  - Access the API at http://localhost:8080
+  - Follow logs:
+    docker compose logs -f api
+  - Stop:
+    docker compose down
+  - Stop and delete the persistent data volume (DESTROYS DB):
+    docker compose down -v
+  - Notes:
+    - Data is stored at /data inside the container and persists in a named volume across restarts.
+    - Migrations run automatically on startup.
+
 
 ## Authentication and sessions
 
@@ -92,3 +118,17 @@ OpenAPI specification is in openapi.yaml and includes:
 
 - The cookie encryption Key is derived from SESSION_SECRET if present; otherwise a random key is generated (sessions will break on restart in that case).
 - Default database is sqlite::memory: for ephemeral dev/testing. For a persistent DB use DATABASE_URL=sqlite://./data/sleep.db and create the directory.
+
+## Environments
+
+- Local (cargo run):
+  - Use .env for local settings (e.g., COOKIE_SECURE=0 for http://).
+  - Start: `cargo run -p sleep-api`.
+
+- Docker Compose:
+  - Copy `.env.docker.example` to `.env.docker` and fill values (ADMIN_EMAIL, ADMIN_PASSWORD_HASH, SESSION_SECRET; optionally COOKIE_SECURE=1).
+  - Compose injects only `.env.docker` into the container; your local `.env` is not used inside the container.
+  - Start: `docker compose up --build`.
+
+- Paths in Docker:
+  - DATABASE_URL should point to the named volume path: `sqlite:///data/sleep.db`.
