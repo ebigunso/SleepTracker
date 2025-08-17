@@ -17,11 +17,11 @@
     }
     loading = true;
     try {
-      const res = await fetch('/login.json', {
+      const res = await fetch('/auth/login', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ email, password })
       });
       if (res.ok) {
         pushToast({ type: 'success', message: 'Logged in' });

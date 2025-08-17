@@ -10,7 +10,7 @@
   async function logout() {
     try {
       const csrf = readCsrfToken();
-      const res = await fetch('/logout', {
+      const res = await fetch('/auth/logout', {
         method: 'POST',
         credentials: 'include',
         headers: csrf ? { 'X-CSRF-Token': csrf } : {}

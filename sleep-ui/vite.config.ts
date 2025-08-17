@@ -8,9 +8,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': { target: 'http://localhost:8080', changeOrigin: true },
-      '/login': { target: 'http://localhost:8080', changeOrigin: true },
-      '/login.json': { target: 'http://localhost:8080', changeOrigin: true },
-      '/logout': { target: 'http://localhost:8080', changeOrigin: true },
+      '/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/auth/, '')
+      },
       '/sleep': { target: 'http://localhost:8080', changeOrigin: true },
       '/exercise': { target: 'http://localhost:8080', changeOrigin: true },
       '/note': { target: 'http://localhost:8080', changeOrigin: true },
