@@ -158,7 +158,6 @@ async fn root() -> StatusCode {
     StatusCode::NO_CONTENT
 }
 
-
 #[doc = r#"Login (form) and issue session + CSRF cookies.
 
 Accepts: `POST /login` (`application/x-www-form-urlencoded`)

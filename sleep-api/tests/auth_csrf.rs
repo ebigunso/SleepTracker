@@ -97,7 +97,10 @@ async fn test_auth_and_csrf_flow() {
         .unwrap();
     assert_eq!(res.status(), 200);
     let v: serde_json::Value = res.json().await.unwrap();
-    assert_eq!(v["authenticated"], false, "expected unauthenticated at start");
+    assert_eq!(
+        v["authenticated"], false,
+        "expected unauthenticated at start"
+    );
 
     // Login with JSON
     let login_body = serde_json::json!({

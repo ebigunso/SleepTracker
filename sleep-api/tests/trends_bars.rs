@@ -76,7 +76,10 @@ async fn login_and_get_auth(
 #[tokio::test]
 async fn test_trends_sleep_bars_basic() {
     // In-memory DB
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var("COOKIE_SECURE", "0"); };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -129,10 +132,7 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("session={session}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s1)
         .send()
@@ -142,10 +142,7 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("session={session}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s2)
         .send()

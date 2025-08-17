@@ -76,7 +76,10 @@ async fn login_and_get_auth(
 
 #[tokio::test]
 async fn test_sleep_flow() {
-unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var("COOKIE_SECURE", "0"); };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -115,10 +118,7 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
     };
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("session={session_cookie}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&input)
         .send()
@@ -146,10 +146,7 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
     };
     let res = client
         .put(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("session={session_cookie}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&updated)
         .send()
@@ -169,10 +166,7 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
 
     let res = client
         .delete(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("session={session_cookie}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .send()
         .await
@@ -191,7 +185,10 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
 
 #[tokio::test]
 async fn test_exercise_and_note() {
-unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var("COOKIE_SECURE", "0"); };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -228,10 +225,7 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
     };
     let res = client
         .post(format!("http://{addr}/exercise"))
-        .header(
-            "Cookie",
-            format!("session={session_cookie}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&exercise)
         .send()
@@ -257,10 +251,7 @@ unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:"); std::env::set_var
     };
     let res = client
         .post(format!("http://{addr}/note"))
-        .header(
-            "Cookie",
-            format!("session={session_cookie}; csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&note)
         .send()
