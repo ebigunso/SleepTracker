@@ -1,4 +1,5 @@
 import type { LayoutServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 
 export const load: LayoutServerLoad = async ({ fetch, url }) => {
   let session = false;
@@ -12,5 +13,6 @@ export const load: LayoutServerLoad = async ({ fetch, url }) => {
     // ignore; treat as unauthenticated
     session = false;
   }
+  if (!session && url.pathname !== '/login') throw redirect(302, '/login');
   return { session, pathname: url.pathname };
 };

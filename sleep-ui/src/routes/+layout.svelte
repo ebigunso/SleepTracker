@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
   import { toasts, pushToast, dismissToast } from '$lib/stores/toast';
   import { readCsrfToken } from '$lib/api';
@@ -8,15 +6,6 @@
 
   export let data: { session?: boolean; pathname?: string };
 
-  // Temporary guard: protect all routes except /login when unauthenticated
-  onMount(() => {
-    const unsub = page.subscribe(($page) => {
-      if (!data.session && $page.url.pathname !== '/login') {
-        goto('/login');
-      }
-    });
-    return unsub;
-  });
 
   async function logout() {
     try {
