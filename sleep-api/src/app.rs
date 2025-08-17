@@ -35,6 +35,11 @@ use serde_json::json;
 
 Routes:
 - `GET /health`
+- `HEAD /health`
+- `POST /login`
+- `POST /login.json`
+- `POST /logout`
+- `GET /api/session`
 - `POST /sleep`
 - `GET /sleep/date/{date}`
 - `PUT /sleep/{id}`
@@ -43,7 +48,6 @@ Routes:
 - `POST /note`
 - `GET /api/trends/sleep-bars`
 - `GET /api/trends/summary`
-- `GET /trends`
 
 # Example
 
@@ -144,15 +148,12 @@ async fn api_session(jar: PrivateCookieJar) -> Json<serde_json::Value> {
     Json(json!({"authenticated": authed}))
 }
 
-#[doc = r#"Redirect root to /trends.
+#[doc = r#"Root endpoint.
 
-Security:
-- Requires an authenticated session (via [`RequireSessionRedirect`]). Unauthenticated users are redirected to `/login`.
+Returns 204 No Content. This API-only server does not serve HTML; the UI is a separate SvelteKit app.
 
 Responses:
-- 303 See Other — redirects to `/trends`
-
-See also: [`trends_page`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
+- 204 No Content
 "#]
 async fn root() -> StatusCode {
     StatusCode::NO_CONTENT
@@ -383,12 +384,8 @@ async fn delete_sleep(
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
     _csrf: CsrfGuard,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
-    let affected = handlers::delete_sleep(&db, id).await?;
-    if affected == 0 {
-        Err(ApiError::NotFound)
-    } else {
-        Ok(StatusCode::NO_CONTENT)
-    }
+    let _affected = handlers::delete_sleep(&db, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[doc = r#"Create an exercise entry.

@@ -69,6 +69,26 @@ paths:
       responses:
         '200':
           description: OK
+    head:
+      responses:
+        '200':
+          description: OK
+  /api/session:
+    get:
+      summary: Session probe
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Authenticated flag
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authenticated:
+                    type: boolean
+
   /sleep:
     post:
       requestBody:
@@ -169,7 +189,7 @@ paths:
           csrfHeader: []
       responses:
         '204':
-          description: Deleted
+          description: Deleted or already absent
         '401':
           description: Unauthorized
           content:
