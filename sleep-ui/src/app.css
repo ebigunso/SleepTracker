@@ -1,5 +1,5 @@
-@config "./tailwind.config.cjs";
 @import "tailwindcss";
+@config "../tailwind.config.cjs";
 
 /* App-level tweaks */
 :root {
