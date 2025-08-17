@@ -3,6 +3,7 @@
   import { toasts, pushToast, dismissToast } from '$lib/stores/toast';
   import { readCsrfToken } from '$lib/api';
   import '../app.css';
+  const AUTH_PREFIX = import.meta.env.DEV ? '/auth' : '';
 
   export let data: { session?: boolean; pathname?: string };
 
@@ -10,7 +11,7 @@
   async function logout() {
     try {
       const csrf = readCsrfToken();
-      const res = await fetch('/auth/logout', {
+      const res = await fetch(`${AUTH_PREFIX}/logout`, {
         method: 'POST',
         credentials: 'include',
         headers: csrf ? { 'X-CSRF-Token': csrf } : {}

@@ -2,6 +2,8 @@
   import { goto } from '$app/navigation';
   import { pushToast } from '$lib/stores/toast';
 
+  const AUTH_PREFIX = import.meta.env.DEV ? '/auth' : '';
+
   let email = '';
   let password = '';
   let loading = false;
@@ -17,7 +19,7 @@
     }
     loading = true;
     try {
-      const res = await fetch('/auth/login', {
+      const res = await fetch(`${AUTH_PREFIX}/login`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
