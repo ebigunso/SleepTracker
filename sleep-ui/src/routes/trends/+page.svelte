@@ -57,8 +57,8 @@
     const qualities = bars.map((b) => (b.quality ?? null));
 
     if (!ChartJS) {
-      // @ts-ignore - suppress type resolution issues for chart.js in TS bundler mode
-      const mod: any = await import('chart.js');
+      // typed dynamic import for chart.js to satisfy TS under bundler mode
+      const mod = (await import('chart.js')) as typeof import('chart.js');
       ChartJS = mod.Chart;
       ChartJS.register(...mod.registerables);
     }
