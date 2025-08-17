@@ -96,12 +96,29 @@ The API applies the following headers to all responses:
   - TODO: Move to nonces/hashes and remove 'unsafe-inline' when templates are adjusted
 - Strict-Transport-Security (HSTS) when ENABLE_HSTS=1/true
 
+## SvelteKit UI (frontend)
+
+For local UI development:
+- cd sleep-ui
+- npm ci
+- npm run dev
+
+The dev server runs at http://localhost:5173 and proxies API calls to http://localhost:8080 via vite.config.ts. Authentication is cookie-based with CSRF double-submit.
+
+Server-side route protection:
+- +layout.server.ts fetches /api/session during SSR and redirects unauthenticated requests to /login. This prevents rendering protected pages on the server and avoids client-side flashes.
+
+Local HTTP note:
+- For local HTTP development, set COOKIE_SECURE=0 in the API environment so non-__Host- cookies are accepted over http. Do not use this setting in production.
+
 ## OpenAPI
 
 OpenAPI specification is in openapi.yaml and includes:
 - /login and /logout endpoints
 - Cookie-based session authentication scheme
 - Double-submit CSRF requirement (X-CSRF-Token) on mutating endpoints
+- /api/session endpoint for session probe (GET)
+- HEAD /health endpoint
 
 ## Building, formatting, linting, testing
 

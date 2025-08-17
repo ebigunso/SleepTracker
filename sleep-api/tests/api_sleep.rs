@@ -173,6 +173,16 @@ async fn test_sleep_flow() {
         .unwrap();
     assert_eq!(res.status(), 204);
 
+    // Idempotency: deleting the same id again should still return 204
+    let res = client
+        .delete(format!("http://{addr}/sleep/{id}"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", &csrf)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 204, "idempotent delete should be 204");
+
     let res = client
         .get(format!("http://{addr}/sleep/date/{}", updated.date))
         .send()
