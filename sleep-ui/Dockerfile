@@ -3,11 +3,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install deps first to leverage Docker layer cache
-COPY package.json ./
-# If a lockfile exists in the future, copy it too
-# COPY package-lock.json ./
-RUN npm install
+# Install deps first to leverage Docker layer cache (deterministic builds)
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy rest of the app
 COPY . .
