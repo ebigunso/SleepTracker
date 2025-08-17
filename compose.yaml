@@ -16,6 +16,7 @@ services:
       - "5173:5173"
     volumes:
       - ./sleep-ui:/app
+      - /app/node_modules
     depends_on:
       - api
 
