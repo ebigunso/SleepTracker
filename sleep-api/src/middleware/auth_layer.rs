@@ -29,7 +29,7 @@ use axum::response::{IntoResponse, Response};
 use axum_extra::extract::cookie::{Key, PrivateCookieJar};
 use serde_json::json;
 
-use crate::auth::{current_user_from_cookie, UserId};
+use crate::auth::{UserId, current_user_from_cookie};
 
 /// Extractor that requires an authenticated session for JSON APIs.
 /// On failure, returns 401 with a JSON error payload.
