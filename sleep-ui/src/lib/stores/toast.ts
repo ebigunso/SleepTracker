@@ -28,7 +28,11 @@ function createToasts() {
   const { subscribe, update } = writable<Toast[]>([]);
 
   function pushToast(t: Omit<Toast, 'id'>) {
-    const id = crypto.randomUUID?.() ?? secureRandomId();
+    const id =
+      typeof crypto !== 'undefined' &&
+      typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : secureRandomId();
     const toast: Toast = { id, ...t };
     update((list) => [...list, toast]);
     if (t.timeout && t.timeout > 0) {
