@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { apiGet } from '$lib/api';
-  import Chart from 'chart.js/auto';
+  let ChartJS: any = null;
 
   type SleepBar = {
     date: string; // ISO date (YYYY-MM-DD)
@@ -12,7 +12,7 @@
   };
 
   let canvasEl: HTMLCanvasElement | null = null;
-  let chart: Chart | null = null;
+  let chart: any | null = null;
 
   let from = '';
   let to = '';
@@ -49,16 +49,23 @@
     }
   }
 
-  function renderChart() {
+  async function renderChart() {
     if (!canvasEl) return;
 
     const labels = bars.map((b) => b.date);
     const durations = bars.map((b) => (b.duration_min ?? 0));
     const qualities = bars.map((b) => (b.quality ?? null));
 
+    if (!ChartJS) {
+      // @ts-ignore - suppress type resolution issues for chart.js in TS bundler mode
+      const mod: any = await import('chart.js');
+      ChartJS = mod.Chart;
+      ChartJS.register(...mod.registerables);
+    }
+
     // Destroy previous chart instance
     chart?.destroy();
-    chart = new Chart(canvasEl, {
+    chart = new ChartJS(canvasEl, {
       type: 'bar',
       data: {
         labels,
@@ -86,7 +93,7 @@
         plugins: {
           tooltip: {
             callbacks: {
-              afterBody(ctx) {
+              afterBody(ctx: any) {
                 const i = ctx[0].dataIndex;
                 const q = qualities[i];
                 return q != null ? `Quality: ${q}` : '';
@@ -117,16 +124,18 @@
     <h2 class="text-xl font-semibold text-gray-900">Trends</h2>
     <form class="flex items-end gap-2" on:submit={refresh}>
       <div>
-        <label class="block text-xs text-gray-600">From</label>
+        <label for="from-date" class="block text-xs text-gray-600">From</label>
         <input
+          id="from-date"
           type="date"
           bind:value={from}
           class="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
       <div>
-        <label class="block text-xs text-gray-600">To</label>
+        <label for="to-date" class="block text-xs text-gray-600">To</label>
         <input
+          id="to-date"
           type="date"
           bind:value={to}
           class="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
