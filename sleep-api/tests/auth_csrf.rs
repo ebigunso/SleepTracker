@@ -105,7 +105,10 @@ async fn test_auth_and_csrf_flow() {
         .unwrap();
     assert_eq!(res.status(), 200);
     let unauth: serde_json::Value = res.json().await.unwrap();
-    assert_eq!(unauth["authenticated"], false, "expected unauthenticated at start");
+    assert_eq!(
+        unauth["authenticated"], false,
+        "expected unauthenticated at start"
+    );
 
     // Login with JSON
     let login_body = serde_json::json!({
@@ -132,12 +135,18 @@ async fn test_auth_and_csrf_flow() {
 
     // Extract CSRF and session cookies from Set-Cookie headers
     let csrf = parse_cookie(
-        login_res.headers().get_all(reqwest::header::SET_COOKIE).iter(),
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
         "__Host-csrf=",
     )
     .expect("missing __Host-csrf cookie in login response");
     let session = parse_cookie(
-        login_res.headers().get_all(reqwest::header::SET_COOKIE).iter(),
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
         "__Host-session=",
     )
     .expect("missing __Host-session cookie in login response");
