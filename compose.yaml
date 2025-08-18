@@ -9,5 +9,16 @@ services:
     volumes:
       - sleep_data:/data
 
+  ui:
+    build: ./sleep-ui
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./sleep-ui:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
 volumes:
   sleep_data:

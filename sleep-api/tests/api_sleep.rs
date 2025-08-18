@@ -64,15 +64,22 @@ async fn login_and_get_auth(
         .expect("login request failed");
     assert_eq!(res.status(), 200, "login failed: {}", res.status());
     let headers = res.headers().get_all(reqwest::header::SET_COOKIE);
-    let csrf = parse_cookie(headers.iter(), "__Host-csrf=").expect("missing __Host-csrf cookie");
-    let session =
-        parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
+    // Accept both secure (__Host-*) and dev-mode (no prefix) cookie names
+    let csrf = parse_cookie(headers.iter(), "__Host-csrf=")
+        .or_else(|| parse_cookie(headers.iter(), "csrf="))
+        .expect("missing CSRF cookie in login response");
+    let session = parse_cookie(headers.iter(), "__Host-session=")
+        .or_else(|| parse_cookie(headers.iter(), "session="))
+        .expect("missing session cookie in login response");
     (csrf, session)
 }
 
 #[tokio::test]
 async fn test_sleep_flow() {
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -111,10 +118,7 @@ async fn test_sleep_flow() {
     };
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&input)
         .send()
@@ -142,10 +146,7 @@ async fn test_sleep_flow() {
     };
     let res = client
         .put(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&updated)
         .send()
@@ -165,15 +166,22 @@ async fn test_sleep_flow() {
 
     let res = client
         .delete(format!("http://{addr}/sleep/{id}"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .send()
         .await
         .unwrap();
     assert_eq!(res.status(), 204);
+
+    // Idempotency: deleting the same id again should still return 204
+    let res = client
+        .delete(format!("http://{addr}/sleep/{id}"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", &csrf)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 204, "idempotent delete should be 204");
 
     let res = client
         .get(format!("http://{addr}/sleep/date/{}", updated.date))
@@ -187,7 +195,10 @@ async fn test_sleep_flow() {
 
 #[tokio::test]
 async fn test_exercise_and_note() {
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -224,10 +235,7 @@ async fn test_exercise_and_note() {
     };
     let res = client
         .post(format!("http://{addr}/exercise"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&exercise)
         .send()
@@ -253,10 +261,7 @@ async fn test_exercise_and_note() {
     };
     let res = client
         .post(format!("http://{addr}/note"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session_cookie}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&note)
         .send()

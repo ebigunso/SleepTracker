@@ -89,26 +89,25 @@ async fn test_auth_and_csrf_flow() {
 
     wait_ready(&client, &addr.to_string()).await;
 
-    // Unauthed UI route should redirect to /login
+    // HEAD /health should be OK
     let res = client
-        .get(format!("http://{addr}/trends"))
+        .head(format!("http://{addr}/health"))
         .send()
         .await
         .unwrap();
-    assert!(
-        res.status().is_redirection(),
-        "expected redirect status, got {}",
-        res.status()
-    );
-    let loc = res
-        .headers()
-        .get(reqwest::header::LOCATION)
-        .unwrap()
-        .to_str()
+    assert_eq!(res.status(), 200);
+
+    // Unauthenticated session probe should be false
+    let res = client
+        .get(format!("http://{addr}/api/session"))
+        .send()
+        .await
         .unwrap();
-    assert!(
-        loc.ends_with("/login"),
-        "expected redirect to /login, got {loc}"
+    assert_eq!(res.status(), 200);
+    let unauth: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(
+        unauth["authenticated"], false,
+        "expected unauthenticated at start"
     );
 
     // Login with JSON
@@ -116,22 +115,38 @@ async fn test_auth_and_csrf_flow() {
         "email": "admin@example.com",
         "password": "password123"
     });
-    let res = client
+    let login_res = client
         .post(format!("http://{addr}/login.json"))
         .json(&login_body)
         .send()
         .await
         .unwrap();
+    assert_eq!(login_res.status(), 200);
+
+    // After login, /api/session should report authenticated: true
+    let res = client
+        .get(format!("http://{addr}/api/session"))
+        .send()
+        .await
+        .unwrap();
     assert_eq!(res.status(), 200);
+    let authed: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(authed["authenticated"], true);
 
     // Extract CSRF and session cookies from Set-Cookie headers
     let csrf = parse_cookie(
-        res.headers().get_all(reqwest::header::SET_COOKIE).iter(),
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
         "__Host-csrf=",
     )
     .expect("missing __Host-csrf cookie in login response");
     let session = parse_cookie(
-        res.headers().get_all(reqwest::header::SET_COOKIE).iter(),
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
         "__Host-session=",
     )
     .expect("missing __Host-session cookie in login response");
@@ -189,6 +204,16 @@ async fn test_auth_and_csrf_flow() {
         .await
         .unwrap();
     assert_eq!(res.status(), 204);
+
+    // After logout, /api/session should report false
+    let res = client
+        .get(format!("http://{addr}/api/session"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    let v3: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(v3["authenticated"], false);
 
     let res = client
         .delete(format!("http://{addr}/sleep/{id}"))

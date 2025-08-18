@@ -11,8 +11,8 @@ For an end-to-end server setup example, see [`router`].
 [`Router`]: axum::Router
 "#]
 
-use crate::auth::{self, LoginPayload};
-use crate::middleware::auth_layer::{RequireSessionJson, RequireSessionRedirect};
+use crate::auth::{self, LoginPayload, current_user_from_cookie};
+use crate::middleware::auth_layer::RequireSessionJson;
 use crate::security::csrf::{CsrfGuard, issue_csrf_cookie};
 use crate::{
     db::Db,
@@ -21,7 +21,6 @@ use crate::{
     models::{ExerciseInput, NoteInput, SleepInput},
     trends,
 };
-use askama::Template;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
@@ -36,6 +35,11 @@ use serde_json::json;
 
 Routes:
 - `GET /health`
+- `HEAD /health`
+- `POST /login`
+- `POST /login.json`
+- `POST /logout`
+- `GET /api/session`
 - `POST /sleep`
 - `GET /sleep/date/{date}`
 - `PUT /sleep/{id}`
@@ -44,7 +48,6 @@ Routes:
 - `POST /note`
 - `GET /api/trends/sleep-bars`
 - `GET /api/trends/summary`
-- `GET /trends`
 
 # Example
 
@@ -114,10 +117,11 @@ pub fn router(db: Db) -> Router {
     };
     let router = Router::new()
         .route("/", get(root))
-        .route("/health", get(|| async { Json(json!({"status":"ok"})) }))
-        .route("/login", get(get_login).post(post_login))
+        .route("/health", get(health_get).head(health_head))
+        .route("/login", post(post_login))
         .route("/login.json", post(post_login_json))
         .route("/logout", post(post_logout))
+        .route("/api/session", get(api_session))
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
         .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
@@ -125,50 +129,34 @@ pub fn router(db: Db) -> Router {
         .route("/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
-        .route("/trends", get(trends_page))
         .with_state(state);
 
     crate::security::headers::apply(router, enable_hsts)
 }
 
-#[doc = r#"Redirect root to /trends.
-
-Security:
-- Requires an authenticated session (via [`RequireSessionRedirect`]). Unauthenticated users are redirected to `/login`.
-
-Responses:
-- 303 See Other — redirects to `/trends`
-
-See also: [`trends_page`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
-"#]
-async fn root(RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect) -> Redirect {
-    Redirect::to("/trends")
+// Health endpoints for SvelteKit UI
+async fn health_get() -> Json<serde_json::Value> {
+    Json(json!({"status":"ok"}))
+}
+async fn health_head() -> StatusCode {
+    StatusCode::OK
 }
 
-#[doc = r#"Render a minimal HTML login form.
+// Session probe for UI
+async fn api_session(jar: PrivateCookieJar) -> Json<serde_json::Value> {
+    let authed = current_user_from_cookie(&jar).is_some();
+    Json(json!({"authenticated": authed}))
+}
 
-Accepts: `GET /login`
-- Returns an HTML page with a form that POSTs to `/login`.
+#[doc = r#"Root endpoint.
+
+Returns 204 No Content. This API-only server does not serve HTML; the UI is a separate SvelteKit app.
 
 Responses:
-- 200 OK — HTML page
-
-See also: [`post_login`], [`crate::auth::verify_login`]
+- 204 No Content
 "#]
-async fn get_login() -> Html<String> {
-    let html = r#"<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Login</title></head>
-<body>
-  <h1>Login</h1>
-  <form method="post" action="/login">
-    <label>Email <input type="email" name="email" /></label><br/>
-    <label>Password <input type="password" name="password" /></label><br/>
-    <button type="submit">Login</button>
-  </form>
-</body>
-</html>"#;
-    Html(html.to_string())
+async fn root() -> StatusCode {
+    StatusCode::NO_CONTENT
 }
 
 #[doc = r#"Login (form) and issue session + CSRF cookies.
@@ -396,12 +384,8 @@ async fn delete_sleep(
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
     _csrf: CsrfGuard,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
-    let affected = handlers::delete_sleep(&db, id).await?;
-    if affected == 0 {
-        Err(ApiError::NotFound)
-    } else {
-        Ok(StatusCode::NO_CONTENT)
-    }
+    let _affected = handlers::delete_sleep(&db, id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 #[doc = r#"Create an exercise entry.
@@ -454,28 +438,4 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
-}
-
-#[doc = r#"Render the trends page (Askama template).
-
-Security:
-- Requires authenticated session ([`RequireSessionRedirect`]); unauthenticated users are redirected to `/login`.
-
-Responses:
-- 200 OK — HTML page
-- Redirect — when not authenticated
-
-See also: [`crate::views::TrendsTemplate`], [`crate::middleware::auth_layer::RequireSessionRedirect`]
-"#]
-async fn trends_page(
-    RequireSessionRedirect { _user_id: _ }: RequireSessionRedirect,
-) -> Html<String> {
-    let tpl = super::views::TrendsTemplate;
-    match tpl.render() {
-        Ok(html) => Html(html),
-        Err(e) => {
-            tracing::error!("Template rendering error: {}", e);
-            Html("An internal error occurred while rendering the page.".to_string())
-        }
-    }
 }

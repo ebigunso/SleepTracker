@@ -63,16 +63,23 @@ async fn login_and_get_auth(
         .expect("login request failed");
     assert_eq!(res.status(), 200, "login failed: {}", res.status());
     let headers = res.headers().get_all(reqwest::header::SET_COOKIE);
-    let csrf = parse_cookie(headers.iter(), "__Host-csrf=").expect("missing __Host-csrf cookie");
-    let session =
-        parse_cookie(headers.iter(), "__Host-session=").expect("missing __Host-session cookie");
+    // Accept both secure (__Host-*) and dev-mode (no prefix) cookie names
+    let csrf = parse_cookie(headers.iter(), "__Host-csrf=")
+        .or_else(|| parse_cookie(headers.iter(), "csrf="))
+        .expect("missing CSRF cookie");
+    let session = parse_cookie(headers.iter(), "__Host-session=")
+        .or_else(|| parse_cookie(headers.iter(), "session="))
+        .expect("missing session cookie");
     (csrf, session)
 }
 
 #[tokio::test]
 async fn test_trends_sleep_bars_basic() {
     // In-memory DB
-    unsafe { std::env::set_var("DATABASE_URL", "sqlite::memory:") };
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
     set_admin_env("admin@example.com", "password123");
 
     let pool = db::connect().await.unwrap();
@@ -125,10 +132,7 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s1)
         .send()
@@ -138,10 +142,7 @@ async fn test_trends_sleep_bars_basic() {
 
     let res = client
         .post(format!("http://{addr}/sleep"))
-        .header(
-            "Cookie",
-            format!("__Host-session={session}; __Host-csrf={csrf}"),
-        )
+        .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s2)
         .send()

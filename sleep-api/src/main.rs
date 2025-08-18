@@ -11,7 +11,6 @@ mod repository;
 mod security;
 mod time;
 mod trends;
-mod views;
 
 use crate::db::connect;
 use tokio::net::TcpListener;
