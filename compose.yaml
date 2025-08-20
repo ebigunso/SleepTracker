@@ -14,6 +14,8 @@ services:
     working_dir: /app
     ports:
       - "5173:5173"
+    environment:
+      - PROXY_TARGET=http://api:8080
     volumes:
       - ./sleep-ui:/app
       - /app/node_modules
