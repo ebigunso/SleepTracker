@@ -4,7 +4,7 @@
  * - Attach X-CSRF-Token for mutating requests by mirroring CSRF cookie
  */
 
-type Json = Record<string, unknown> | unknown[];
+type Json = object | unknown[];
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -119,4 +119,80 @@ export async function apiDelete(path: string, init: RequestInit = {}): Promise<v
   if (!res.ok) {
     throw new Error(`DELETE ${path} failed: ${res.status}`);
   }
+}
+
+/**
+ * Alias for CSRF getter (dev or secure cookie)
+ */
+export const getCsrfToken = readCsrfToken;
+
+/**
+ * Low-level fetch wrapper that always includes credentials and attaches CSRF for mutating methods.
+ */
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const method = (init.method ?? 'GET').toString().toUpperCase();
+  const isMutating = method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
+  const csrf = isMutating ? readCsrfToken() : null;
+  const headers = isMutating && csrf
+    ? mergeHeaders({ 'X-CSRF-Token': csrf }, init.headers)
+    : mergeHeaders(init.headers);
+  return fetch(path, { credentials: 'include', ...init, headers });
+}
+
+// ------------------------------
+// Types matching OpenAPI schemas
+// ------------------------------
+export type IsoDate = string; // YYYY-MM-DD
+export type IsoTime = string; // HH:mm:ss
+
+export interface SleepListItem {
+  id: number;
+  date: IsoDate;
+  bed_time: IsoTime;
+  wake_time: IsoTime;
+  latency_min: number;
+  awakenings: number;
+  quality: number;
+  duration_min: number | null;
+}
+
+export interface SleepInput {
+  date: IsoDate;
+  bed_time: IsoTime;
+  wake_time: IsoTime;
+  latency_min: number;
+  awakenings: number;
+  quality: number;
+}
+
+export interface ExerciseUpsert {
+  date: IsoDate;
+  intensity: 'none' | 'light' | 'hard';
+}
+
+// ------------------------------
+// Helper APIs for Sleep/Exercise
+// ------------------------------
+export async function getRecent(days = 7): Promise<SleepListItem[]> {
+  return apiGet<SleepListItem[]>(`/sleep/recent?days=${days}`);
+}
+
+export async function getRange(from: IsoDate, to: IsoDate): Promise<SleepListItem[]> {
+  return apiGet<SleepListItem[]>(`/sleep/range?from=${from}&to=${to}`);
+}
+
+export async function createSleep(input: SleepInput): Promise<{ id: number }> {
+  return apiPost<{ id: number }>('/sleep', input);
+}
+
+export async function updateSleep(id: number, input: SleepInput): Promise<void> {
+  await apiPut<void>(`/sleep/${id}`, input);
+}
+
+export async function deleteSleep(id: number): Promise<void> {
+  await apiDelete(`/sleep/${id}`);
+}
+
+export async function upsertExercise(payload: ExerciseUpsert): Promise<{ id: number }> {
+  return apiPost<{ id: number }>('/exercise', payload);
 }
