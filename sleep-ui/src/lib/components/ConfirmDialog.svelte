@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
 
   export let open = false;
   export let title = 'Confirm';
@@ -22,25 +22,30 @@
   function onBackdrop(e: MouseEvent) {
     if (e.target === dialogEl) onCancel();
   }
+  function onBackdropKeydown(e: KeyboardEvent) {
+    if (e.target === dialogEl && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
+      e.preventDefault();
+      onCancel();
+    }
+  }
 
   // Close on Escape
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') onCancel();
   }
-
-  onMount(() => {
-    window.addEventListener('keydown', onKeydown);
-    return () => window.removeEventListener('keydown', onKeydown);
-  });
 </script>
+
+<svelte:window on:keydown={onKeydown} />
 
 {#if open}
   <div
     bind:this={dialogEl}
     class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40"
     on:click={onBackdrop}
+    on:keydown={onBackdropKeydown}
     aria-modal="true"
     role="dialog"
+    tabindex="-1"
   >
     <div class="w-full sm:max-w-sm bg-white rounded-t-lg sm:rounded-lg shadow-lg p-4 sm:p-6">
       <h3 class="text-lg font-semibold text-gray-900 mb-2">{title}</h3>

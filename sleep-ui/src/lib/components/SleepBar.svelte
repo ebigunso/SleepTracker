@@ -45,12 +45,6 @@
     <div
       class="absolute h-full rounded bg-indigo-500"
       style={`left:${pct(seg.start)}; width:${pct(seg.end - seg.start)};`}
-    />
+    ></div>
   {/each}
 </div>
-
-<style>
-  .bar {
-    /* allow rounding not to show gaps between segments */
-  }
-</style>
