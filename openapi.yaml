@@ -202,6 +202,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /sleep/recent:
+    get:
+      summary: Recent daily sleep entries
+      parameters:
+        - in: query
+          name: days
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 31
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Up to N recent entries ordered desc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepListItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /sleep/range:
+    get:
+      summary: Daily sleep entries within an inclusive date range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Entries in range ordered asc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepListItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /exercise:
     post:
       requestBody:
@@ -467,3 +540,33 @@ components:
         detail:
           type: string
           nullable: true
+    SleepListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        bed_time:
+          type: string
+          format: time
+        wake_time:
+          type: string
+          format: time
+        latency_min:
+          type: integer
+        awakenings:
+          type: integer
+        quality:
+          type: integer
+        duration_min:
+          type: integer
+          nullable: true
+    BadRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

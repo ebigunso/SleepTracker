@@ -97,3 +97,31 @@ pub struct SleepSession {
     pub awakenings: i32,
     pub quality: i32,
 }
+
+#[doc = r#"List item projection for v_daily_sleep.
+
+Used by GET /sleep/recent and GET /sleep/range. Note that the SQL maps
+`wake_date` to `date` via `AS date` to align with the existing field name.
+`duration_min` is nullable (computed on insert/update; may be NULL for legacy rows).
+
+Fields mirror v_daily_sleep columns:
+- id
+- date (wake date)
+- bed_time
+- wake_time
+- latency_min
+- awakenings
+- quality
+- duration_min (nullable)
+"#]
+#[derive(Serialize, Deserialize, Debug, PartialEq, FromRow, Clone)]
+pub struct SleepListItem {
+    pub id: i64,
+    pub date: NaiveDate,
+    pub bed_time: NaiveTime,
+    pub wake_time: NaiveTime,
+    pub latency_min: i32,
+    pub awakenings: i32,
+    pub quality: i32,
+    pub duration_min: Option<i32>,
+}

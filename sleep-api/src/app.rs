@@ -125,6 +125,8 @@ pub fn router(db: Db) -> Router {
         .route("/sleep", post(create_sleep))
         .route("/sleep/date/{date}", get(get_sleep))
         .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
+        .route("/sleep/recent", get(get_sleep_recent))
+        .route("/sleep/range", get(get_sleep_range))
         .route("/exercise", post(create_exercise))
         .route("/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
@@ -438,4 +440,78 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+#[derive(serde::Deserialize)]
+struct RecentParams {
+    days: Option<i32>,
+}
+
+#[derive(serde::Deserialize)]
+struct RangeParams {
+    from: chrono::NaiveDate,
+    to: chrono::NaiveDate,
+}
+
+#[doc = r#"List recent sleep entries.
+
+Accepts: `GET /sleep/recent?days=7`
+- days clamped to [1, 31]; defaults to 7 when missing
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<SleepListItem>` (ordered desc by date)
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_sleep_recent(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RecentParams>,
+) -> impl IntoResponse {
+    let days = params.days.unwrap_or(7).clamp(1, 31);
+    match crate::repository::list_recent_sleep(&db, days).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
+}
+
+#[doc = r#"List sleep entries in an inclusive date range.
+
+Accepts: `GET /sleep/range?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- Validates `from <= to`
+- Range length must be ≤ 62 days
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<SleepListItem>` (ordered asc by date)
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_sleep_range(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RangeParams>,
+) -> impl IntoResponse {
+    if params.from > params.to {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"from must be <= to"})),
+        )
+            .into_response();
+    }
+    let span_days = (params.to - params.from).num_days() + 1;
+    if span_days > 62 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"range must be <= 62 days"})),
+        )
+            .into_response();
+    }
+    match crate::repository::list_sleep_range(&db, params.from, params.to).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
 }

@@ -17,7 +17,7 @@ See also:
 
 use crate::{
     db::Db,
-    models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
+    models::{ExerciseInput, NoteInput, SleepInput, SleepSession, SleepListItem},
 };
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
@@ -160,6 +160,53 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, sqlx::Error> {
         .execute(db)
         .await?;
     Ok(res.rows_affected())
+}
+
+#[doc = r#"List last N daily sleep entries ordered by date DESC.
+
+Backed by the v_daily_sleep view. Maps wake_date -> date via SQL alias to match API struct."#]
+pub async fn list_recent_sleep(db: &Db, days: i32) -> Result<Vec<SleepListItem>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepListItem>(
+        r#"SELECT id,
+                   wake_date AS date,
+                   bed_time,
+                   wake_time,
+                   latency_min,
+                   awakenings,
+                   quality,
+                   duration_min
+          FROM v_daily_sleep
+          ORDER BY date DESC
+          LIMIT ?"#,
+    )
+    .bind(days)
+    .fetch_all(db)
+    .await
+}
+
+#[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]
+pub async fn list_sleep_range(
+    db: &Db,
+    from: NaiveDate,
+    to: NaiveDate,
+) -> Result<Vec<SleepListItem>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepListItem>(
+        r#"SELECT id,
+                   wake_date AS date,
+                   bed_time,
+                   wake_time,
+                   latency_min,
+                   awakenings,
+                   quality,
+                   duration_min
+          FROM v_daily_sleep
+          WHERE date BETWEEN ? AND ?
+          ORDER BY date ASC"#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
+    .await
 }
 
 #[doc = r#"Insert an exercise event.

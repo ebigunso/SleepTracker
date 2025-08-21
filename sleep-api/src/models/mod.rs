@@ -21,4 +21,4 @@ pub use intensity::Intensity;
 pub use note::NoteInput;
 #[allow(unused_imports)]
 pub use quality::Quality;
-pub use sleep::{SleepInput, SleepSession};
+pub use sleep::{SleepInput, SleepSession, SleepListItem};
