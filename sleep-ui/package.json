@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test:e2e": "playwright test",
+    "test:unit": "vitest run",
     "sync": "svelte-kit sync"
   },
   "devDependencies": {
@@ -24,7 +25,8 @@
     "tailwindcss": "^4.1.11",
     "tslib": "^2.6.3",
     "typescript": "^5.5.4",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^1.6.0"
   },
   "dependencies": {
     "chart.js": "^4.4.3"
