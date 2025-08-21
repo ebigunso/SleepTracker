@@ -1,11 +1,11 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::{
-    password_hash::{PasswordHasher, SaltString},
     Argon2,
+    password_hash::{PasswordHasher, SaltString},
 };
 use reqwest::Client;
-use sleep_api::{app, db};
 use sleep_api::models::{Quality, SleepInput, SleepListItem};
+use sleep_api::{app, db};
 
 fn set_admin_env(email: &str, password: &str) {
     let salt = SaltString::generate(OsRng);
@@ -73,7 +73,16 @@ async fn login_and_get_auth(
     (csrf, session)
 }
 
-async fn seed_sleep(client: &Client, addr: &str, csrf: &str, session_cookie: &str, date: (i32, u32, u32), bed: (u32, u32, u32), wake: (u32, u32, u32), quality: i32) {
+async fn seed_sleep(
+    client: &Client,
+    addr: &str,
+    csrf: &str,
+    session_cookie: &str,
+    date: (i32, u32, u32),
+    bed: (u32, u32, u32),
+    wake: (u32, u32, u32),
+    quality: i32,
+) {
     let input = SleepInput {
         date: chrono::NaiveDate::from_ymd_opt(date.0, date.1, date.2).unwrap(),
         bed_time: chrono::NaiveTime::from_hms_opt(bed.0, bed.1, bed.2).unwrap(),
@@ -171,7 +180,12 @@ async fn test_sleep_list_recent_and_range() {
     assert_eq!(range.len(), 4, "range length {}", range.len());
     let mut prev_a = range.first().unwrap().date;
     for item in range.iter().skip(1) {
-        assert!(item.date >= prev_a, "not asc: {} then {}", prev_a, item.date);
+        assert!(
+            item.date >= prev_a,
+            "not asc: {} then {}",
+            prev_a,
+            item.date
+        );
         prev_a = item.date;
     }
 
