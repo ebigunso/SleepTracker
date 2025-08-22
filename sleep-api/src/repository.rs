@@ -200,7 +200,7 @@ pub async fn list_sleep_range(
                    quality,
                    duration_min
           FROM v_daily_sleep
-          WHERE date BETWEEN ? AND ?
+          WHERE wake_date BETWEEN ? AND ?
           ORDER BY date ASC"#,
     )
     .bind(from)
