@@ -39,7 +39,7 @@
 
   async function loadByDate(date: string) {
     try {
-      const rec = await apiGet<any>(`/sleep/date/${date}`);
+      const rec = await apiGet<any>(`/api/sleep/date/${date}`);
       initialDate = rec.date;
       initialBed = normalizeTime(rec.bed_time);
       initialWake = normalizeTime(rec.wake_time);

@@ -174,25 +174,25 @@ export interface ExerciseUpsert {
 // Helper APIs for Sleep/Exercise
 // ------------------------------
 export async function getRecent(days = 7): Promise<SleepListItem[]> {
-  return apiGet<SleepListItem[]>(`/sleep/recent?days=${days}`);
+  return apiGet<SleepListItem[]>(`/api/sleep/recent?days=${days}`);
 }
 
 export async function getRange(from: IsoDate, to: IsoDate): Promise<SleepListItem[]> {
-  return apiGet<SleepListItem[]>(`/sleep/range?from=${from}&to=${to}`);
+  return apiGet<SleepListItem[]>(`/api/sleep/range?from=${from}&to=${to}`);
 }
 
 export async function createSleep(input: SleepInput): Promise<{ id: number }> {
-  return apiPost<{ id: number }>('/sleep', input);
+  return apiPost<{ id: number }>('/api/sleep', input);
 }
 
 export async function updateSleep(id: number, input: SleepInput): Promise<void> {
-  await apiPut<void>(`/sleep/${id}`, input);
+  await apiPut<void>(`/api/sleep/${id}`, input);
 }
 
 export async function deleteSleep(id: number): Promise<void> {
-  await apiDelete(`/sleep/${id}`);
+  await apiDelete(`/api/sleep/${id}`);
 }
 
 export async function upsertExercise(payload: ExerciseUpsert): Promise<{ id: number }> {
-  return apiPost<{ id: number }>('/exercise', payload);
+  return apiPost<{ id: number }>('/api/exercise', payload);
 }

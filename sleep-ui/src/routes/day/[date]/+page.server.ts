@@ -13,7 +13,7 @@ export const load = async ({ fetch, params }: any) => {
   const date = params.date as string;
   let items: SleepListItem[] = [];
   try {
-    const res = await fetch(`/sleep/range?from=${date}&to=${date}`);
+    const res = await fetch(`/api/sleep/range?from=${date}&to=${date}`);
     if (res.ok) {
       items = await res.json();
     }

@@ -13,7 +13,7 @@ type SleepListItem = {
 export const load = async ({ fetch }: any) => {
   let recent: SleepListItem[] = [];
   try {
-    const res = await fetch('/sleep/recent?days=7');
+    const res = await fetch('/api/sleep/recent?days=7');
     if (res.ok) {
       recent = await res.json();
     }

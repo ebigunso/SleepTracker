@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import type { SleepInput, ExerciseUpsert, SleepListItem } from '$lib/api';
-  import { createSleep, updateSleep, upsertExercise } from '$lib/api';
+  import { createSleep, updateSleep, upsertExercise, apiPost } from '$lib/api';
   import { upsertRecent, setIntensity } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
 
@@ -122,12 +122,7 @@
       // Optional note (best-effort)
       if (notes.trim().length > 0 && notes.trim().length <= 280) {
         try {
-          await fetch('/note', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: input.date, body: notes.trim() })
-          });
+          await apiPost('/api/note', { date: input.date, body: notes.trim() });
         } catch {
           // swallow
         }
