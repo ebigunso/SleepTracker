@@ -14,7 +14,11 @@
   });
 
   function isoDate(d: Date): string {
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0, 10);
+    // Format date in local time to avoid UTC shift (which excluded "today" in non-UTC TZs)
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   const last7Dates = (() => {
