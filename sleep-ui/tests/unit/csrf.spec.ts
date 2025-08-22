@@ -7,7 +7,7 @@ describe('getCsrfToken/readCsrfToken', () => {
     // reset cookies
     document.cookie.split(';').forEach((c) => {
       const eqPos = c.indexOf('=');
-      const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
+      const name = eqPos > -1 ? c.substring(0, eqPos).trim() : c.trim();
       if (name) {
         // expire cookie
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
