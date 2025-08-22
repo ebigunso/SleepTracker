@@ -4,7 +4,7 @@
  * - Attach X-CSRF-Token for mutating requests by mirroring CSRF cookie
  */
 
-type Json = object | unknown[];
+export type Json = Record<string, unknown> | unknown[];
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -182,11 +182,11 @@ export async function getRange(from: IsoDate, to: IsoDate): Promise<SleepListIte
 }
 
 export async function createSleep(input: SleepInput): Promise<{ id: number }> {
-  return apiPost<{ id: number }>('/api/sleep', input);
+  return apiPost<{ id: number }>('/api/sleep', input as unknown as Json);
 }
 
 export async function updateSleep(id: number, input: SleepInput): Promise<void> {
-  await apiPut<void>(`/api/sleep/${id}`, input);
+  await apiPut<void>(`/api/sleep/${id}`, input as unknown as Json);
 }
 
 export async function deleteSleep(id: number): Promise<void> {
@@ -194,5 +194,5 @@ export async function deleteSleep(id: number): Promise<void> {
 }
 
 export async function upsertExercise(payload: ExerciseUpsert): Promise<{ id: number }> {
-  return apiPost<{ id: number }>('/api/exercise', payload);
+  return apiPost<{ id: number }>('/api/exercise', payload as unknown as Json);
 }
