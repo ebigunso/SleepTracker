@@ -3,8 +3,8 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
-  import { apiGet, deleteSleep } from '$lib/api';
-  import type { SleepInput } from '$lib/api';
+import { apiGet, deleteSleep } from '$lib/api';
+import type { SleepListItem } from '$lib/api';
   import { removeRecentById } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
 
@@ -39,7 +39,7 @@
 
   async function loadByDate(date: string) {
     try {
-      const rec = await apiGet<any>(`/api/sleep/date/${date}`);
+      const rec = await apiGet<SleepListItem>(`/api/sleep/date/${date}`);
       initialDate = rec.date;
       initialBed = normalizeTime(rec.bed_time);
       initialWake = normalizeTime(rec.wake_time);
