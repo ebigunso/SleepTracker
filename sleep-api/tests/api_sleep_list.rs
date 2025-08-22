@@ -21,7 +21,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{addr}/health");
+    let health_url = format!("http://{addr}/api/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -56,7 +56,7 @@ async fn login_and_get_auth(
     password: &str,
 ) -> (String, String) {
     let res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(format!("http://{addr}/api/login.json"))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
@@ -92,7 +92,7 @@ async fn seed_sleep(
         quality: Quality(quality as u8),
     };
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
         .header("X-CSRF-Token", csrf)
         .json(&input)
@@ -154,7 +154,7 @@ async fn test_sleep_list_recent_and_range() {
 
     // GET /sleep/recent?days=7 -> <= 7 items, desc by date
     let res = client
-        .get(format!("http://{addr}/sleep/recent?days=7"))
+        .get(format!("http://{addr}/api/sleep/recent?days=7"))
         .send()
         .await
         .unwrap();
@@ -170,7 +170,7 @@ async fn test_sleep_list_recent_and_range() {
     // GET /sleep/range?from=2025-06-12&to=2025-06-15 -> 4 items, asc by date
     let res = client
         .get(format!(
-            "http://{addr}/sleep/range?from=2025-06-12&to=2025-06-15"
+            "http://{addr}/api/sleep/range?from=2025-06-12&to=2025-06-15"
         ))
         .send()
         .await
@@ -229,7 +229,7 @@ async fn test_sleep_list_invalid_params() {
 
     // days=0 -> 400
     let res = client
-        .get(format!("http://{addr}/sleep/recent?days=0"))
+        .get(format!("http://{addr}/api/sleep/recent?days=0"))
         .send()
         .await
         .unwrap();
@@ -240,7 +240,7 @@ async fn test_sleep_list_invalid_params() {
     // from > to -> 400
     let res = client
         .get(format!(
-            "http://{addr}/sleep/range?from=2025-07-02&to=2025-07-01"
+            "http://{addr}/api/sleep/range?from=2025-07-02&to=2025-07-01"
         ))
         .send()
         .await
@@ -250,7 +250,7 @@ async fn test_sleep_list_invalid_params() {
     // range > 62 days -> 400
     let res = client
         .get(format!(
-            "http://{addr}/sleep/range?from=2025-01-01&to=2025-03-15"
+            "http://{addr}/api/sleep/range?from=2025-01-01&to=2025-03-15"
         ))
         .send()
         .await

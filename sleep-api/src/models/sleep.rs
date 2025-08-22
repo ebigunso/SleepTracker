@@ -100,7 +100,7 @@ pub struct SleepSession {
 
 #[doc = r#"List item projection for v_daily_sleep.
 
-Used by GET /sleep/recent and GET /sleep/range. Note that the SQL maps
+Used by GET /api/sleep/recent and GET /api/sleep/range. Note that the SQL maps
 `wake_date` to `date` via `AS date` to align with the existing field name.
 `duration_min` is nullable (computed on insert/update; may be NULL for legacy rows).
 

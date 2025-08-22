@@ -21,7 +21,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{addr}/health");
+    let health_url = format!("http://{addr}/api/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -56,7 +56,7 @@ async fn login_and_get_auth(
     password: &str,
 ) -> (String, String) {
     let res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(format!("http://{addr}/api/login.json"))
         .json(&serde_json::json!({ "email": email, "password": password }))
         .send()
         .await
@@ -131,7 +131,7 @@ async fn test_trends_sleep_bars_basic() {
     };
 
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s1)
@@ -141,7 +141,7 @@ async fn test_trends_sleep_bars_basic() {
     assert_eq!(res.status(), 201);
 
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header("Cookie", format!("session={session}; csrf={csrf}"))
         .header("X-CSRF-Token", &csrf)
         .json(&s2)
