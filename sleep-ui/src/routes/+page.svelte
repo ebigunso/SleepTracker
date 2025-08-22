@@ -6,11 +6,15 @@
   import { deleteSleep } from '$lib/api';
   import { recentSleep, exerciseIntensityByDate, removeRecentById } from '$lib/stores/sleep';
 
-  export let data: { recent: SleepListItem[] };
+  export let data: { recent: SleepListItem[]; intensities?: { date: string; intensity: 'none' | 'light' | 'hard' }[] };
 
   onMount(() => {
-    // seed store with server-fetched recent data
+    // seed stores with server-fetched data
     recentSleep.set(data.recent ?? []);
+    if (data.intensities && Array.isArray(data.intensities)) {
+      const map = Object.fromEntries(data.intensities.map((d) => [d.date, d.intensity]));
+      exerciseIntensityByDate.set(map);
+    }
   });
 
   function isoDate(d: Date): string {

@@ -3,7 +3,7 @@
   import { page } from '$app/stores';
   import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
-import { apiGet, deleteSleep } from '$lib/api';
+import { deleteSleep, getSleepById } from '$lib/api';
 import type { SleepListItem } from '$lib/api';
   import { removeRecentById } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
@@ -12,14 +12,12 @@ import type { SleepListItem } from '$lib/api';
   const params = p.params as unknown as { id: string };
   const id = Number(params.id);
 
-  // Expect date via query (?date=YYYY-MM-DD) to use GET by date
-  const dateParam = p.url.searchParams.get('date');
 
   let loading = true;
   let errorMsg: string | null = null;
 
   // Form initial values
-  let initialDate: string | null = dateParam;
+  let initialDate: string | null = null;
   let initialBed: string | null = null;
   let initialWake: string | null = null;
   let initialLatency = 0;
@@ -37,9 +35,9 @@ import type { SleepListItem } from '$lib/api';
     return '00:00:00';
   }
 
-  async function loadByDate(date: string) {
+  async function loadById(id: number) {
     try {
-      const rec = await apiGet<SleepListItem>(`/api/sleep/date/${date}`);
+      const rec = await getSleepById(id);
       initialDate = rec.date;
       initialBed = normalizeTime(rec.bed_time);
       initialWake = normalizeTime(rec.wake_time);
@@ -48,18 +46,13 @@ import type { SleepListItem } from '$lib/api';
       initialQuality = rec.quality ?? 3;
       // Intensity is not part of this payload; leave default or get from a separate endpoint in future
     } catch (e: any) {
-      errorMsg = `Failed to load record for ${date}: ${e?.message ?? 'error'}`;
+      errorMsg = `Failed to load record: ${e?.message ?? 'error'}`;
     } finally {
       loading = false;
     }
   }
 
-  if (dateParam) {
-    loadByDate(dateParam);
-  } else {
-    loading = false;
-    errorMsg = 'Missing ?date=YYYY-MM-DD to load entry';
-  }
+  loadById(id);
 
   async function onDelete() {
     if (!confirm('Delete this entry?')) return;

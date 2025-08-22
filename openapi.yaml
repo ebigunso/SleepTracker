@@ -148,6 +148,29 @@ paths:
         '404':
           description: Not Found
   /api/sleep/{id}:
+    get:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SleepSession'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
     put:
       parameters:
         - in: path
@@ -304,6 +327,45 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/exercise/intensity:
+    get:
+      summary: Exercise intensity by date in range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Intensities ordered asc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DateIntensity'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -516,6 +578,15 @@ components:
         duration_min:
           type: integer
           nullable: true
+    DateIntensity:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        intensity:
+          type: string
+          enum: [none, light, hard]
     NoteInput:
       type: object
       properties:
@@ -535,7 +606,9 @@ components:
     Error:
       type: object
       properties:
-        error:
+        code:
+          type: string
+        message:
           type: string
         detail:
           type: string

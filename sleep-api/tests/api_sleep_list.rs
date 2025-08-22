@@ -233,9 +233,7 @@ async fn test_sleep_list_invalid_params() {
         .send()
         .await
         .unwrap();
-    // Our implementation clamps invalid/missing days; to produce 400 we need invalid range tests below
-    // Keep this check lenient: recent with days=0 should still be 200 due to clamping to 1
-    assert!(res.status() == 200 || res.status() == 400);
+    assert_eq!(res.status(), 400, "days=0 should be 400 per validation policy");
 
     // from > to -> 400
     let res = client

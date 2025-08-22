@@ -165,6 +165,10 @@ export interface SleepInput {
   quality: number;
 }
 
+export interface SleepSession extends SleepInput {
+  id: number;
+}
+
 export interface ExerciseUpsert {
   date: IsoDate;
   intensity: 'none' | 'light' | 'hard';
@@ -181,6 +185,10 @@ export async function getRange(from: IsoDate, to: IsoDate): Promise<SleepListIte
   return apiGet<SleepListItem[]>(`/api/sleep/range?from=${from}&to=${to}`);
 }
 
+export async function getSleepById(id: number): Promise<SleepSession> {
+  return apiGet<SleepSession>(`/api/sleep/${id}`);
+}
+
 export async function createSleep(input: SleepInput): Promise<{ id: number }> {
   return apiPost<{ id: number }>('/api/sleep', input as unknown as Json);
 }
@@ -191,6 +199,10 @@ export async function updateSleep(id: number, input: SleepInput): Promise<void> 
 
 export async function deleteSleep(id: number): Promise<void> {
   await apiDelete(`/api/sleep/${id}`);
+}
+
+export async function getExerciseIntensity(from: IsoDate, to: IsoDate): Promise<{ date: IsoDate; intensity: 'none' | 'light' | 'hard' }[]> {
+  return apiGet<{ date: IsoDate; intensity: 'none' | 'light' | 'hard' }[]>(`/api/exercise/intensity?from=${from}&to=${to}`);
 }
 
 export async function upsertExercise(payload: ExerciseUpsert): Promise<{ id: number }> {

@@ -18,7 +18,7 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
-    models::{ExerciseInput, NoteInput, SleepInput},
+    models::{ExerciseInput, NoteInput, SleepInput, DateIntensity},
     trends,
 };
 use axum::http::StatusCode;
@@ -124,10 +124,11 @@ pub fn router(db: Db) -> Router {
         .route("/api/session", get(api_session))
         .route("/api/sleep", post(create_sleep))
         .route("/api/sleep/date/{date}", get(get_sleep))
-        .route("/api/sleep/{id}", put(update_sleep).delete(delete_sleep))
+        .route("/api/sleep/{id}", get(get_sleep_by_id).put(update_sleep).delete(delete_sleep))
         .route("/api/sleep/recent", get(get_sleep_recent))
         .route("/api/sleep/range", get(get_sleep_range))
         .route("/api/exercise", post(create_exercise))
+        .route("/api/exercise/intensity", get(get_exercise_intensity))
         .route("/api/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
@@ -470,7 +471,17 @@ async fn get_sleep_recent(
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
     axum::extract::Query(params): axum::extract::Query<RecentParams>,
 ) -> impl IntoResponse {
-    let days = params.days.unwrap_or(7).clamp(1, 31);
+    let days = match params.days {
+        None => 7,
+        Some(d) if (1..=31).contains(&d) => d,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"code":"bad_request","message":"days must be between 1 and 31"})),
+            )
+                .into_response()
+        }
+    };
     match crate::repository::list_recent_sleep(&db, days).await {
         Ok(items) => Json(items).into_response(),
         Err(e) => ApiError::Db(e).into_response(),
@@ -511,6 +522,68 @@ async fn get_sleep_range(
             .into_response();
     }
     match crate::repository::list_sleep_range(&db, params.from, params.to).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
+}
+
+#[doc = r#"Get a sleep session by id.
+
+Accepts: `GET /api/sleep/{id}`
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — [`SleepSession`]
+- 401 Unauthorized — no/invalid session
+- 404 Not Found — no entry for id
+"#]
+async fn get_sleep_by_id(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    Path(id): Path<i64>,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    match crate::repository::find_sleep_by_id(&db, id).await? {
+        Some(s) => Ok(Json(s)),
+        None => Err(ApiError::NotFound),
+    }
+}
+
+#[doc = r#"List exercise intensity for a date range.
+
+Accepts: `GET /api/exercise/intensity?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- Validates `from <= to`
+- Range length must be ≤ 62 days
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<{date, intensity}>` ordered asc by date
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_exercise_intensity(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RangeParams>,
+) -> impl IntoResponse {
+    if params.from > params.to {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"from must be <= to"})),
+        )
+            .into_response();
+    }
+    let span_days = (params.to - params.from).num_days() + 1;
+    if span_days > 62 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"range must be <= 62 days"})),
+        )
+            .into_response();
+    }
+    match crate::repository::list_exercise_intensity(&db, params.from, params.to).await {
         Ok(items) => Json(items).into_response(),
         Err(e) => ApiError::Db(e).into_response(),
     }

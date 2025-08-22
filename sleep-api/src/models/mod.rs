@@ -15,7 +15,7 @@ pub mod note;
 pub mod quality;
 pub mod sleep;
 
-pub use exercise::ExerciseInput;
+pub use exercise::{ExerciseInput, DateIntensity};
 #[allow(unused_imports)]
 pub use intensity::Intensity;
 pub use note::NoteInput;

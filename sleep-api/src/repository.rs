@@ -17,7 +17,7 @@ See also:
 
 use crate::{
     db::Db,
-    models::{ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession},
+    models::{ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession, DateIntensity},
 };
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
@@ -109,6 +109,25 @@ pub async fn find_sleep_by_date(
     .await
 }
 
+#[doc = r#"Find a sleep session by id.
+
+Returns `Ok(None)` if no session exists for the provided id.
+
+See the example on [`insert_sleep`].
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
+pub async fn find_sleep_by_id(db: &Db, id: i64) -> Result<Option<SleepSession>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepSession>(
+        r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
+           FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.id = ?"#,
+    )
+    .bind(id)
+    .fetch_optional(db)
+    .await
+}
+
 #[doc = r#"Update a sleep session and its metrics in a single transaction.
 
 Requires a recomputed `duration_min`; see [`time::compute_duration_min`].
@@ -182,6 +201,40 @@ pub async fn list_recent_sleep(db: &Db, days: i32) -> Result<Vec<SleepListItem>,
     .bind(days)
     .fetch_all(db)
     .await
+}
+
+#[doc = r#"List exercise intensity by date in the inclusive range [from, to].
+
+For each date, returns the highest intensity among any events on that date.
+
+- "none" < "light" < "hard"
+
+Ordered by date ASC.
+"#]
+pub async fn list_exercise_intensity(
+    db: &Db,
+    from: NaiveDate,
+    to: NaiveDate,
+) -> Result<Vec<DateIntensity>, sqlx::Error> {
+    // Map intensity to ordinal to pick max, then map back to string
+    sqlx::query_as::<Sqlite, DateIntensity>(
+        r#"
+        SELECT
+          date,
+          CASE MAX(CASE intensity WHEN 'none' THEN 0 WHEN 'light' THEN 1 WHEN 'hard' THEN 2 ELSE 0 END)
+            WHEN 2 THEN 'hard'
+            WHEN 1 THEN 'light'
+            ELSE 'none'
+          END AS intensity
+        FROM exercise_events
+        WHERE date BETWEEN ? AND ?
+        GROUP BY date
+        ORDER BY date ASC
+        "#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
 }
 
 #[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]

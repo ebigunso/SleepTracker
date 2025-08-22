@@ -128,6 +128,16 @@ async fn test_sleep_flow() {
     let id: serde_json::Value = res.json().await.unwrap();
     let id = id["id"].as_i64().unwrap();
 
+    // Fetch by id and verify
+    let res = client
+        .get(format!("http://{addr}/api/sleep/{id}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    let session_by_id: SleepSession = res.json().await.unwrap();
+    assert_eq!(session_by_id.id, id);
+
     let res = client
         .get(format!("http://{addr}/api/sleep/date/{}", input.date))
         .send()
