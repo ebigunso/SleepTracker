@@ -15,9 +15,37 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/auth/, '')
       },
-      '/sleep': { target, changeOrigin: true },
-      '/exercise': { target, changeOrigin: true },
-      '/note': { target, changeOrigin: true },
+      '/sleep': {
+        target,
+        changeOrigin: true,
+        bypass(req) {
+          const accept = req.headers['accept'] || '';
+          if (req.method === 'GET' && accept.includes('text/html')) {
+            // Let SvelteKit handle UI route navigations like /sleep/new
+            return false;
+          }
+        }
+      },
+      '/exercise': {
+        target,
+        changeOrigin: true,
+        bypass(req) {
+          const accept = req.headers['accept'] || '';
+          if (req.method === 'GET' && accept.includes('text/html')) {
+            return false;
+          }
+        }
+      },
+      '/note': {
+        target,
+        changeOrigin: true,
+        bypass(req) {
+          const accept = req.headers['accept'] || '';
+          if (req.method === 'GET' && accept.includes('text/html')) {
+            return false;
+          }
+        }
+      },
       '/health': { target, changeOrigin: true }
     }
   }
