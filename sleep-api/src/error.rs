@@ -25,16 +25,18 @@ impl IntoResponse for ApiError {
                 error!(?e, "database error");
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"error":"database error","detail": e.to_string()})),
+                    Json(json!({"code":"internal","message":"database error","detail": e.to_string()})),
                 )
                     .into_response()
             }
-            ApiError::NotFound => {
-                (StatusCode::NOT_FOUND, Json(json!({"error":"not found"}))).into_response()
-            }
+            ApiError::NotFound => (
+                StatusCode::NOT_FOUND,
+                Json(json!({"code":"not_found","message":"not found"})),
+            )
+                .into_response(),
             ApiError::InvalidInput(msg) => (
                 StatusCode::BAD_REQUEST,
-                Json(json!({"error":"invalid input","detail": msg})),
+                Json(json!({"code":"bad_request","message": msg})),
             )
                 .into_response(),
         }

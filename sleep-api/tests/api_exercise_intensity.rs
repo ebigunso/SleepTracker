@@ -4,7 +4,6 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString},
 };
 use reqwest::Client;
-use sleep_api::models::{Quality, SleepInput};
 use sleep_api::{app, db};
 
 fn set_admin_env(email: &str, password: &str) {
@@ -28,7 +27,7 @@ async fn wait_ready(client: &Client, addr: &str) {
         }
         tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
-    panic!("server did not become ready");
+    panic!("Server did not become ready in time");
 }
 
 fn parse_cookie<'a>(
@@ -66,16 +65,21 @@ async fn login_and_get_auth(
     // Accept both secure (__Host-*) and dev-mode (no prefix) cookie names
     let csrf = parse_cookie(headers.iter(), "__Host-csrf=")
         .or_else(|| parse_cookie(headers.iter(), "csrf="))
-        .expect("missing CSRF cookie");
+        .expect("missing CSRF cookie in login response");
     let session = parse_cookie(headers.iter(), "__Host-session=")
         .or_else(|| parse_cookie(headers.iter(), "session="))
-        .expect("missing session cookie");
+        .expect("missing session cookie in login response");
     (csrf, session)
 }
 
+#[derive(serde::Deserialize, Debug)]
+struct DateIntensity {
+    date: chrono::NaiveDate,
+    intensity: String, // "none" | "light" | "hard"
+}
+
 #[tokio::test]
-async fn test_trends_sleep_bars_basic() {
-    // In-memory DB
+async fn test_exercise_intensity_range_endpoint() {
     unsafe {
         std::env::set_var("DATABASE_URL", "sqlite::memory:");
         std::env::set_var("COOKIE_SECURE", "0");
@@ -90,21 +94,17 @@ async fn test_trends_sleep_bars_basic() {
         .await
         .unwrap();
 
-    // Start server
     let app = app::router(pool.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.2:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
-    let _server = tokio::spawn(async move {
+    let server = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
 
     let client = Client::builder().cookie_store(true).build().unwrap();
-
-    // Wait for health to be ready
     wait_ready(&client, &addr.to_string()).await;
 
-    // Login and get CSRF + session
-    let (csrf, session) = login_and_get_auth(
+    let (csrf, session_cookie) = login_and_get_auth(
         &client,
         &addr.to_string(),
         "admin@example.com",
@@ -112,56 +112,71 @@ async fn test_trends_sleep_bars_basic() {
     )
     .await;
 
-    // Seed two sleep entries (wake-date semantics)
-    let s1 = SleepInput {
-        date: chrono::NaiveDate::from_ymd_opt(2025, 6, 17).unwrap(),
-        bed_time: chrono::NaiveTime::from_hms_opt(23, 5, 0).unwrap(),
-        wake_time: chrono::NaiveTime::from_hms_opt(6, 15, 0).unwrap(),
-        latency_min: 15,
-        awakenings: 0,
-        quality: Quality(4),
-    };
-    let s2 = SleepInput {
-        date: chrono::NaiveDate::from_ymd_opt(2025, 6, 18).unwrap(),
-        bed_time: chrono::NaiveTime::from_hms_opt(0, 30, 0).unwrap(),
-        wake_time: chrono::NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
-        latency_min: 20,
-        awakenings: 1,
-        quality: Quality(3),
-    };
+    // Seed exercise events:
+    // 2025-06-10: light
+    // 2025-06-11: none
+    // 2025-06-12: light then hard (final should be "hard")
+    let seeds = vec![
+        ("2025-06-10", "light"),
+        ("2025-06-11", "none"),
+        ("2025-06-12", "light"),
+        ("2025-06-12", "hard"),
+    ];
+    for (date, intensity) in seeds {
+        let res = client
+            .post(format!("http://{addr}/api/exercise"))
+            .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+            .header("X-CSRF-Token", &csrf)
+            .json(&serde_json::json!({
+                "date": date,
+                "intensity": intensity
+            }))
+            .send()
+            .await
+            .unwrap();
+        let status = res.status();
+        if status != 201 {
+            let body = res.text().await.unwrap_or_else(|_| "<no body>".into());
+            panic!("seed exercise failed: {} body: {}", status, body);
+        }
+    }
 
+    // Query intensities in [2025-06-10, 2025-06-12]
     let res = client
-        .post(format!("http://{addr}/api/sleep"))
-        .header("Cookie", format!("session={session}; csrf={csrf}"))
-        .header("X-CSRF-Token", &csrf)
-        .json(&s1)
+        .get(format!(
+            "http://{addr}/api/exercise/intensity?from=2025-06-10&to=2025-06-12"
+        ))
         .send()
         .await
         .unwrap();
-    assert_eq!(res.status(), 201);
+    assert_eq!(res.status(), 200, "intensity status {}", res.status());
+    let items: Vec<DateIntensity> = res.json().await.unwrap();
+    assert_eq!(items.len(), 3, "expected 3 days");
+    assert_eq!(
+        items[0].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 10).unwrap()
+    );
+    assert_eq!(items[0].intensity, "light");
+    assert_eq!(
+        items[1].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 11).unwrap()
+    );
+    assert_eq!(items[1].intensity, "none");
+    assert_eq!(
+        items[2].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 12).unwrap()
+    );
+    assert_eq!(items[2].intensity, "hard");
 
+    // Invalid range: from > to => 400
     let res = client
-        .post(format!("http://{addr}/api/sleep"))
-        .header("Cookie", format!("session={session}; csrf={csrf}"))
-        .header("X-CSRF-Token", &csrf)
-        .json(&s2)
+        .get(format!(
+            "http://{addr}/api/exercise/intensity?from=2025-06-13&to=2025-06-12"
+        ))
         .send()
         .await
         .unwrap();
-    assert_eq!(res.status(), 201);
+    assert_eq!(res.status(), 400);
 
-    // Call sleep-bars
-    let bars_url = format!("http://{addr}/api/trends/sleep-bars?from=2025-06-16&to=2025-06-19");
-    let res = client.get(&bars_url).send().await.unwrap();
-    assert_eq!(res.status(), 200);
-    let bars_json: serde_json::Value = res.json().await.unwrap();
-    assert!(bars_json.is_array());
-    let arr = bars_json.as_array().unwrap();
-    assert!(arr.len() >= 2);
-
-    // Shape checks on first element
-    let first = &arr[0];
-    assert!(first.get("date").is_some(), "missing date");
-    assert!(first.get("bed_time").is_some(), "missing bed_time");
-    assert!(first.get("wake_time").is_some(), "missing wake_time");
+    server.abort();
 }

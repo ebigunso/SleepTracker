@@ -2,7 +2,7 @@
   import { goto } from '$app/navigation';
   import { pushToast } from '$lib/stores/toast';
 
-  const AUTH_PREFIX = import.meta.env.DEV ? '/auth' : '';
+  const AUTH_PREFIX = '/api';
 
   let email = '';
   let password = '';
