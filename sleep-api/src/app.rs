@@ -18,7 +18,7 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
-    models::{DateIntensity, ExerciseInput, NoteInput, SleepInput},
+    models::{ExerciseInput, NoteInput, SleepInput},
     trends,
 };
 use axum::http::StatusCode;
@@ -26,7 +26,7 @@ use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
     extract::{Form, Path, State},
-    routing::{get, post, put},
+    routing::{get, post},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;
