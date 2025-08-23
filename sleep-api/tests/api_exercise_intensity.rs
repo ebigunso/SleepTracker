@@ -1,7 +1,7 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::{
-    password_hash::{PasswordHasher, SaltString},
     Argon2,
+    password_hash::{PasswordHasher, SaltString},
 };
 use reqwest::Client;
 use sleep_api::{app, db};
@@ -104,8 +104,13 @@ async fn test_exercise_intensity_range_endpoint() {
     let client = Client::builder().cookie_store(true).build().unwrap();
     wait_ready(&client, &addr.to_string()).await;
 
-    let (csrf, session_cookie) =
-        login_and_get_auth(&client, &addr.to_string(), "admin@example.com", "password123").await;
+    let (csrf, session_cookie) = login_and_get_auth(
+        &client,
+        &addr.to_string(),
+        "admin@example.com",
+        "password123",
+    )
+    .await;
 
     // Seed exercise events:
     // 2025-06-10: light
@@ -147,11 +152,20 @@ async fn test_exercise_intensity_range_endpoint() {
     assert_eq!(res.status(), 200, "intensity status {}", res.status());
     let items: Vec<DateIntensity> = res.json().await.unwrap();
     assert_eq!(items.len(), 3, "expected 3 days");
-    assert_eq!(items[0].date, chrono::NaiveDate::from_ymd_opt(2025, 6, 10).unwrap());
+    assert_eq!(
+        items[0].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 10).unwrap()
+    );
     assert_eq!(items[0].intensity, "light");
-    assert_eq!(items[1].date, chrono::NaiveDate::from_ymd_opt(2025, 6, 11).unwrap());
+    assert_eq!(
+        items[1].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 11).unwrap()
+    );
     assert_eq!(items[1].intensity, "none");
-    assert_eq!(items[2].date, chrono::NaiveDate::from_ymd_opt(2025, 6, 12).unwrap());
+    assert_eq!(
+        items[2].date,
+        chrono::NaiveDate::from_ymd_opt(2025, 6, 12).unwrap()
+    );
     assert_eq!(items[2].intensity, "hard");
 
     // Invalid range: from > to => 400

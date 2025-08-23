@@ -18,7 +18,7 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
-    models::{ExerciseInput, NoteInput, SleepInput, DateIntensity},
+    models::{DateIntensity, ExerciseInput, NoteInput, SleepInput},
     trends,
 };
 use axum::http::StatusCode;
@@ -124,7 +124,10 @@ pub fn router(db: Db) -> Router {
         .route("/api/session", get(api_session))
         .route("/api/sleep", post(create_sleep))
         .route("/api/sleep/date/{date}", get(get_sleep))
-        .route("/api/sleep/{id}", get(get_sleep_by_id).put(update_sleep).delete(delete_sleep))
+        .route(
+            "/api/sleep/{id}",
+            get(get_sleep_by_id).put(update_sleep).delete(delete_sleep),
+        )
         .route("/api/sleep/recent", get(get_sleep_recent))
         .route("/api/sleep/range", get(get_sleep_range))
         .route("/api/exercise", post(create_exercise))
@@ -479,7 +482,7 @@ async fn get_sleep_recent(
                 StatusCode::BAD_REQUEST,
                 Json(json!({"code":"bad_request","message":"days must be between 1 and 31"})),
             )
-                .into_response()
+                .into_response();
         }
     };
     match crate::repository::list_recent_sleep(&db, days).await {

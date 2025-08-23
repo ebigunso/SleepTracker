@@ -17,7 +17,7 @@ See also:
 
 use crate::{
     db::Db,
-    models::{ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession, DateIntensity},
+    models::{DateIntensity, ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession},
 };
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};

@@ -29,9 +29,11 @@ impl IntoResponse for ApiError {
                 )
                     .into_response()
             }
-            ApiError::NotFound => {
-                (StatusCode::NOT_FOUND, Json(json!({"code":"not_found","message":"not found"}))).into_response()
-            }
+            ApiError::NotFound => (
+                StatusCode::NOT_FOUND,
+                Json(json!({"code":"not_found","message":"not found"})),
+            )
+                .into_response(),
             ApiError::InvalidInput(msg) => (
                 StatusCode::BAD_REQUEST,
                 Json(json!({"code":"bad_request","message": msg})),

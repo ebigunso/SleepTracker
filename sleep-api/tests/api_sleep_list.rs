@@ -233,7 +233,11 @@ async fn test_sleep_list_invalid_params() {
         .send()
         .await
         .unwrap();
-    assert_eq!(res.status(), 400, "days=0 should be 400 per validation policy");
+    assert_eq!(
+        res.status(),
+        400,
+        "days=0 should be 400 per validation policy"
+    );
 
     // from > to -> 400
     let res = client
