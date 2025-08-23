@@ -1,30 +1,17 @@
 <script lang="ts">
   import SleepForm from '$lib/components/SleepForm.svelte';
-  import { page } from '$app/stores';
-  import { get } from 'svelte/store';
   import { goto } from '$app/navigation';
-import { deleteSleep, getSleepById } from '$lib/api';
-import type { SleepListItem } from '$lib/api';
+  import { deleteSleep } from '$lib/api';
+  import type { SleepSession } from '$lib/api';
   import { removeRecentById } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
 
-  const p = get(page);
-  const params = p.params as unknown as { id: string };
-  const id = Number(params.id);
+  export let data: {
+    rec: SleepSession;
+    qDate: string | null;
+  };
 
-
-  let loading = true;
-  let errorMsg: string | null = null;
-
-  // Form initial values
-  let initialDate: string | null = null;
-  let initialBed: string | null = null;
-  let initialWake: string | null = null;
-  let initialLatency = 0;
-  let initialAwakenings = 0;
-  let initialQuality = 3;
-  let initialIntensity: 'none' | 'light' | 'hard' = 'none';
-  let initialNotes = '';
+  const id = Number(data.rec.id);
 
   function normalizeTime(t: string): string {
     // ensure HH:mm:ss
@@ -35,24 +22,13 @@ import type { SleepListItem } from '$lib/api';
     return '00:00:00';
   }
 
-  async function loadById(id: number) {
-    try {
-      const rec = await getSleepById(id);
-      initialDate = rec.date;
-      initialBed = normalizeTime(rec.bed_time);
-      initialWake = normalizeTime(rec.wake_time);
-      initialLatency = rec.latency_min ?? 0;
-      initialAwakenings = rec.awakenings ?? 0;
-      initialQuality = rec.quality ?? 3;
-      // Intensity is not part of this payload; leave default or get from a separate endpoint in future
-    } catch (e: any) {
-      errorMsg = `Failed to load record: ${e?.message ?? 'error'}`;
-    } finally {
-      loading = false;
-    }
-  }
-
-  loadById(id);
+  // Form initial values derived from server data and optional query param (?date=YYYY-MM-DD)
+  const initialDate: string | null = data.qDate ?? data.rec.date;
+  const initialBed: string | null = normalizeTime(data.rec.bed_time);
+  const initialWake: string | null = normalizeTime(data.rec.wake_time);
+  const initialLatency = (data.rec as any)?.latency_min ?? 0;
+  const initialAwakenings = (data.rec as any)?.awakenings ?? 0;
+  const initialQuality = (data.rec as any)?.quality ?? 3;
 
   async function onDelete() {
     if (!confirm('Delete this entry?')) return;
@@ -82,25 +58,15 @@ import type { SleepListItem } from '$lib/api';
     </button>
   </div>
 
-  {#if errorMsg}
-    <div class="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-      {errorMsg}
-    </div>
-  {/if}
-
-  {#if loading}
-    <p class="text-gray-600 text-sm">Loading…</p>
-  {:else}
-    <SleepForm
-      mode="edit"
-      {id}
-      {initialDate}
-      {initialBed}
-      {initialWake}
-      {initialLatency}
-      {initialAwakenings}
-      {initialQuality}
-      on:saved={onSaved}
-    />
-  {/if}
+  <SleepForm
+    mode="edit"
+    {id}
+    {initialDate}
+    {initialBed}
+    {initialWake}
+    {initialLatency}
+    {initialAwakenings}
+    {initialQuality}
+    on:saved={onSaved}
+  />
 </section>
