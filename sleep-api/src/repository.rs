@@ -235,6 +235,7 @@ pub async fn list_exercise_intensity(
     .bind(from)
     .bind(to)
     .fetch_all(db)
+    .await
 }
 
 #[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]
@@ -291,9 +292,42 @@ let id = repository::insert_exercise(&db, &input).await?;
 - Returns [`sqlx::Error`] on database errors.
 "#]
 pub async fn insert_exercise(db: &Db, input: &ExerciseInput) -> Result<i64, sqlx::Error> {
+    // For "daily intensity" sentinel rows (no time and no duration), upsert by date
+    if input.start_time.is_none() && input.duration_min.is_none() {
+        let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
+        if let Some(existing_id) = sqlx::query_scalar::<Sqlite, i64>(
+            "SELECT id FROM exercise_events WHERE date = ? AND start_time IS NULL AND duration_min IS NULL",
+        )
+        .bind(input.date)
+        .fetch_optional(&mut *tx)
+        .await?
+        {
+            sqlx::query::<Sqlite>("UPDATE exercise_events SET intensity = ? WHERE id = ?")
+                .bind(input.intensity.to_string())
+                .bind(existing_id)
+                .execute(&mut *tx)
+                .await?;
+            tx.commit().await?;
+            return Ok(existing_id);
+        } else {
+            let res = sqlx::query::<Sqlite>(
+                "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)",
+            )
+            .bind(input.date)
+            .bind(input.intensity.to_string())
+            .bind(None::<chrono::NaiveTime>)
+            .bind(None::<i32>)
+            .execute(&mut *tx)
+            .await?;
+            tx.commit().await?;
+            return Ok(res.last_insert_rowid());
+        }
+    }
+
+    // Otherwise, treat as a normal exercise event insert
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
-        "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)"
+        "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)",
     )
     .bind(input.date)
     .bind(input.intensity.to_string())
