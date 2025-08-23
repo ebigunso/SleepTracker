@@ -124,10 +124,10 @@ pub fn router(db: Db) -> Router {
         .route("/api/session", get(api_session))
         .route("/api/sleep", post(create_sleep))
         .route("/api/sleep/date/{date}", get(get_sleep))
-        .route(
-            "/api/sleep/{id}",
-            get(get_sleep_by_id).put(update_sleep).delete(delete_sleep),
-        )
+        // Register methods for /api/sleep/{id} explicitly to avoid any chaining ambiguity
+        .route("/api/sleep/{id}", get(get_sleep_by_id))
+        .route("/api/sleep/{id}", axum::routing::put(update_sleep))
+        .route("/api/sleep/{id}", axum::routing::delete(delete_sleep))
         .route("/api/sleep/recent", get(get_sleep_recent))
         .route("/api/sleep/range", get(get_sleep_range))
         .route("/api/exercise", post(create_exercise))
