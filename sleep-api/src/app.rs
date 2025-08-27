@@ -26,7 +26,7 @@ use axum::response::{Html, IntoResponse, Redirect};
 use axum::{
     Json, Router,
     extract::{Form, Path, State},
-    routing::{get, post, put},
+    routing::{get, post},
 };
 use axum_extra::extract::cookie::{Cookie, Key, PrivateCookieJar, SameSite};
 use serde_json::json;
@@ -34,18 +34,18 @@ use serde_json::json;
 #[doc = r#"Build the application [`Router`].
 
 Routes:
-- `GET /health`
-- `HEAD /health`
-- `POST /login`
-- `POST /login.json`
-- `POST /logout`
+- `GET /api/health`
+- `HEAD /api/health`
+- `POST /api/login`
+- `POST /api/login.json`
+- `POST /api/logout`
 - `GET /api/session`
-- `POST /sleep`
-- `GET /sleep/date/{date}`
-- `PUT /sleep/{id}`
-- `DELETE /sleep/{id}`
-- `POST /exercise`
-- `POST /note`
+- `POST /api/sleep`
+- `GET /api/sleep/date/{date}`
+- `PUT /api/sleep/{id}`
+- `DELETE /api/sleep/{id}`
+- `POST /api/exercise`
+- `POST /api/note`
 - `GET /api/trends/sleep-bars`
 - `GET /api/trends/summary`
 
@@ -117,16 +117,22 @@ pub fn router(db: Db) -> Router {
     };
     let router = Router::new()
         .route("/", get(root))
-        .route("/health", get(health_get).head(health_head))
-        .route("/login", post(post_login))
-        .route("/login.json", post(post_login_json))
-        .route("/logout", post(post_logout))
+        .route("/api/health", get(health_get).head(health_head))
+        .route("/api/login", post(post_login))
+        .route("/api/login.json", post(post_login_json))
+        .route("/api/logout", post(post_logout))
         .route("/api/session", get(api_session))
-        .route("/sleep", post(create_sleep))
-        .route("/sleep/date/{date}", get(get_sleep))
-        .route("/sleep/{id}", put(update_sleep).delete(delete_sleep))
-        .route("/exercise", post(create_exercise))
-        .route("/note", post(create_note))
+        .route("/api/sleep", post(create_sleep))
+        .route("/api/sleep/date/{date}", get(get_sleep))
+        // Register methods for /api/sleep/{id} explicitly to avoid any chaining ambiguity
+        .route("/api/sleep/{id}", get(get_sleep_by_id))
+        .route("/api/sleep/{id}", axum::routing::put(update_sleep))
+        .route("/api/sleep/{id}", axum::routing::delete(delete_sleep))
+        .route("/api/sleep/recent", get(get_sleep_recent))
+        .route("/api/sleep/range", get(get_sleep_range))
+        .route("/api/exercise", post(create_exercise))
+        .route("/api/exercise/intensity", get(get_exercise_intensity))
+        .route("/api/note", post(create_note))
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
         .with_state(state);
@@ -161,7 +167,7 @@ async fn root() -> StatusCode {
 
 #[doc = r#"Login (form) and issue session + CSRF cookies.
 
-Accepts: `POST /login` (`application/x-www-form-urlencoded`)
+Accepts: `POST /api/login` (`application/x-www-form-urlencoded`)
 - Body: `{ email, password }`
 - On success:
   - Issues encrypted session cookie (see [`crate::config::session_cookie_name`])
@@ -178,7 +184,7 @@ Responses:
 
 Example:
 ```bash
-curl -i -X POST http://localhost:8080/login \
+curl -i -X POST http://localhost:8080/api/login \
   -H 'Content-Type: application/x-www-form-urlencoded' \
   -d 'email=admin@example.com&password=...' \
   -c cookies.txt
@@ -205,7 +211,7 @@ async fn post_login(
 
 #[doc = r#"Login (JSON) and issue session + CSRF cookies.
 
-Accepts: `POST /login.json` (`application/json`)
+Accepts: `POST /api/login.json` (`application/json`)
 - Body: `{ "email": "...", "password": "..." }`
 - On success: `{"ok": true}` and `Set-Cookie` headers for session + CSRF
 
@@ -218,7 +224,7 @@ Note:
 
 Example:
 ```bash
-curl -i -X POST http://localhost:8080/login.json \
+curl -i -X POST http://localhost:8080/api/login.json \
   -H 'Content-Type: application/json' \
   -d '{"email":"admin@example.com","password":"..."}' \
   -c cookies.txt
@@ -245,7 +251,7 @@ async fn post_login_json(
 
 #[doc = r#"Logout and clear cookies.
 
-Accepts: `POST /logout`
+Accepts: `POST /api/logout`
 
 Security:
 - Requires a valid CSRF header (double-submit) via [`CsrfGuard`]
@@ -256,7 +262,7 @@ Responses:
 
 Example:
 ```bash
-curl -i -X POST http://localhost:8080/logout \
+curl -i -X POST http://localhost:8080/api/logout \
   -H "Cookie: __Host-session=...; __Host-csrf=..." \
   -H "X-CSRF-Token: <csrf cookie value>"
 ```
@@ -277,7 +283,7 @@ async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::respo
 
 #[doc = r#"Create a sleep session.
 
-Accepts: `POST /sleep` (`application/json`)
+Accepts: `POST /api/sleep` (`application/json`)
 - Body: [`SleepInput`]
 
 Security:
@@ -291,7 +297,7 @@ Responses:
 
 Example:
 ```bash
-curl -i -X POST http://localhost:8080/sleep \
+curl -i -X POST http://localhost:8080/api/sleep \
   -H "Cookie: __Host-session=...; __Host-csrf=..." \
   -H "X-CSRF-Token: <csrf cookie value>" \
   -H "Content-Type: application/json" \
@@ -312,7 +318,7 @@ async fn create_sleep(
 
 #[doc = r#"Get a sleep session for a wake date.
 
-Accepts: `GET /sleep/date/{date}`
+Accepts: `GET /api/sleep/date/{date}`
 - Path param `date`: `YYYY-MM-DD` (wake date)
 
 Security:
@@ -338,7 +344,7 @@ async fn get_sleep(
 
 #[doc = r#"Update a sleep session by id.
 
-Accepts: `PUT /sleep/{id}` (`application/json`)
+Accepts: `PUT /api/sleep/{id}` (`application/json`)
 - Body: [`SleepInput`]
 
 Security:
@@ -365,7 +371,7 @@ async fn update_sleep(
 
 #[doc = r#"Delete a sleep session by id.
 
-Accepts: `DELETE /sleep/{id}`
+Accepts: `DELETE /api/sleep/{id}`
 
 Security:
 - Requires authenticated session ([`RequireSessionJson`])
@@ -438,4 +444,150 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+#[derive(serde::Deserialize)]
+struct RecentParams {
+    days: Option<i32>,
+}
+
+#[derive(serde::Deserialize)]
+struct RangeParams {
+    from: chrono::NaiveDate,
+    to: chrono::NaiveDate,
+}
+
+#[doc = r#"List recent sleep entries.
+
+Accepts: `GET /api/sleep/recent?days=7`
+- days clamped to [1, 31]; defaults to 7 when missing
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<SleepListItem>` (ordered desc by date)
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_sleep_recent(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RecentParams>,
+) -> impl IntoResponse {
+    let days = match params.days {
+        None => 7,
+        Some(d) if (1..=31).contains(&d) => d,
+        _ => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"code":"bad_request","message":"days must be between 1 and 31"})),
+            )
+                .into_response();
+        }
+    };
+    match crate::repository::list_recent_sleep(&db, days).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
+}
+
+#[doc = r#"List sleep entries in an inclusive date range.
+
+Accepts: `GET /api/sleep/range?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- Validates `from <= to`
+- Range length must be ≤ 62 days
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<SleepListItem>` (ordered asc by date)
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_sleep_range(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RangeParams>,
+) -> impl IntoResponse {
+    if params.from > params.to {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"from must be <= to"})),
+        )
+            .into_response();
+    }
+    let span_days = (params.to - params.from).num_days() + 1;
+    if span_days > 62 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"range must be <= 62 days"})),
+        )
+            .into_response();
+    }
+    match crate::repository::list_sleep_range(&db, params.from, params.to).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
+}
+
+#[doc = r#"Get a sleep session by id.
+
+Accepts: `GET /api/sleep/{id}`
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — [`SleepSession`]
+- 401 Unauthorized — no/invalid session
+- 404 Not Found — no entry for id
+"#]
+async fn get_sleep_by_id(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    Path(id): Path<i64>,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    match crate::repository::find_sleep_by_id(&db, id).await? {
+        Some(s) => Ok(Json(s)),
+        None => Err(ApiError::NotFound),
+    }
+}
+
+#[doc = r#"List exercise intensity for a date range.
+
+Accepts: `GET /api/exercise/intensity?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- Validates `from <= to`
+- Range length must be ≤ 62 days
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `Vec<{date, intensity}>` ordered asc by date
+- 400 Bad Request — `{code,message}` on invalid params
+"#]
+async fn get_exercise_intensity(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<RangeParams>,
+) -> impl IntoResponse {
+    if params.from > params.to {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"from must be <= to"})),
+        )
+            .into_response();
+    }
+    let span_days = (params.to - params.from).num_days() + 1;
+    if span_days > 62 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"code":"bad_request","message":"range must be <= 62 days"})),
+        )
+            .into_response();
+    }
+    match crate::repository::list_exercise_intensity(&db, params.from, params.to).await {
+        Ok(items) => Json(items).into_response(),
+        Err(e) => ApiError::Db(e).into_response(),
+    }
 }

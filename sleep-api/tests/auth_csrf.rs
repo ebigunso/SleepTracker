@@ -24,7 +24,7 @@ fn set_admin_env(email: &str, password: &str) {
 }
 
 async fn wait_ready(client: &Client, addr: &str) {
-    let health_url = format!("http://{addr}/health");
+    let health_url = format!("http://{addr}/api/health");
     for _ in 0..20 {
         if client.get(&health_url).send().await.is_ok() {
             return;
@@ -91,7 +91,7 @@ async fn test_auth_and_csrf_flow() {
 
     // HEAD /health should be OK
     let res = client
-        .head(format!("http://{addr}/health"))
+        .head(format!("http://{addr}/api/health"))
         .send()
         .await
         .unwrap();
@@ -116,7 +116,7 @@ async fn test_auth_and_csrf_flow() {
         "password": "password123"
     });
     let login_res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(format!("http://{addr}/api/login.json"))
         .json(&login_body)
         .send()
         .await
@@ -161,7 +161,7 @@ async fn test_auth_and_csrf_flow() {
         quality: Quality(4),
     };
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .json(&sample)
         .send()
         .await
@@ -174,7 +174,7 @@ async fn test_auth_and_csrf_flow() {
 
     // Mutating API with CSRF header should succeed
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header(
             "Cookie",
             format!("__Host-session={session}; __Host-csrf={csrf}"),
@@ -194,7 +194,7 @@ async fn test_auth_and_csrf_flow() {
 
     // Logout clears session; subsequent mutating should be 401
     let res = client
-        .post(format!("http://{addr}/logout"))
+        .post(format!("http://{addr}/api/logout"))
         .header(
             "Cookie",
             format!("__Host-session={session}; __Host-csrf={csrf}"),
@@ -216,7 +216,7 @@ async fn test_auth_and_csrf_flow() {
     assert_eq!(v3["authenticated"], false);
 
     let res = client
-        .delete(format!("http://{addr}/sleep/{id}"))
+        .delete(format!("http://{addr}/api/sleep/{id}"))
         .header("X-CSRF-Token", &csrf)
         .send()
         .await
@@ -269,7 +269,7 @@ async fn test_csrf_percent_encoded_header() {
         "password": "password123"
     });
     let res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(format!("http://{addr}/api/login.json"))
         .json(&login_body)
         .send()
         .await
@@ -300,7 +300,7 @@ async fn test_csrf_percent_encoded_header() {
         quality: Quality(4),
     };
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header(
             "Cookie",
             format!("__Host-session={session}; __Host-csrf={csrf}"),
@@ -347,7 +347,7 @@ async fn test_dev_cookie_names_and_flags() {
     wait_ready(&client, &addr.to_string()).await;
 
     let res = client
-        .post(format!("http://{addr}/login.json"))
+        .post(format!("http://{addr}/api/login.json"))
         .json(&serde_json::json!({ "email":"admin@example.com", "password":"password123" }))
         .send()
         .await
@@ -399,7 +399,7 @@ async fn test_dev_cookie_names_and_flags() {
         quality: Quality(5),
     };
     let res = client
-        .post(format!("http://{addr}/sleep"))
+        .post(format!("http://{addr}/api/sleep"))
         .header("Cookie", format!("session={session_val}; csrf={csrf_val}"))
         .header("X-CSRF-Token", &csrf_val)
         .json(&sample)

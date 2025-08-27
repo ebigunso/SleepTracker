@@ -2,6 +2,7 @@ use super::intensity::Intensity;
 use crate::domain::DomainError;
 use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 #[doc = r#"User-provided input representing an exercise event.
 
@@ -36,6 +37,12 @@ pub struct ExerciseInput {
     pub intensity: Intensity,
     pub start_time: Option<NaiveTime>,
     pub duration_min: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq, FromRow, Clone)]
+pub struct DateIntensity {
+    pub date: NaiveDate,
+    pub intensity: String, // "none" | "light" | "hard"
 }
 
 impl ExerciseInput {

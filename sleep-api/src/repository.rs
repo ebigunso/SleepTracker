@@ -17,7 +17,7 @@ See also:
 
 use crate::{
     db::Db,
-    models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
+    models::{DateIntensity, ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession},
 };
 use chrono::NaiveDate;
 use sqlx::{Sqlite, Transaction};
@@ -109,6 +109,25 @@ pub async fn find_sleep_by_date(
     .await
 }
 
+#[doc = r#"Find a sleep session by id.
+
+Returns `Ok(None)` if no session exists for the provided id.
+
+See the example on [`insert_sleep`].
+
+# Errors
+- Returns [`sqlx::Error`] on database errors.
+"#]
+pub async fn find_sleep_by_id(db: &Db, id: i64) -> Result<Option<SleepSession>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepSession>(
+        r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
+           FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.id = ?"#,
+    )
+    .bind(id)
+    .fetch_optional(db)
+    .await
+}
+
 #[doc = r#"Update a sleep session and its metrics in a single transaction.
 
 Requires a recomputed `duration_min`; see [`time::compute_duration_min`].
@@ -162,6 +181,88 @@ pub async fn delete_sleep(db: &Db, id: i64) -> Result<u64, sqlx::Error> {
     Ok(res.rows_affected())
 }
 
+#[doc = r#"List last N daily sleep entries ordered by date DESC.
+
+Backed by the v_daily_sleep view. Maps wake_date -> date via SQL alias to match API struct."#]
+pub async fn list_recent_sleep(db: &Db, days: i32) -> Result<Vec<SleepListItem>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepListItem>(
+        r#"SELECT id,
+                   wake_date AS date,
+                   bed_time,
+                   wake_time,
+                   latency_min,
+                   awakenings,
+                   quality,
+                   duration_min
+          FROM v_daily_sleep
+          ORDER BY date DESC
+          LIMIT ?"#,
+    )
+    .bind(days)
+    .fetch_all(db)
+    .await
+}
+
+#[doc = r#"List exercise intensity by date in the inclusive range [from, to].
+
+For each date, returns the highest intensity among any events on that date.
+
+- "none" < "light" < "hard"
+
+Ordered by date ASC.
+"#]
+pub async fn list_exercise_intensity(
+    db: &Db,
+    from: NaiveDate,
+    to: NaiveDate,
+) -> Result<Vec<DateIntensity>, sqlx::Error> {
+    // Map intensity to ordinal to pick max, then map back to string
+    sqlx::query_as::<Sqlite, DateIntensity>(
+        r#"
+        SELECT
+          date,
+          CASE MAX(CASE intensity WHEN 'none' THEN 0 WHEN 'light' THEN 1 WHEN 'hard' THEN 2 ELSE 0 END)
+            WHEN 2 THEN 'hard'
+            WHEN 1 THEN 'light'
+            ELSE 'none'
+          END AS intensity
+        FROM exercise_events
+        WHERE date BETWEEN ? AND ?
+        GROUP BY date
+        ORDER BY date ASC
+        "#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
+    .await
+}
+
+#[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]
+pub async fn list_sleep_range(
+    db: &Db,
+    from: NaiveDate,
+    to: NaiveDate,
+) -> Result<Vec<SleepListItem>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, SleepListItem>(
+        r#"SELECT id,
+                   wake_date AS date,
+                   bed_time,
+                   wake_time,
+                   latency_min,
+                   awakenings,
+                   quality,
+                   duration_min
+          FROM v_daily_sleep
+          WHERE wake_date BETWEEN ? AND ?
+          ORDER BY date ASC"#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
+    .await
+}
+
 #[doc = r#"Insert an exercise event.
 
 # Example (minimal)
@@ -191,9 +292,42 @@ let id = repository::insert_exercise(&db, &input).await?;
 - Returns [`sqlx::Error`] on database errors.
 "#]
 pub async fn insert_exercise(db: &Db, input: &ExerciseInput) -> Result<i64, sqlx::Error> {
+    // For "daily intensity" sentinel rows (no time and no duration), upsert by date
+    if input.start_time.is_none() && input.duration_min.is_none() {
+        let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
+        if let Some(existing_id) = sqlx::query_scalar::<Sqlite, i64>(
+            "SELECT id FROM exercise_events WHERE date = ? AND start_time IS NULL AND duration_min IS NULL",
+        )
+        .bind(input.date)
+        .fetch_optional(&mut *tx)
+        .await?
+        {
+            sqlx::query::<Sqlite>("UPDATE exercise_events SET intensity = ? WHERE id = ?")
+                .bind(input.intensity.to_string())
+                .bind(existing_id)
+                .execute(&mut *tx)
+                .await?;
+            tx.commit().await?;
+            return Ok(existing_id);
+        } else {
+            let res = sqlx::query::<Sqlite>(
+                "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)",
+            )
+            .bind(input.date)
+            .bind(input.intensity.to_string())
+            .bind(None::<chrono::NaiveTime>)
+            .bind(None::<i32>)
+            .execute(&mut *tx)
+            .await?;
+            tx.commit().await?;
+            return Ok(res.last_insert_rowid());
+        }
+    }
+
+    // Otherwise, treat as a normal exercise event insert
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
-        "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)"
+        "INSERT INTO exercise_events(date, intensity, start_time, duration_min) VALUES (?, ?, ?, ?)",
     )
     .bind(input.date)
     .bind(input.intensity.to_string())

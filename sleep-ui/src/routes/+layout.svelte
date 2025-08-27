@@ -3,7 +3,7 @@
   import { toasts, pushToast, dismissToast } from '$lib/stores/toast';
   import { readCsrfToken } from '$lib/api';
   import '../app.css';
-  const AUTH_PREFIX = import.meta.env.DEV ? '/auth' : '';
+  const AUTH_PREFIX = '/api';
 
   export let data: { session?: boolean; pathname?: string };
 

@@ -3,7 +3,7 @@ info:
   title: Sleep API
   version: '0.1'
 paths:
-  /login:
+  /api/login:
     post:
       summary: Login (form)
       description: Issues session and CSRF cookies via Set-Cookie. Send subsequent mutating requests with X-CSRF-Token equal to the CSRF cookie value.
@@ -22,7 +22,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /login.json:
+  /api/login.json:
     post:
       summary: Login (JSON)
       deprecated: true
@@ -43,7 +43,7 @@ paths:
                 properties:
                   ok:
                     type: boolean
-  /logout:
+  /api/logout:
     post:
       summary: Logout
       security:
@@ -64,7 +64,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /health:
+  /api/health:
     get:
       responses:
         '200':
@@ -89,7 +89,7 @@ paths:
                   authenticated:
                     type: boolean
 
-  /sleep:
+  /api/sleep:
     post:
       requestBody:
         required: true
@@ -122,7 +122,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /sleep/date/{date}:
+  /api/sleep/date/{date}:
     get:
       parameters:
         - in: path
@@ -147,7 +147,30 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Not Found
-  /sleep/{id}:
+  /api/sleep/{id}:
+    get:
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SleepSession'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found
     put:
       parameters:
         - in: path
@@ -202,7 +225,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /exercise:
+  /api/sleep/recent:
+    get:
+      summary: Recent daily sleep entries
+      parameters:
+        - in: query
+          name: days
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 31
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Up to N recent entries ordered desc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepListItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/sleep/range:
+    get:
+      summary: Daily sleep entries within an inclusive date range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Entries in range ordered asc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepListItem'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/exercise:
     post:
       requestBody:
         required: true
@@ -235,7 +331,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /note:
+  /api/exercise/intensity:
+    get:
+      summary: Exercise intensity by date in range
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          required: true
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Intensities ordered asc by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DateIntensity'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/note:
     post:
       requestBody:
         required: true
@@ -443,6 +578,15 @@ components:
         duration_min:
           type: integer
           nullable: true
+    DateIntensity:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        intensity:
+          type: string
+          enum: [none, light, hard]
     NoteInput:
       type: object
       properties:
@@ -462,8 +606,40 @@ components:
     Error:
       type: object
       properties:
-        error:
+        code:
+          type: string
+        message:
           type: string
         detail:
           type: string
           nullable: true
+    SleepListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+          format: date
+        bed_time:
+          type: string
+          format: time
+        wake_time:
+          type: string
+          format: time
+        latency_min:
+          type: integer
+        awakenings:
+          type: integer
+        quality:
+          type: integer
+        duration_min:
+          type: integer
+          nullable: true
+    BadRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
