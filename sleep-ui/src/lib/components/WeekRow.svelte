@@ -43,7 +43,9 @@
 </script>
 
 <div class="flex items-center gap-3 py-2 border-b border-gray-200">
-  <div class="w-28 shrink-0 text-sm text-gray-700 font-medium">{date}</div>
+  <div class="w-28 shrink-0 text-sm text-gray-700 font-medium">
+    <a class="text-indigo-600 hover:text-indigo-700" href={`/day/${date}`}>{date}</a>
+  </div>
 
   {#if item}
     <div class="flex-1 min-w-0">

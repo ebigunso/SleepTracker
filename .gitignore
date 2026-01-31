@@ -31,3 +31,7 @@ sleep-ui/.vite
 sleep-ui/.env
 sleep-ui/playwright-report
 sleep-ui/test-results
+
+# Coding Agent Documents
+docs/agent/rules/
+docs/plans/
