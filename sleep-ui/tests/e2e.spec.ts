@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { test, expect } from '@playwright/test';
 
 // These must match your backend ADMIN_EMAIL / password.
