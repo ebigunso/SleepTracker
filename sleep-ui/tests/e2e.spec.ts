@@ -14,7 +14,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
   await page.getByLabel('Email').fill(EMAIL!);
   await page.getByLabel('Password').fill(PASSWORD!);
   await Promise.all([page.waitForURL('**/'), page.getByRole('button', { name: /sign in/i }).click()]);
-  await expect(page.getByRole('heading', { name: /This week/i })).toBeVisible();
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   // Quick Log: navigate to create form
   await page.getByRole('button', { name: /quick log/i }).click();
@@ -35,7 +35,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
   await page.getByRole('button', { name: /proceed/i }).click();
 
   // Back to dashboard, row for today should be present
-  await expect(page.getByRole('heading', { name: /this week/i })).toBeVisible();
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   // Edit the first row (assumes newest first)
   await page.getByRole('button', { name: /^edit$/i }).first().click();
@@ -56,5 +56,5 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
   await page.getByRole('button', { name: /^delete$/i }).first().click();
 
   // After deletion, "Quality: 5" might disappear for that row; at least ensure the dashboard still renders
-  await expect(page.getByRole('heading', { name: /this week/i })).toBeVisible();
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 });

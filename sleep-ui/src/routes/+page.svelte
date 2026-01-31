@@ -1,6 +1,7 @@
 <script lang="ts">
   import WeekRow from '$lib/components/WeekRow.svelte';
   import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   import type { SleepListItem } from '$lib/api';
   import { deleteSleep } from '$lib/api';
   import { recentSleep, exerciseIntensityByDate, removeRecentById } from '$lib/stores/sleep';
@@ -22,12 +23,12 @@
   let nextTo = '';
   let jumpTo = '';
 
-  $: recentSleep.set(data.items ?? []);
-  $: if (data.intensities && Array.isArray(data.intensities)) {
-    const map = Object.fromEntries(data.intensities.map((d) => [d.date, d.intensity]));
-    exerciseIntensityByDate.set(map);
-  } else {
-    exerciseIntensityByDate.set({});
+  $: localIntensityMap = data.intensities && Array.isArray(data.intensities)
+    ? Object.fromEntries(data.intensities.map((d) => [d.date, d.intensity]))
+    : {};
+  $: if (browser) {
+    recentSleep.set(data.items ?? []);
+    exerciseIntensityByDate.set(localIntensityMap);
   }
 
   function isoDate(d: Date): string {
@@ -58,7 +59,8 @@
     return arr;
   }
 
-  $: intensityMap = $exerciseIntensityByDate;
+  $: intensityMap = browser ? $exerciseIntensityByDate : localIntensityMap;
+  $: recentItems = browser ? $recentSleep : (data.items ?? []);
 
   $: windowDays = data.windowDays ?? 14;
   $: rangeDates = buildRangeDates(data.from, data.to);
@@ -69,7 +71,7 @@
   $: jumpTo = data.to;
 
   $: rows = rangeDates.map((date) => {
-    const item = $recentSleep.find((x) => x.date === date) ?? null;
+    const item = recentItems.find((x) => x.date === date) ?? null;
     const intensity = intensityMap[date];
     return { date, item, intensity };
   });
@@ -108,7 +110,9 @@
 <section class="space-y-4">
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h2 class="text-xl font-semibold text-gray-900">Last {windowDays} days</h2>
+      <h2 class="text-xl font-semibold text-gray-900" data-testid="dashboard-heading">
+        Last {windowDays} days
+      </h2>
       <p class="text-sm text-gray-600">{data.from} – {data.to}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
