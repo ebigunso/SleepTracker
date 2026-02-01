@@ -50,14 +50,14 @@ Use Docker Compose to build and run the app.
 ## Authentication and sessions
 
 - Single-user login based on ADMIN_EMAIL and ADMIN_PASSWORD_HASH.
-- Endpoint: POST /login
+- Endpoint: POST /api/login
   - Accepts both application/json and application/x-www-form-urlencoded
   - Payload schema:
     { "email": "...", "password": "..." }
   - On success, the server issues:
     - Encrypted session cookie (__Host-session by default)
     - CSRF cookie (__Host-csrf by default)
-- Endpoint: POST /logout — clears session and CSRF cookies.
+- Endpoint: POST /api/logout — clears session and CSRF cookies.
 
 Session cookie properties:
 - Encrypted/signed via axum-extra PrivateCookieJar using a key derived from SESSION_SECRET
@@ -114,11 +114,11 @@ Local HTTP note:
 ## OpenAPI
 
 OpenAPI specification is in openapi.yaml and includes:
-- /login and /logout endpoints
+- /api/login and /api/logout endpoints
 - Cookie-based session authentication scheme
 - Double-submit CSRF requirement (X-CSRF-Token) on mutating endpoints
 - /api/session endpoint for session probe (GET)
-- HEAD /health endpoint
+- HEAD /api/health endpoint
 
 ## Building, formatting, linting, testing
 
