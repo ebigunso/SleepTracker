@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
+  import { browser } from '$app/environment';
   import SleepForm from '$lib/components/SleepForm.svelte';
   import { goto } from '$app/navigation';
-  import { deleteSleep } from '$lib/api';
+  import { deleteSleep, getExerciseIntensity } from '$lib/api';
   import type { SleepSession } from '$lib/api';
-  import { removeRecentById } from '$lib/stores/sleep';
+  import { exerciseIntensityByDate, removeRecentById, setIntensity } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
 
   export let data: {
@@ -29,6 +32,34 @@
   const initialLatency = (data.rec as any)?.latency_min ?? 0;
   const initialAwakenings = (data.rec as any)?.awakenings ?? 0;
   const initialQuality = (data.rec as any)?.quality ?? 3;
+  const intensityDate = initialDate ?? data.rec.date;
+  let initialIntensity: 'none' | 'light' | 'hard' = 'none';
+
+  if (browser && intensityDate) {
+    const stored = get(exerciseIntensityByDate)[intensityDate];
+    if (stored !== undefined) {
+      initialIntensity = stored;
+    }
+  }
+
+  onMount(async () => {
+    if (!intensityDate) return;
+    const stored = get(exerciseIntensityByDate)[intensityDate];
+    if (stored !== undefined) {
+      initialIntensity = stored;
+      return;
+    }
+    try {
+      const list = await getExerciseIntensity(intensityDate, intensityDate);
+      const found = list.find((x) => x.date === intensityDate);
+      if (found?.intensity) {
+        initialIntensity = found.intensity;
+        setIntensity(intensityDate, found.intensity);
+      }
+    } catch {
+      // ignore; intensity is optional
+    }
+  });
 
   async function onDelete() {
     if (!confirm('Delete this entry?')) return;
@@ -67,6 +98,7 @@
     {initialLatency}
     {initialAwakenings}
     {initialQuality}
+    {initialIntensity}
     on:saved={onSaved}
   />
 </section>
