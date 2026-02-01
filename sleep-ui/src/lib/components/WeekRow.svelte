@@ -21,7 +21,7 @@
 
   function onEdit() {
     if (!item) return;
-    goto(`/sleep/${item.id}/edit?date=${encodeURIComponent(date)}`);
+    goto(`/sleep/${item.id}/edit?date=${encodeURIComponent(item.date)}`);
   }
 
   function onDelete() {
