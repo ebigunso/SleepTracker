@@ -25,7 +25,10 @@ pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), Api
     let tz = crate::config::app_tz();
     let duration =
         crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
-    repository::update_sleep(db, id, &input, duration).await?;
+    let updated = repository::update_sleep(db, id, &input, duration).await?;
+    if !updated {
+        return Err(ApiError::NotFound);
+    }
     Ok(())
 }
 

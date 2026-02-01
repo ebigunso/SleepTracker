@@ -193,6 +193,17 @@ async fn test_sleep_flow() {
         .unwrap();
     assert_eq!(res.status(), 204, "idempotent delete should be 204");
 
+    let missing_id = id + 999;
+    let res = client
+        .put(format!("http://{addr}/api/sleep/{missing_id}"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", &csrf)
+        .json(&updated)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 404, "update missing id should be 404");
+
     let res = client
         .get(format!("http://{addr}/api/sleep/date/{}", updated.date))
         .send()
