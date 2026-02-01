@@ -4,17 +4,21 @@ on:
     branches: [ main ]
     paths:
       - sleep-api/**
+      - .cargo/**
       - Cargo.toml
       - Cargo.lock
       - migrations/**
+      - openapi.yaml
       - .github/workflows/ci-backend.yml
   pull_request:
     branches: [ main ]
     paths:
       - sleep-api/**
+      - .cargo/**
       - Cargo.toml
       - Cargo.lock
       - migrations/**
+      - openapi.yaml
       - .github/workflows/ci-backend.yml
 
 jobs:
