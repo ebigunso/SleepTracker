@@ -153,8 +153,16 @@ pub async fn update_sleep(
     .execute(&mut *tx)
     .await?;
     if res.rows_affected() == 0 {
-        tx.rollback().await?;
-        return Ok(false);
+        // rows_affected == 0 can mean either "no such id" or "no changes".
+        // Check existence so we only treat the missing-id case as not found.
+        let exists = sqlx::query_scalar::<Sqlite, i64>("SELECT 1 FROM sleep_sessions WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&mut *tx)
+            .await?;
+        if exists.is_none() {
+            tx.rollback().await?;
+            return Ok(false);
+        }
     }
     sqlx::query::<Sqlite>(
         "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=?, duration_min=? WHERE session_id=?",
