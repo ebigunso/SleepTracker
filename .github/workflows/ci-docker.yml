@@ -6,6 +6,11 @@ on:
       - Dockerfile
       - docker-entrypoint.sh
       - compose.yaml
+      - sleep-api/**
+      - Cargo.toml
+      - Cargo.lock
+      - migrations/**
+      - .cargo/**
       - .github/workflows/ci-docker.yml
   pull_request:
     branches: [ main ]
@@ -13,6 +18,11 @@ on:
       - Dockerfile
       - docker-entrypoint.sh
       - compose.yaml
+      - sleep-api/**
+      - Cargo.toml
+      - Cargo.lock
+      - migrations/**
+      - .cargo/**
       - .github/workflows/ci-docker.yml
 
 jobs:
