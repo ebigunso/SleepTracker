@@ -14,11 +14,10 @@ export function upsertRecent(item: SleepListItem) {
     const withoutId = arr.filter((x) => x.id !== item.id);
     const idx = withoutId.findIndex((x) => x.date === item.date);
     if (idx >= 0) {
-      const copy = withoutId.slice();
-      copy[idx] = item;
+      withoutId[idx] = item;
       // Keep sort by date desc if already sorted
-      copy.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-      return copy;
+      withoutId.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      return withoutId;
     }
     return [item, ...withoutId].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   });
