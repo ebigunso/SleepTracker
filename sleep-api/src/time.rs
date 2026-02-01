@@ -16,24 +16,38 @@ use chrono_tz::Tz;
 /// Maximum minutes to scan forward to bridge DST "spring forward" gaps
 const MAX_DST_GAP_MINUTES: usize = 3 * 60;
 
+#[derive(Copy, Clone, Debug)]
+enum AmbiguousTimeChoice {
+    Earliest,
+    Latest,
+}
+
 /// Resolve a local naive datetime in a timezone to a concrete instant.
 ///
 /// Handling of DST gaps/overlaps:
-/// - Ambiguous: pick the earliest instant.
+/// - Ambiguous: pick the earliest or latest instant based on `choice`.
 /// - Non-existent (spring-forward gap): advance in 1-minute steps until valid (up to MAX_DST_GAP_MINUTES).
 ///
 /// Fallback: If no valid local time can be resolved, falls back to interpreting the naive datetime as UTC with a warning. This may affect duration calculations across DST transitions.
-fn resolve_local(tz: Tz, ndt: NaiveDateTime) -> DateTime<Tz> {
+fn resolve_local(tz: Tz, ndt: NaiveDateTime, choice: AmbiguousTimeChoice) -> DateTime<Tz> {
     match tz.from_local_datetime(&ndt) {
         LocalResult::Single(dt) => dt,
-        LocalResult::Ambiguous(earliest, _latest) => earliest,
+        LocalResult::Ambiguous(earliest, latest) => match choice {
+            AmbiguousTimeChoice::Earliest => earliest,
+            AmbiguousTimeChoice::Latest => latest,
+        },
         LocalResult::None => {
             // advance forward until it becomes valid
             let mut cur = ndt;
             for _ in 0..MAX_DST_GAP_MINUTES {
                 match tz.from_local_datetime(&cur) {
                     LocalResult::Single(dt) => return dt,
-                    LocalResult::Ambiguous(earliest, _latest) => return earliest,
+                    LocalResult::Ambiguous(earliest, latest) => {
+                        return match choice {
+                            AmbiguousTimeChoice::Earliest => earliest,
+                            AmbiguousTimeChoice::Latest => latest,
+                        };
+                    }
                     LocalResult::None => {
                         cur += ChronoDuration::minutes(1);
                     }
@@ -56,7 +70,7 @@ Given a target `wake_date`, `bed_time` and `wake_time`, the bed datetime may bel
 previous calendar day when `bed_time > wake_time` (crossing midnight).
 
 DST handling:
-- Ambiguous local times (fall back) choose the earliest instant.
+- Ambiguous local times (fall back) choose the earliest instant for bed times and the latest instant for wake times.
 - Non-existent times (spring forward gap) advance minute-by-minute until valid.
 
 # Example
@@ -101,8 +115,8 @@ pub fn compute_duration_min(
     let bed_ndt = NaiveDateTime::new(bed_date, bed_time);
     let wake_ndt = NaiveDateTime::new(wake_date, wake_time);
 
-    let bed_local = resolve_local(tz, bed_ndt);
-    let wake_local = resolve_local(tz, wake_ndt);
+    let bed_local = resolve_local(tz, bed_ndt, AmbiguousTimeChoice::Earliest);
+    let wake_local = resolve_local(tz, wake_ndt, AmbiguousTimeChoice::Latest);
 
     let bed_utc = bed_local.with_timezone(&Utc);
     let wake_utc = wake_local.with_timezone(&Utc);
