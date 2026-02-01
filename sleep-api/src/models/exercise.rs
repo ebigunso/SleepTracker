@@ -45,17 +45,26 @@ pub struct DateIntensity {
     pub intensity: String, // "none" | "light" | "hard"
 }
 
+const MAX_EXERCISE_DURATION_MIN: i32 = 24 * 60;
+
 impl ExerciseInput {
     #[doc = r#"Validate the exercise input.
 
 Currently, this ensures that `intensity` has been deserialized into a valid value.
-Add additional checks here as needed (e.g., maximum duration).
+Duration (when provided) must be in 1..=1440 minutes.
 
 # Errors
 
-Returns [`DomainError`] if a validation rule is violated (none at present).
+Returns [`DomainError`] if a validation rule is violated.
 "#]
     pub fn validate(&self) -> Result<(), DomainError> {
+        if let Some(duration_min) = self.duration_min
+            && !(1..=MAX_EXERCISE_DURATION_MIN).contains(&duration_min)
+        {
+            return Err(DomainError::InvalidInput(format!(
+                "duration_min must be between 1 and {MAX_EXERCISE_DURATION_MIN}"
+            )));
+        }
         // intensity is validated by deserialization
         Ok(())
     }
