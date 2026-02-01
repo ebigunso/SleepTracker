@@ -10,7 +10,9 @@ fn exercise_duration_negative_is_invalid() {
         duration_min: Some(-5),
     };
 
-    let err = input.validate().expect_err("negative duration should be rejected");
+    let err = input
+        .validate()
+        .expect_err("negative duration should be rejected");
     assert!(matches!(err, DomainError::InvalidInput(_)));
 }
 
