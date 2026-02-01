@@ -3,10 +3,12 @@
   import { goto } from '$app/navigation';
   import { createEventDispatcher } from 'svelte';
   import type { SleepListItem } from '$lib/api';
+  import type { Segment } from '$lib/utils/sleep';
 
-  export let date: string; // YYYY-MM-DD (wake date)
+  export let date: string; // YYYY-MM-DD (display date)
   export let item: SleepListItem | null = null;
   export let intensity: 'none' | 'light' | 'hard' | undefined;
+  export let segments: Segment[] | undefined = undefined;
 
   const dispatch = createEventDispatcher<{
     delete: { id: number; date: string };
@@ -34,6 +36,12 @@
     return `${h}h ${m}m`;
   }
 
+  let displayDuration: number | null = null;
+
+  $: displayDuration = segments && segments.length
+    ? segments.reduce((sum, seg) => sum + Math.max(0, seg.end - seg.start), 0)
+    : item?.duration_min ?? null;
+
   const badgeColor =
     intensity === 'hard'
       ? 'bg-red-100 text-red-700'
@@ -49,9 +57,9 @@
 
   {#if item}
     <div class="flex-1 min-w-0">
-      <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
+      <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} segments={segments} />
       <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-        <span>Duration: <span class="font-medium">{fmtMin(item.duration_min ?? null)}</span></span>
+        <span>Duration: <span class="font-medium">{fmtMin(displayDuration)}</span></span>
         <span>Quality: <span class="font-medium">{item.quality}</span></span>
         <span>Latency: <span class="font-medium">{item.latency_min}m</span></span>
         {#if intensity}
