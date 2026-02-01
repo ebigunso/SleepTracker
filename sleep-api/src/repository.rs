@@ -141,15 +141,19 @@ pub async fn update_sleep(
     id: i64,
     input: &SleepInput,
     duration_min: i32,
-) -> Result<(), sqlx::Error> {
+) -> Result<bool, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
-    sqlx::query::<Sqlite>("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
+    let res = sqlx::query::<Sqlite>("UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?")
         .bind(input.date)
         .bind(input.bed_time)
         .bind(input.wake_time)
         .bind(id)
         .execute(&mut *tx)
         .await?;
+    if res.rows_affected() == 0 {
+        tx.rollback().await?;
+        return Ok(false);
+    }
     sqlx::query::<Sqlite>(
         "UPDATE sleep_metrics SET latency_min=?, awakenings=?, quality=?, duration_min=? WHERE session_id=?",
     )
@@ -161,7 +165,7 @@ pub async fn update_sleep(
     .execute(&mut *tx)
     .await?;
     tx.commit().await?;
-    Ok(())
+    Ok(true)
 }
 
 #[doc = r#"Delete a sleep session by id.

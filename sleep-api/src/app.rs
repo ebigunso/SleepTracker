@@ -355,6 +355,7 @@ Responses:
 - 204 No Content — updated
 - 401 Unauthorized — no/invalid session
 - 403 Forbidden — CSRF failure
+- 404 Not Found — no entry for id
 
 See also: [`crate::handlers::update_sleep`]
 "#]
