@@ -8,6 +8,8 @@ export type Toast = {
   timeout?: number;
 };
 
+const DEFAULT_TOAST_TIMEOUT_MS = 4000;
+
 /**
  * Secure random ID generator as a fallback for crypto.randomUUID.
  * Generates 16 random bytes and returns a 32-char hex string.
@@ -35,8 +37,9 @@ function createToasts() {
         : secureRandomId();
     const toast: Toast = { id, ...t };
     update((list) => [...list, toast]);
-    if (t.timeout && t.timeout > 0) {
-      setTimeout(() => dismissToast(id), t.timeout);
+    const timeout = t.timeout ?? DEFAULT_TOAST_TIMEOUT_MS;
+    if (timeout > 0) {
+      setTimeout(() => dismissToast(id), timeout);
     }
     return id;
   }
