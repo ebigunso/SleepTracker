@@ -45,6 +45,8 @@ pub struct DateIntensity {
     pub intensity: String, // "none" | "light" | "hard"
 }
 
+const MAX_EXERCISE_DURATION_MIN: i32 = 24 * 60;
+
 impl ExerciseInput {
     #[doc = r#"Validate the exercise input.
 
@@ -67,5 +69,3 @@ Returns [`DomainError`] if a validation rule is violated.
         Ok(())
     }
 }
-
-const MAX_EXERCISE_DURATION_MIN: i32 = 24 * 60;
