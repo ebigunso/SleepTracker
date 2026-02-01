@@ -21,7 +21,7 @@
 
   function onEdit() {
     if (!item) return;
-    goto(`/sleep/${item.id}/edit?date=${encodeURIComponent(date)}`);
+    goto(`/sleep/${item.id}/edit?date=${encodeURIComponent(item.date)}`);
   }
 
   function onDelete() {
@@ -38,9 +38,7 @@
 
   let displayDuration: number | null = null;
 
-  $: displayDuration = segments && segments.length
-    ? segments.reduce((sum, seg) => sum + Math.max(0, seg.end - seg.start), 0)
-    : item?.duration_min ?? null;
+  $: displayDuration = item?.duration_min ?? null;
 
   const badgeColor =
     intensity === 'hard'

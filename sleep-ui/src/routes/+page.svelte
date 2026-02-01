@@ -5,6 +5,7 @@
   import type { SleepListItem } from '$lib/api';
   import { deleteSleep } from '$lib/api';
   import { recentSleep, exerciseIntensityByDate, removeRecentById } from '$lib/stores/sleep';
+  import { toMinutes, type Segment } from '$lib/utils/sleep';
 
   export let data: {
     items: SleepListItem[];
@@ -49,6 +50,26 @@
     return isoDate(d);
   }
 
+  function isCrossMidnight(item: SleepListItem): boolean {
+    const bedMin = toMinutes(item.bed_time);
+    const wakeMin = toMinutes(item.wake_time);
+    if (!Number.isFinite(bedMin) || !Number.isFinite(wakeMin)) return false;
+    return bedMin > wakeMin;
+  }
+
+  function segmentsForDate(item: SleepListItem, date: string): Segment[] | undefined {
+    const bedMin = toMinutes(item.bed_time);
+    const wakeMin = toMinutes(item.wake_time);
+    if (!Number.isFinite(bedMin) || !Number.isFinite(wakeMin)) return undefined;
+    if (bedMin <= wakeMin) {
+      return date === item.date ? [{ start: bedMin, end: wakeMin }] : undefined;
+    }
+    const prevDate = shiftIsoDate(item.date, -1);
+    if (date === item.date) return [{ start: 0, end: wakeMin }];
+    if (date === prevDate) return [{ start: bedMin, end: 24 * 60 }];
+    return undefined;
+  }
+
   function buildRangeDates(from: string, to: string): string[] {
     const start = parseDate(from);
     const end = parseDate(to);
@@ -71,9 +92,15 @@
   $: jumpTo = data.to;
 
   $: rows = rangeDates.map((date) => {
-    const item = recentItems.find((x) => x.date === date) ?? null;
+    const directItem = recentItems.find((x) => x.date === date) ?? null;
+    const crossItem =
+      directItem
+        ? null
+        : recentItems.find((x) => isCrossMidnight(x) && shiftIsoDate(x.date, -1) === date) ?? null;
+    const item = directItem ?? crossItem;
     const intensity = intensityMap[date];
-    return { date, item, intensity };
+    const segments = item ? segmentsForDate(item, date) : undefined;
+    return { date, item, intensity, segments };
   });
 
   async function handleDelete(e: CustomEvent<{ id: number; date: string }>) {
@@ -159,7 +186,13 @@
 
   <div class="rounded-md bg-white shadow divide-y divide-gray-200">
     {#each rows as r (r.date)}
-      <WeekRow date={r.date} item={r.item} intensity={r.intensity} on:delete={handleDelete} />
+      <WeekRow
+        date={r.date}
+        item={r.item}
+        intensity={r.intensity}
+        segments={r.segments}
+        on:delete={handleDelete}
+      />
     {/each}
   </div>
 </section>
