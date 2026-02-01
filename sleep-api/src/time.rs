@@ -36,7 +36,7 @@ fn resolve_local(tz: Tz, ndt: NaiveDateTime, choice: AmbiguousTimeChoice) -> Dat
             AmbiguousTimeChoice::Earliest => earliest,
             AmbiguousTimeChoice::Latest => latest,
         },
-        LocalResult::None => {
+                        };
             // advance forward until it becomes valid
             let mut cur = ndt;
             for _ in 0..MAX_DST_GAP_MINUTES {
@@ -46,7 +46,7 @@ fn resolve_local(tz: Tz, ndt: NaiveDateTime, choice: AmbiguousTimeChoice) -> Dat
                         return match choice {
                             AmbiguousTimeChoice::Earliest => earliest,
                             AmbiguousTimeChoice::Latest => latest,
-                        }
+                        };
                     }
                     LocalResult::None => {
                         cur += ChronoDuration::minutes(1);
