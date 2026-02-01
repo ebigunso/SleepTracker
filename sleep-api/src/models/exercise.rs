@@ -56,12 +56,12 @@ Duration (when provided) must be in 1..=1440 minutes.
 Returns [`DomainError`] if a validation rule is violated.
 "#]
     pub fn validate(&self) -> Result<(), DomainError> {
-        if let Some(duration_min) = self.duration_min {
-            if !(1..=MAX_EXERCISE_DURATION_MIN).contains(&duration_min) {
-                return Err(DomainError::InvalidInput(format!(
-                    "duration_min must be between 1 and {MAX_EXERCISE_DURATION_MIN}"
-                )));
-            }
+        if let Some(duration_min) = self.duration_min
+            && !(1..=MAX_EXERCISE_DURATION_MIN).contains(&duration_min)
+        {
+            return Err(DomainError::InvalidInput(format!(
+                "duration_min must be between 1 and {MAX_EXERCISE_DURATION_MIN}"
+            )));
         }
         // intensity is validated by deserialization
         Ok(())
