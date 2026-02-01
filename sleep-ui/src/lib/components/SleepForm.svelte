@@ -31,11 +31,17 @@
   let intensity: 'none' | 'light' | 'hard' = initialIntensity;
   let notes = initialNotes;
 
+  let intensityDirty = false;
+
   let loading = false;
   let errorMsg: string | null = null;
 
   let warnOpen = false;
   let pendingSubmit = false;
+
+  $: if (!intensityDirty && intensity !== initialIntensity) {
+    intensity = initialIntensity;
+  }
 
   function today(): string {
     const d = new Date();
@@ -202,7 +208,12 @@
     </div>
     <div class="sm:col-span-2">
       <label for="intensity" class="block text-sm font-medium text-gray-700">Exercise intensity</label>
-      <select id="intensity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" bind:value={intensity}>
+      <select
+        id="intensity"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        bind:value={intensity}
+        on:change={() => (intensityDirty = true)}
+      >
         <option value="none">none</option>
         <option value="light">light</option>
         <option value="hard">hard</option>
