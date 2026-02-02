@@ -8,9 +8,9 @@ use chrono_tz::Tz;
 use std::str::FromStr;
 fn is_overlap_db_error(err: &sqlx::Error) -> bool {
     match err {
-        sqlx::Error::Database(db_err) => {
-            db_err.message().contains("sleep session overlaps existing session")
-        }
+        sqlx::Error::Database(db_err) => db_err
+            .message()
+            .contains("sleep session overlaps existing session"),
         _ => false,
     }
 }
@@ -60,7 +60,7 @@ pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), Api
         Err(e) if is_overlap_db_error(&e) => {
             return Err(ApiError::InvalidInput(
                 "sleep session overlaps existing session".into(),
-            ))
+            ));
         }
         Err(e) => return Err(e.into()),
     };
