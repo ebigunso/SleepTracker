@@ -343,24 +343,25 @@ pub async fn list_exercise_intensity(
     .await
 }
 
-#[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]
+#[doc = r#"List sleep sessions in the inclusive range [from, to] ordered by date ASC."#]
 pub async fn list_sleep_range(
     db: &Db,
     from: NaiveDate,
     to: NaiveDate,
 ) -> Result<Vec<SleepListItem>, sqlx::Error> {
     sqlx::query_as::<Sqlite, SleepListItem>(
-        r#"SELECT id,
-                   wake_date AS date,
-                   bed_time,
-                   wake_time,
-                   latency_min,
-                   awakenings,
-                   quality,
-                   duration_min
-          FROM v_daily_sleep
-          WHERE wake_date BETWEEN ? AND ?
-          ORDER BY date ASC"#,
+        r#"SELECT s.id,
+                   COALESCE(s.session_date, s.date) AS date,
+                   s.bed_time,
+                   s.wake_time,
+                   m.latency_min,
+                   m.awakenings,
+                   m.quality,
+                   m.duration_min
+          FROM sleep_sessions s
+          JOIN sleep_metrics m ON m.session_id = s.id
+          WHERE COALESCE(s.session_date, s.date) BETWEEN ? AND ?
+          ORDER BY date ASC, s.wake_time ASC"#,
     )
     .bind(from)
     .bind(to)

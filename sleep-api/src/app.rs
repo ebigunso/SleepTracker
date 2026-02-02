@@ -521,7 +521,7 @@ async fn get_sleep_recent(
     }
 }
 
-#[doc = r#"List sleep entries in an inclusive date range.
+#[doc = r#"List sleep sessions in an inclusive date range.
 
 Accepts: `GET /api/sleep/range?from=YYYY-MM-DD&to=YYYY-MM-DD`
 - Validates `from <= to`
@@ -531,7 +531,7 @@ Security:
 - Requires authenticated session ([`RequireSessionJson`])
 
 Responses:
-- 200 OK — `Vec<SleepListItem>` (ordered asc by date)
+- 200 OK — `Vec<SleepListItem>` (per-session rows ordered asc by date)
 - 400 Bad Request — `{code,message}` on invalid params
 "#]
 async fn get_sleep_range(
