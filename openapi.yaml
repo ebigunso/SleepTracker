@@ -312,7 +312,7 @@ paths:
                 $ref: '#/components/schemas/Error'
   /api/sleep/range:
     get:
-      summary: Daily sleep entries within an inclusive date range
+      summary: Sleep sessions within an inclusive date range
       parameters:
         - in: query
           name: from
@@ -330,7 +330,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: Entries in range ordered asc by date
+          description: Sessions in range ordered asc by date then wake_time
           content:
             application/json:
               schema:
