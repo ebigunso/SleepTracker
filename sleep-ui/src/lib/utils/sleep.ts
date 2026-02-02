@@ -7,6 +7,13 @@ export function toMinutes(t: string): number {
   return hours * 60 + mins;
 }
 
+export function computeDurationMin(bed_time: string, wake_time: string): number {
+  const bedMin = toMinutes(bed_time);
+  const wakeMin = toMinutes(wake_time);
+  if (bedMin <= wakeMin) return wakeMin - bedMin;
+  return (24 * 60 - bedMin) + wakeMin;
+}
+
 /**
  * Compute 24h track segments for a sleep interval that may cross midnight.
  * Inputs are "HH:mm" or "HH:mm:ss" local times.

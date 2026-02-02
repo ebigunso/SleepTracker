@@ -104,16 +104,7 @@ pub fn compute_duration_min(
     wake_time: NaiveTime,
     tz: Tz,
 ) -> Result<i32, DomainError> {
-    let bed_date = if bed_time > wake_time {
-        wake_date
-            .pred_opt()
-            .ok_or_else(|| DomainError::InvalidInput("invalid date (underflow)".into()))?
-    } else {
-        wake_date
-    };
-
-    let bed_ndt = NaiveDateTime::new(bed_date, bed_time);
-    let wake_ndt = NaiveDateTime::new(wake_date, wake_time);
+    let (bed_ndt, wake_ndt) = sleep_window_bounds(wake_date, bed_time, wake_time)?;
 
     let bed_local = resolve_local(tz, bed_ndt, AmbiguousTimeChoice::Earliest);
     let wake_local = resolve_local(tz, wake_ndt, AmbiguousTimeChoice::Latest);
@@ -131,4 +122,32 @@ pub fn compute_duration_min(
         return Err(DomainError::InvalidInput("Duration too large".into()));
     }
     Ok(mins as i32)
+}
+
+#[doc = r#"Return the local bed/wake datetime bounds for a sleep session.
+
+Uses wake-date semantics: if `bed_time > wake_time`, the bed datetime is
+considered to be on the previous calendar day relative to `wake_date`.
+
+# Errors
+
+Returns [`DomainError::InvalidInput`] if the computed bed date would underflow.
+"#]
+pub fn sleep_window_bounds(
+    wake_date: NaiveDate,
+    bed_time: NaiveTime,
+    wake_time: NaiveTime,
+) -> Result<(NaiveDateTime, NaiveDateTime), DomainError> {
+    let bed_date = if bed_time > wake_time {
+        wake_date
+            .pred_opt()
+            .ok_or_else(|| DomainError::InvalidInput("invalid date (underflow)".into()))?
+    } else {
+        wake_date
+    };
+
+    Ok((
+        NaiveDateTime::new(bed_date, bed_time),
+        NaiveDateTime::new(wake_date, wake_time),
+    ))
 }

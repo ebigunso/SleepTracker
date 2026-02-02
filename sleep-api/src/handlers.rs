@@ -4,28 +4,66 @@ use crate::{
     models::{ExerciseInput, NoteInput, SleepInput, SleepSession},
     repository,
 };
+use chrono_tz::Tz;
+use std::str::FromStr;
+fn is_overlap_db_error(err: &sqlx::Error) -> bool {
+    match err {
+        sqlx::Error::Database(db_err) => db_err
+            .message()
+            .contains("sleep session overlaps existing session"),
+        _ => false,
+    }
+}
 
 pub async fn create_sleep(db: &Db, input: SleepInput) -> Result<i64, ApiError> {
     input.validate()?;
-    let tz = crate::config::app_tz();
+    let (bed_dt, wake_dt) =
+        crate::time::sleep_window_bounds(input.date, input.bed_time, input.wake_time)?;
+    let tz = repository::get_user_timezone(db).await;
     let duration =
         crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
-    Ok(repository::insert_sleep(db, &input, duration).await?)
+    if repository::has_sleep_overlap(db, bed_dt, wake_dt, None).await? {
+        return Err(ApiError::InvalidInput(
+            "sleep session overlaps existing session".into(),
+        ));
+    }
+    match repository::insert_sleep(db, &input, duration).await {
+        Ok(id) => Ok(id),
+        Err(e) if is_overlap_db_error(&e) => Err(ApiError::InvalidInput(
+            "sleep session overlaps existing session".into(),
+        )),
+        Err(e) => Err(e.into()),
+    }
 }
 
 pub async fn get_sleep_by_date(
     db: &Db,
     date: chrono::NaiveDate,
-) -> Result<Option<SleepSession>, ApiError> {
+) -> Result<Vec<SleepSession>, ApiError> {
     Ok(repository::find_sleep_by_date(db, date).await?)
 }
 
 pub async fn update_sleep(db: &Db, id: i64, input: SleepInput) -> Result<(), ApiError> {
     input.validate()?;
-    let tz = crate::config::app_tz();
+    let (bed_dt, wake_dt) =
+        crate::time::sleep_window_bounds(input.date, input.bed_time, input.wake_time)?;
+    let tz = repository::get_user_timezone(db).await;
     let duration =
         crate::time::compute_duration_min(input.date, input.bed_time, input.wake_time, tz)?;
-    let updated = repository::update_sleep(db, id, &input, duration).await?;
+    if repository::has_sleep_overlap(db, bed_dt, wake_dt, Some(id)).await? {
+        return Err(ApiError::InvalidInput(
+            "sleep session overlaps existing session".into(),
+        ));
+    }
+    let updated = match repository::update_sleep(db, id, &input, duration).await {
+        Ok(updated) => updated,
+        Err(e) if is_overlap_db_error(&e) => {
+            return Err(ApiError::InvalidInput(
+                "sleep session overlaps existing session".into(),
+            ));
+        }
+        Err(e) => return Err(e.into()),
+    };
     if !updated {
         return Err(ApiError::NotFound);
     }
@@ -44,6 +82,13 @@ pub async fn create_exercise(db: &Db, input: ExerciseInput) -> Result<i64, ApiEr
 pub async fn create_note(db: &Db, input: NoteInput) -> Result<i64, ApiError> {
     input.validate()?;
     Ok(repository::insert_note(db, &input).await?)
+}
+
+pub async fn set_user_timezone(db: &Db, timezone: String) -> Result<(), ApiError> {
+    let tz = Tz::from_str(timezone.trim())
+        .map_err(|_| ApiError::InvalidInput("invalid timezone".into()))?;
+    repository::set_user_timezone(db, tz.name()).await?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -78,8 +123,9 @@ mod tests {
             quality: Quality(4),
         };
         let id = create_sleep(&db, input.clone()).await.unwrap();
-        let fetched = get_sleep_by_date(&db, input.date).await.unwrap().unwrap();
-        assert_eq!(fetched.id, id);
-        assert_eq!(fetched.bed_time, input.bed_time);
+        let fetched = get_sleep_by_date(&db, input.date).await.unwrap();
+        assert_eq!(fetched.len(), 1);
+        assert_eq!(fetched[0].id, id);
+        assert_eq!(fetched[0].bed_time, input.bed_time);
     }
 }

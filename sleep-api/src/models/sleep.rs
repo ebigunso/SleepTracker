@@ -98,13 +98,15 @@ pub struct SleepSession {
     pub quality: i32,
 }
 
-#[doc = r#"List item projection for v_daily_sleep.
+#[doc = r#"List item projection for sleep summaries and sessions.
 
-Used by GET /api/sleep/recent and GET /api/sleep/range. Note that the SQL maps
-`wake_date` to `date` via `AS date` to align with the existing field name.
+Used by GET /api/sleep/recent and GET /api/sleep/range. The recent endpoint
+queries `v_daily_sleep`, while the range endpoint returns per-session rows from
+`sleep_sessions` and `sleep_metrics`. Both map the wake date to `date` via
+`AS date` to align with the existing field name.
 `duration_min` is nullable (computed on insert/update; may be NULL for legacy rows).
 
-Fields mirror v_daily_sleep columns:
+Fields mirror the selected columns:
 - id
 - date (wake date)
 - bed_time

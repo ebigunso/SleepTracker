@@ -89,8 +89,44 @@ paths:
                   authenticated:
                     type: boolean
 
+  /api/settings/timezone:
+    post:
+      summary: Set user timezone
+      description: Persist an IANA timezone name for DST-aware duration calculations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimezonePayload'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '204':
+          description: Updated
+        '400':
+          description: Invalid timezone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/sleep:
     post:
+      description: Creates a sleep session using wake-date semantics. Overlaps are rejected.
       requestBody:
         required: true
         content:
@@ -110,6 +146,12 @@ paths:
                 properties:
                   id:
                     type: integer
+        '400':
+          description: Invalid input (including overlaps)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
           content:
@@ -124,6 +166,8 @@ paths:
                 $ref: '#/components/schemas/Error'
   /api/sleep/date/{date}:
     get:
+      summary: Sleep sessions for a wake date
+      description: Returns all sessions that share the same wake date (may be empty).
       parameters:
         - in: path
           name: date
@@ -138,15 +182,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SleepSession'
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepSession'
         '401':
           description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '404':
-          description: Not Found
   /api/sleep/{id}:
     get:
       parameters:
@@ -172,6 +216,7 @@ paths:
         '404':
           description: Not Found
     put:
+      description: Updates a sleep session. Overlaps are rejected.
       parameters:
         - in: path
           name: id
@@ -189,6 +234,12 @@ paths:
       responses:
         '204':
           description: Updated
+        '400':
+          description: Invalid input (including overlaps)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           description: Unauthorized
           content:
@@ -261,7 +312,7 @@ paths:
                 $ref: '#/components/schemas/Error'
   /api/sleep/range:
     get:
-      summary: Daily sleep entries within an inclusive date range
+      summary: Sleep sessions within an inclusive date range
       parameters:
         - in: query
           name: from
@@ -279,7 +330,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: Entries in range ordered asc by date
+          description: Sessions in range ordered asc by date then wake_time
           content:
             application/json:
               schema:
@@ -543,6 +594,7 @@ components:
         date:
           type: string
           format: date
+          description: Wake date (local). If bed_time > wake_time, bed datetime is treated as previous day.
         bed_time:
           type: string
           format: time
@@ -603,6 +655,12 @@ components:
           type: string
         password:
           type: string
+    TimezonePayload:
+      type: object
+      properties:
+        timezone:
+          type: string
+          description: IANA timezone name (e.g., Asia/Tokyo)
     Error:
       type: object
       properties:

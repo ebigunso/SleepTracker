@@ -1,4 +1,4 @@
-type SleepListItem = {
+type SleepSession = {
   id: number;
   date: string; // YYYY-MM-DD
   bed_time: string;
@@ -11,15 +11,17 @@ type SleepListItem = {
 
 export const load = async ({ fetch, params }: any) => {
   const date = params.date as string;
-  let items: SleepListItem[] = [];
+  let items: SleepSession[] = [];
   try {
-    const res = await fetch(`/api/sleep/range?from=${date}&to=${date}`);
+    const res = await fetch(`/api/sleep/date/${date}`);
     if (res.ok) {
-      items = await res.json();
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        items = data as SleepSession[];
+      }
     }
   } catch {
     // ignore
   }
-  const item = items.length > 0 ? items[0] : null;
-  return { date, item };
+  return { date, items };
 };

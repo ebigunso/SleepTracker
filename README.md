@@ -120,6 +120,16 @@ OpenAPI specification is in openapi.yaml and includes:
 - /api/session endpoint for session probe (GET)
 - HEAD /api/health endpoint
 
+## Sleep sessions, wake dates, and timezones
+
+- Sleep entries use wake-date semantics: the `date` field is the wake date (local).
+  - If `bed_time` is later than `wake_time`, the bed datetime is treated as the previous calendar day.
+- Multiple sessions per wake date are supported. `GET /api/sleep/date/{date}` returns an array (possibly empty).
+- `GET /api/sleep/range` returns per-session rows ordered by date ascending, then `wake_time` ascending.
+- Overlap is rejected: any overlap, including end == start, returns 400 with an error message.
+- Duration calculations are timezone-aware (DST-aware). The API uses the saved user timezone or falls back to `APP_TZ` (default `Asia/Tokyo`).
+  - Set the timezone via `POST /api/settings/timezone` with `{ "timezone": "Asia/Tokyo" }` (IANA name).
+
 ## Building, formatting, linting, testing
 
 - Format:

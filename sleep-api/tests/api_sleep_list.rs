@@ -152,6 +152,19 @@ async fn test_sleep_list_recent_and_range() {
         .await;
     }
 
+    // Add a second session on 2025-06-15 to validate per-session range results
+    seed_sleep(
+        &client,
+        &addr.to_string(),
+        &csrf,
+        &session_cookie,
+        (2025, 6, 15),
+        (13, 0, 0),
+        (14, 0, 0),
+        5,
+    )
+    .await;
+
     // GET /sleep/recent?days=7 -> <= 7 items, desc by date
     let res = client
         .get(format!("http://{addr}/api/sleep/recent?days=7"))
@@ -167,7 +180,7 @@ async fn test_sleep_list_recent_and_range() {
         prev = item.date;
     }
 
-    // GET /sleep/range?from=2025-06-12&to=2025-06-15 -> 4 items, asc by date
+    // GET /sleep/range?from=2025-06-12&to=2025-06-15 -> 5 items, asc by date then wake_time
     let res = client
         .get(format!(
             "http://{addr}/api/sleep/range?from=2025-06-12&to=2025-06-15"
@@ -177,17 +190,33 @@ async fn test_sleep_list_recent_and_range() {
         .unwrap();
     assert_eq!(res.status(), 200, "range status {}", res.status());
     let range: Vec<SleepListItem> = res.json().await.unwrap();
-    assert_eq!(range.len(), 4, "range length {}", range.len());
-    let mut prev_a = range.first().unwrap().date;
+    assert_eq!(range.len(), 5, "range length {}", range.len());
+    let mut prev_date = range.first().unwrap().date;
+    let mut prev_wake = range.first().unwrap().wake_time;
     for item in range.iter().skip(1) {
-        assert!(
-            item.date >= prev_a,
-            "not asc: {} then {}",
-            prev_a,
-            item.date
-        );
-        prev_a = item.date;
+        if item.date == prev_date {
+            assert!(
+                item.wake_time >= prev_wake,
+                "not asc by wake_time: {} then {}",
+                prev_wake,
+                item.wake_time
+            );
+        } else {
+            assert!(
+                item.date >= prev_date,
+                "not asc by date: {} then {}",
+                prev_date,
+                item.date
+            );
+        }
+        prev_date = item.date;
+        prev_wake = item.wake_time;
     }
+    let sessions_on_15: Vec<_> = range
+        .iter()
+        .filter(|item| item.date == chrono::NaiveDate::from_ymd_opt(2025, 6, 15).unwrap())
+        .collect();
+    assert_eq!(sessions_on_15.len(), 2, "sessions on 2025-06-15");
 
     server.abort();
 }

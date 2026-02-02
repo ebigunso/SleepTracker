@@ -19,8 +19,80 @@ use crate::{
     db::Db,
     models::{DateIntensity, ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession},
 };
-use chrono::NaiveDate;
+use chrono::{NaiveDate, NaiveDateTime};
+use chrono_tz::Tz;
 use sqlx::{Sqlite, Transaction};
+use std::str::FromStr;
+
+#[doc = r#"Resolve the user timezone from app_settings (fallback to APP_TZ / Asia/Tokyo)."#]
+pub async fn get_user_timezone(db: &Db) -> Tz {
+    let fallback = crate::config::app_tz();
+    let result = sqlx::query_scalar::<Sqlite, String>(
+        "SELECT value FROM app_settings WHERE key = 'user_timezone' LIMIT 1",
+    )
+    .fetch_optional(db)
+    .await;
+
+    match result {
+        Ok(Some(value)) => Tz::from_str(&value).unwrap_or(fallback),
+        Ok(None) => fallback,
+        Err(e) => {
+            tracing::warn!(error = ?e, "failed to read user_timezone; falling back to APP_TZ");
+            fallback
+        }
+    }
+}
+
+#[doc = r#"Persist the user timezone in app_settings (upsert)."#]
+pub async fn set_user_timezone(db: &Db, timezone: &str) -> Result<(), sqlx::Error> {
+    sqlx::query::<Sqlite>(
+        "INSERT INTO app_settings(key, value) VALUES ('user_timezone', ?) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(timezone)
+    .execute(db)
+    .await?;
+    Ok(())
+}
+
+#[doc = r#"Return whether the given sleep window overlaps any existing session.
+
+Overlap is inclusive; end == start is treated as overlapping."#]
+pub async fn has_sleep_overlap(
+    db: &Db,
+    bed_dt: NaiveDateTime,
+    wake_dt: NaiveDateTime,
+    exclude_id: Option<i64>,
+) -> Result<bool, sqlx::Error> {
+    let base_sql = r#"
+        SELECT 1
+        FROM sleep_sessions s
+        WHERE ? >=
+            CASE
+                WHEN s.bed_time > s.wake_time
+                    THEN datetime(COALESCE(s.session_date, s.date) || ' ' || s.bed_time, '-1 day')
+                ELSE datetime(COALESCE(s.session_date, s.date) || ' ' || s.bed_time)
+            END
+          AND ? <= datetime(COALESCE(s.session_date, s.date) || ' ' || s.wake_time)
+    "#;
+
+    let exists = if let Some(id) = exclude_id {
+        sqlx::query_scalar::<Sqlite, i64>(&format!("{base_sql} AND s.id != ? LIMIT 1"))
+            .bind(wake_dt)
+            .bind(bed_dt)
+            .bind(id)
+            .fetch_optional(db)
+            .await?
+    } else {
+        sqlx::query_scalar::<Sqlite, i64>(&format!("{base_sql} LIMIT 1"))
+            .bind(wake_dt)
+            .bind(bed_dt)
+            .fetch_optional(db)
+            .await?
+    };
+
+    Ok(exists.is_some())
+}
 
 #[doc = r#"Insert a sleep session and its metrics in a single transaction.
 
@@ -65,11 +137,12 @@ pub async fn insert_sleep(
 ) -> Result<i64, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
-        "INSERT INTO sleep_sessions(date, bed_time, wake_time) VALUES (?, ?, ?)",
+        "INSERT INTO sleep_sessions(date, bed_time, wake_time, session_date) VALUES (?, ?, ?, ?)",
     )
     .bind(input.date)
     .bind(input.bed_time)
     .bind(input.wake_time)
+    .bind(input.date)
     .execute(&mut *tx)
     .await?;
     let id = res.last_insert_rowid();
@@ -87,9 +160,9 @@ pub async fn insert_sleep(
     Ok(id)
 }
 
-#[doc = r#"Find a sleep session by wake date.
+#[doc = r#"List sleep sessions by wake date.
 
-Returns `Ok(None)` if no session exists for the provided date.
+Returns an empty list if no sessions exist for the provided date.
 
 See the example on [`insert_sleep`].
 
@@ -99,13 +172,22 @@ See the example on [`insert_sleep`].
 pub async fn find_sleep_by_date(
     db: &Db,
     date: NaiveDate,
-) -> Result<Option<SleepSession>, sqlx::Error> {
+) -> Result<Vec<SleepSession>, sqlx::Error> {
     sqlx::query_as::<Sqlite, SleepSession>(
-        r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
-           FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.date = ?"#,
+        r#"SELECT s.id,
+                  COALESCE(s.session_date, s.date) AS date,
+                  s.bed_time,
+                  s.wake_time,
+                  m.latency_min,
+                  m.awakenings,
+                  m.quality
+           FROM sleep_sessions s
+           JOIN sleep_metrics m ON m.session_id = s.id
+           WHERE COALESCE(s.session_date, s.date) = ?
+           ORDER BY s.wake_time ASC"#,
     )
     .bind(date)
-    .fetch_optional(db)
+    .fetch_all(db)
     .await
 }
 
@@ -120,8 +202,16 @@ See the example on [`insert_sleep`].
 "#]
 pub async fn find_sleep_by_id(db: &Db, id: i64) -> Result<Option<SleepSession>, sqlx::Error> {
     sqlx::query_as::<Sqlite, SleepSession>(
-        r#"SELECT s.id, s.date, s.bed_time, s.wake_time, m.latency_min, m.awakenings, m.quality
-           FROM sleep_sessions s JOIN sleep_metrics m ON m.session_id = s.id WHERE s.id = ?"#,
+        r#"SELECT s.id,
+                  COALESCE(s.session_date, s.date) AS date,
+                  s.bed_time,
+                  s.wake_time,
+                  m.latency_min,
+                  m.awakenings,
+                  m.quality
+           FROM sleep_sessions s
+           JOIN sleep_metrics m ON m.session_id = s.id
+           WHERE s.id = ?"#,
     )
     .bind(id)
     .fetch_optional(db)
@@ -144,11 +234,12 @@ pub async fn update_sleep(
 ) -> Result<bool, sqlx::Error> {
     let mut tx: Transaction<'_, Sqlite> = db.begin().await?;
     let res = sqlx::query::<Sqlite>(
-        "UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=? WHERE id=?",
+        "UPDATE sleep_sessions SET date=?, bed_time=?, wake_time=?, session_date=? WHERE id=?",
     )
     .bind(input.date)
     .bind(input.bed_time)
     .bind(input.wake_time)
+    .bind(input.date)
     .bind(id)
     .execute(&mut *tx)
     .await?;
@@ -252,24 +343,25 @@ pub async fn list_exercise_intensity(
     .await
 }
 
-#[doc = r#"List daily sleep entries in the inclusive range [from, to] ordered by date ASC."#]
+#[doc = r#"List sleep sessions in the inclusive range [from, to] ordered by date ASC."#]
 pub async fn list_sleep_range(
     db: &Db,
     from: NaiveDate,
     to: NaiveDate,
 ) -> Result<Vec<SleepListItem>, sqlx::Error> {
     sqlx::query_as::<Sqlite, SleepListItem>(
-        r#"SELECT id,
-                   wake_date AS date,
-                   bed_time,
-                   wake_time,
-                   latency_min,
-                   awakenings,
-                   quality,
-                   duration_min
-          FROM v_daily_sleep
-          WHERE wake_date BETWEEN ? AND ?
-          ORDER BY date ASC"#,
+        r#"SELECT s.id,
+                   COALESCE(s.session_date, s.date) AS date,
+                   s.bed_time,
+                   s.wake_time,
+                   m.latency_min,
+                   m.awakenings,
+                   m.quality,
+                   m.duration_min
+          FROM sleep_sessions s
+          JOIN sleep_metrics m ON m.session_id = s.id
+          WHERE COALESCE(s.session_date, s.date) BETWEEN ? AND ?
+          ORDER BY date ASC, s.wake_time ASC"#,
     )
     .bind(from)
     .bind(to)

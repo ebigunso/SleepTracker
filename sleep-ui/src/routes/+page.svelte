@@ -2,13 +2,12 @@
   import WeekRow from '$lib/components/WeekRow.svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import type { SleepListItem } from '$lib/api';
+  import type { SleepSession } from '$lib/api';
   import { deleteSleep } from '$lib/api';
   import { recentSleep, exerciseIntensityByDate, removeRecentById } from '$lib/stores/sleep';
-  import { toMinutes, type Segment } from '$lib/utils/sleep';
 
   export let data: {
-    items: SleepListItem[];
+    items: SleepSession[];
     intensities?: { date: string; intensity: 'none' | 'light' | 'hard' }[];
     from: string;
     to: string;
@@ -44,31 +43,16 @@
     return new Date(`${date}T00:00:00`);
   }
 
+  function sessionDate(item: SleepSession): string {
+    return item.session_date ?? item.date;
+  }
+
   function shiftIsoDate(date: string, days: number): string {
     const d = parseDate(date);
     d.setDate(d.getDate() + days);
     return isoDate(d);
   }
 
-  function isCrossMidnight(item: SleepListItem): boolean {
-    const bedMin = toMinutes(item.bed_time);
-    const wakeMin = toMinutes(item.wake_time);
-    if (!Number.isFinite(bedMin) || !Number.isFinite(wakeMin)) return false;
-    return bedMin > wakeMin;
-  }
-
-  function segmentsForDate(item: SleepListItem, date: string): Segment[] | undefined {
-    const bedMin = toMinutes(item.bed_time);
-    const wakeMin = toMinutes(item.wake_time);
-    if (!Number.isFinite(bedMin) || !Number.isFinite(wakeMin)) return undefined;
-    if (bedMin <= wakeMin) {
-      return date === item.date ? [{ start: bedMin, end: wakeMin }] : undefined;
-    }
-    const prevDate = shiftIsoDate(item.date, -1);
-    if (date === item.date) return [{ start: 0, end: wakeMin }];
-    if (date === prevDate) return [{ start: bedMin, end: 24 * 60 }];
-    return undefined;
-  }
 
   function buildRangeDates(from: string, to: string): string[] {
     const start = parseDate(from);
@@ -92,15 +76,9 @@
   $: jumpTo = data.to;
 
   $: rows = rangeDates.map((date) => {
-    const directItem = recentItems.find((x) => x.date === date) ?? null;
-    const crossItem =
-      directItem
-        ? null
-        : recentItems.find((x) => isCrossMidnight(x) && shiftIsoDate(x.date, -1) === date) ?? null;
-    const item = directItem ?? crossItem;
+    const items = recentItems.filter((x) => sessionDate(x) === date);
     const intensity = intensityMap[date];
-    const segments = item ? segmentsForDate(item, date) : undefined;
-    return { date, item, intensity, segments };
+    return { date, items, intensity };
   });
 
   async function handleDelete(e: CustomEvent<{ id: number; date: string }>) {
@@ -188,9 +166,8 @@
     {#each rows as r (r.date)}
       <WeekRow
         date={r.date}
-        item={r.item}
+        items={r.items}
         intensity={r.intensity}
-        segments={r.segments}
         on:delete={handleDelete}
       />
     {/each}

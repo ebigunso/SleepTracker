@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
-  import type { SleepInput, ExerciseUpsert, SleepListItem } from '$lib/api';
+  import type { SleepInput, ExerciseUpsert, SleepSession } from '$lib/api';
   import { createSleep, updateSleep, upsertExercise, apiPost } from '$lib/api';
   import { upsertRecent, setIntensity } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
+  import { computeDurationMin } from '$lib/utils/sleep';
 
   /**
    * Props
@@ -20,7 +21,7 @@
   export let initialIntensity: 'none' | 'light' | 'hard' = 'none';
   export let initialNotes: string = '';
 
-  const dispatch = createEventDispatcher<{ saved: SleepListItem; deleted: void }>();
+  const dispatch = createEventDispatcher<{ saved: SleepSession; deleted: void }>();
 
   let date = initialDate ?? today();
   let bed = normalizeTime(initialBed ?? '22:00:00');
@@ -60,19 +61,6 @@
     return '00:00:00';
   }
 
-  function toMinutes(t: string): number {
-    const [hh, mm, ss] = t.split(':').map((v) => parseInt(v, 10));
-    return (hh || 0) * 60 + (mm || 0);
-  }
-
-  function computeDurationMin(bedTime: string, wakeTime: string): number {
-    const bedMin = toMinutes(bedTime);
-    const wakeMin = toMinutes(wakeTime);
-    if (bedMin <= wakeMin) return wakeMin - bedMin;
-    // wrap across midnight
-    return (24 * 60 - bedMin) + wakeMin;
-  }
-
   function shouldWarn(durationMin: number): boolean {
     return durationMin < 120 || durationMin > 14 * 60;
   }
@@ -88,8 +76,7 @@
     };
   }
 
-  function toListItem(input: SleepInput, idNum: number): SleepListItem {
-    // Build a client-side projection to update dashboard without refetch.
+  function toSessionItem(input: SleepInput, idNum: number): SleepSession {
     const duration = computeDurationMin(input.bed_time, input.wake_time);
     return {
       id: idNum,
@@ -137,7 +124,7 @@
         }
       }
 
-      const item = toListItem(input, savedId);
+      const item = toSessionItem(input, savedId);
       upsertRecent(item);
       pushToast({ type: 'success', message: mode === 'create' ? 'Saved' : 'Updated' });
       dispatch('saved', item);
