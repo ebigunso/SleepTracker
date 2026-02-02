@@ -64,9 +64,9 @@
       : 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200';
 </script>
 
-<div class="flex items-center gap-3 py-3 border-b border-gray-200">
-  <div class="w-28 shrink-0 text-sm text-gray-700 font-semibold">
-    <a class="text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
+<div class="flex flex-col xs:flex-row xs:items-center gap-3 py-3 border-b border-gray-200">
+  <div class="w-full xs:w-28 shrink-0 text-sm text-gray-700 font-semibold">
+    <a class="focus-ring touch-target inline-flex items-center text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
   </div>
 
   {#if sessionCount > 0}
@@ -94,14 +94,14 @@
             </div>
             <div class="mt-3 flex gap-2 justify-end">
               <button
-                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
+                class="focus-ring touch-target inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
                 on:click={() => onEdit(item.id, sessionDateFor(item))}
                 aria-label="Edit"
               >
                 Edit
               </button>
               <button
-                class="inline-flex items-center rounded-md bg-rose-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-600"
+                class="focus-ring touch-target inline-flex items-center rounded-md bg-rose-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-600"
                 on:click={() => onDelete(item.id)}
                 aria-label="Delete"
               >
@@ -112,19 +112,19 @@
         {/each}
       </div>
     </div>
-    <div class="flex gap-2 shrink-0">
+    <div class="flex gap-2 shrink-0 w-full xs:w-auto">
       <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+        class="focus-ring touch-target inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
         on:click={onAdd}
       >
         Add entry
       </button>
     </div>
   {:else}
-    <div class="flex-1 text-sm text-gray-500">No entry</div>
-    <div class="shrink-0">
+    <div class="flex-1 state-card state-card--empty text-sm">No entry</div>
+    <div class="shrink-0 w-full xs:w-auto">
       <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
+        class="focus-ring touch-target inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
         on:click={onAdd}
       >
         Add entry

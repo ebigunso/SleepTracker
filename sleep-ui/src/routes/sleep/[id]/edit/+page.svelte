@@ -85,7 +85,7 @@
       <p class="text-sm text-slate-500">Update details or remove this session.</p>
     </div>
     <button
-      class="inline-flex items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
+      class="focus-ring touch-target inline-flex items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
       on:click={onDelete}
     >
       Delete

@@ -41,14 +41,14 @@
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-slate-50">
+<div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
   <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200/70">
     <div class="mb-5">
       <h2 class="text-2xl font-semibold text-slate-900">Welcome back</h2>
       <p class="text-sm text-slate-500">Sign in to track your sleep and trends.</p>
     </div>
     {#if errorMsg}
-      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <div class="state-card state-card--error mb-3" role="alert" aria-live="polite">
         {errorMsg}
       </div>
     {/if}
@@ -79,7 +79,7 @@
       </div>
       <button
         type="submit"
-        class="w-full inline-flex items-center justify-center rounded-full bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+        class="focus-ring touch-target w-full inline-flex items-center justify-center rounded-full bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
         disabled={loading}
       >
         {#if loading}Signing in...{:else}Sign in{/if}

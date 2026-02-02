@@ -162,12 +162,12 @@
 </script>
 
 {#if errorMsg}
-  <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+  <div class="state-card state-card--error mb-3" role="alert" aria-live="polite">
     {errorMsg}
   </div>
 {/if}
 
-<form on:submit={onSubmit} class="space-y-4">
+<form on:submit={onSubmit} class="space-y-4" aria-busy={loading}>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
       <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
@@ -213,7 +213,7 @@
   </div>
 
   <div class="flex justify-end gap-2">
-    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60" disabled={loading}>
+    <button type="submit" class="focus-ring touch-target inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60" disabled={loading}>
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
     </button>
   </div>
