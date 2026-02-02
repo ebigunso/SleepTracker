@@ -23,10 +23,10 @@
   }
 </script>
 
-<div class="bar relative h-3 w-full rounded bg-gray-200 overflow-hidden" aria-label="sleep-bar">
+<div class="bar relative h-3 w-full rounded-md bg-indigo-100/80 ring-1 ring-inset ring-indigo-200 overflow-hidden" aria-label="sleep-bar">
   {#each renderSegments as seg}
     <div
-      class="absolute h-full rounded bg-indigo-500"
+      class="absolute h-full rounded-md bg-indigo-600"
       style={`left:${pct(seg.start)}; width:${pct(seg.end - seg.start)};`}
     ></div>
   {/each}

@@ -3,4 +3,136 @@
 /* App-level tweaks */
 :root {
   color-scheme: light;
+  --color-primary: #4f46e5;
+  --color-secondary: #0ea5e9;
+  --color-accent: #22c55e;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: #e2e8f0;
+  --color-ring: rgba(79, 70, 229, 0.4);
+  --radius-base: 0.75rem;
+  --shadow-card: 0 10px 30px -20px rgba(15, 23, 42, 0.35);
+}
+
+@layer base {
+  html {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-text);
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--color-text);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    color: var(--color-text-muted);
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-secondary);
+  }
+
+  button,
+  [type="button"],
+  [type="submit"],
+  [type="reset"] {
+    font-weight: 600;
+    border-radius: calc(var(--radius-base) - 0.25rem);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  input,
+  textarea,
+  select {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: calc(var(--radius-base) - 0.25rem);
+    padding: 0.6rem 0.75rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid transparent;
+    box-shadow: 0 0 0 3px var(--color-ring);
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    box-shadow: var(--shadow-card);
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: #ffffff;
+  }
+
+  .btn-primary:hover {
+    background: #4338ca;
+    box-shadow: 0 12px 24px -16px rgba(79, 70, 229, 0.6);
+  }
+
+  .btn-secondary {
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--color-secondary);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(14, 165, 233, 0.2);
+  }
+
+  .btn-accent {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+  }
+
+  .btn-accent:hover {
+    background: rgba(34, 197, 94, 0.22);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--color-primary);
+  }
 }

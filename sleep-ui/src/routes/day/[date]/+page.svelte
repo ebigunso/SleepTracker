@@ -54,11 +54,14 @@
   $: totalAwakenings = sortedItems.reduce((sum, it) => sum + (it.awakenings ?? 0), 0);
 </script>
 
-<section class="space-y-4">
-  <div class="flex items-center justify-between">
-    <h2 class="text-xl font-semibold text-gray-900">Day view: {data.date}</h2>
+<section class="space-y-6">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-2xl font-semibold text-slate-900">Day view</h2>
+      <p class="text-sm text-slate-500">{data.date}</p>
+    </div>
     <button
-      class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+      class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
       on:click={add}
     >
       Add session
@@ -66,29 +69,29 @@
   </div>
 
   {#if sessionCount > 0}
-    <div class="rounded-md bg-white shadow p-4 space-y-3">
-      <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-        <span>Sessions: <span class="font-medium">{sessionCount}</span></span>
-        <span>Total: <span class="font-medium">{fmtMin(totalDuration)}</span></span>
-        <span>Avg Quality: <span class="font-medium">{avgQuality ?? '—'}</span></span>
-        <span>Avg Latency: <span class="font-medium">{avgLatency ?? '—'}m</span></span>
-        <span>Awakenings: <span class="font-medium">{totalAwakenings}</span></span>
+    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 space-y-4">
+      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <span>Sessions: <span class="font-semibold text-slate-700">{sessionCount}</span></span>
+        <span>Total: <span class="font-semibold text-slate-700">{fmtMin(totalDuration)}</span></span>
+        <span>Avg Quality: <span class="font-semibold text-slate-700">{avgQuality ?? '—'}</span></span>
+        <span>Avg Latency: <span class="font-semibold text-slate-700">{avgLatency ?? '—'}m</span></span>
+        <span>Awakenings: <span class="font-semibold text-slate-700">{totalAwakenings}</span></span>
       </div>
-      <div class="space-y-3">
+      <div class="space-y-4">
         {#each sortedItems as item (item.id)}
-          <div class="rounded border border-gray-200 bg-white p-3">
+          <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
-            <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm text-gray-700">
-              <div><span class="text-gray-500">Bed:</span> <span class="font-medium">{item.bed_time}</span></div>
-              <div><span class="text-gray-500">Wake:</span> <span class="font-medium">{item.wake_time}</span></div>
-              <div><span class="text-gray-500">Duration:</span> <span class="font-medium">{fmtMin(durationFor(item))}</span></div>
-              <div><span class="text-gray-500">Latency:</span> <span class="font-medium">{item.latency_min}m</span></div>
-              <div><span class="text-gray-500">Awakenings:</span> <span class="font-medium">{item.awakenings}</span></div>
-              <div><span class="text-gray-500">Quality:</span> <span class="font-medium">{item.quality}</span></div>
+            <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-700 sm:grid-cols-3">
+              <div><span class="text-slate-500">Bed:</span> <span class="font-medium">{item.bed_time}</span></div>
+              <div><span class="text-slate-500">Wake:</span> <span class="font-medium">{item.wake_time}</span></div>
+              <div><span class="text-slate-500">Duration:</span> <span class="font-medium">{fmtMin(durationFor(item))}</span></div>
+              <div><span class="text-slate-500">Latency:</span> <span class="font-medium">{item.latency_min}m</span></div>
+              <div><span class="text-slate-500">Awakenings:</span> <span class="font-medium">{item.awakenings}</span></div>
+              <div><span class="text-slate-500">Quality:</span> <span class="font-medium">{item.quality}</span></div>
             </div>
-            <div class="mt-3 flex justify-end">
+            <div class="mt-4 flex justify-end">
               <button
-                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                 on:click={() => edit(item.id, item.date)}
               >
                 Edit
@@ -99,7 +102,7 @@
       </div>
     </div>
   {:else}
-    <div class="rounded-md border border-gray-200 bg-white p-4 text-gray-700">
+    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">
       No sleep entry for this date.
     </div>
   {/if}

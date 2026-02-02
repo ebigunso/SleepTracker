@@ -48,23 +48,39 @@
 </script>
 
 <!-- App shell -->
-<div class="min-h-screen bg-gray-50 text-gray-900">
-  <header class="border-b bg-white">
-    <div class="mx-auto max-w-3xl px-4 py-3 flex items-center justify-between">
-      <h1 class="text-lg font-semibold">SleepTracker</h1>
-      <nav class="flex items-center gap-3">
+<div class="min-h-screen bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur">
+    <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+      <div class="flex items-center gap-3">
+        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
+        <div>
+          <h1 class="text-lg font-semibold text-slate-900">SleepTracker</h1>
+          <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
+        </div>
+      </div>
+      <nav class="flex flex-wrap items-center gap-2 text-sm">
         {#if data.session}
-          <a href="/" class="text-sm text-gray-700 hover:text-gray-900">Home</a>
-          <a href="/trends" class="text-sm text-gray-700 hover:text-gray-900">Trends</a>
-          <button class="text-sm text-red-600 hover:text-red-700" on:click|preventDefault={logout}>Logout</button>
+          <a href="/" class="rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Home</a>
+          <a href="/trends" class="rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Trends</a>
+          <button
+            class="rounded-full px-3 py-1.5 text-rose-600 hover:bg-rose-50"
+            on:click|preventDefault={logout}
+          >
+            Logout
+          </button>
         {:else}
-          <a href="/login" class="text-sm text-blue-600 hover:text-blue-700">Login</a>
+          <a
+            href="/login"
+            class="rounded-full bg-indigo-600 px-4 py-1.5 font-semibold text-white shadow-sm hover:bg-indigo-700"
+          >
+            Login
+          </a>
         {/if}
       </nav>
     </div>
   </header>
 
-  <main class="mx-auto max-w-3xl px-4 py-6">
+  <main class="mx-auto max-w-5xl px-4 py-8">
     <slot />
   </main>
 </div>
@@ -72,11 +88,11 @@
 <!-- Toasts -->
 <div class="fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2">
   {#each $toasts as t (t.id)}
-    <div class="rounded-md px-4 py-3 shadow bg-white border w-[95%] max-w-md flex items-start gap-3">
-      <span class="text-sm {t.type === 'error' ? 'text-red-700' : t.type === 'success' ? 'text-green-700' : 'text-gray-700'}">
+    <div class="flex w-[95%] max-w-md items-start gap-3 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg">
+      <span class="text-sm {t.type === 'error' ? 'text-rose-600' : t.type === 'success' ? 'text-emerald-600' : 'text-slate-700'}">
         {t.message}
       </span>
-      <button class="ml-auto text-xs text-gray-500 hover:text-gray-800" on:click={() => dismissToast(t.id)}>Dismiss</button>
+      <button class="ml-auto text-xs text-slate-500 hover:text-slate-800" on:click={() => dismissToast(t.id)}>Dismiss</button>
     </div>
   {/each}
 </div>

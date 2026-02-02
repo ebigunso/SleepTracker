@@ -13,6 +13,11 @@
 </script>
 
 <section class="space-y-4">
-  <h2 class="text-xl font-semibold text-gray-900">New sleep entry</h2>
-  <SleepForm mode="create" {initialDate} on:saved={onSaved} />
+  <div>
+    <h2 class="text-2xl font-semibold text-slate-900">New sleep entry</h2>
+    <p class="text-sm text-slate-500">Log bedtime, wake time, and how you feel.</p>
+  </div>
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+    <SleepForm mode="create" {initialDate} on:saved={onSaved} />
+  </div>
 </section>

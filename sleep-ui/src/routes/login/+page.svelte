@@ -41,20 +41,23 @@
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50">
-  <div class="w-full max-w-sm bg-white shadow rounded-lg p-6">
-    <h2 class="text-xl font-semibold mb-4 text-gray-900">Sign in</h2>
+<div class="min-h-screen flex items-center justify-center bg-slate-50">
+  <div class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200/70">
+    <div class="mb-5">
+      <h2 class="text-2xl font-semibold text-slate-900">Welcome back</h2>
+      <p class="text-sm text-slate-500">Sign in to track your sleep and trends.</p>
+    </div>
     {#if errorMsg}
-      <div class="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
         {errorMsg}
       </div>
     {/if}
-    <form on:submit={submit} class="space-y-3">
+    <form on:submit={submit} class="space-y-4">
       <div>
-        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
         <input
           id="email"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          class="mt-1 block w-full rounded-md border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           type="email"
           name="email"
           bind:value={email}
@@ -63,10 +66,10 @@
         />
       </div>
       <div>
-        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
         <input
           id="password"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          class="mt-1 block w-full rounded-md border-slate-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           type="password"
           name="password"
           bind:value={password}
@@ -76,7 +79,7 @@
       </div>
       <button
         type="submit"
-        class="w-full inline-flex items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+        class="w-full inline-flex items-center justify-center rounded-full bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
         disabled={loading}
       >
         {#if loading}Signing in...{:else}Sign in{/if}

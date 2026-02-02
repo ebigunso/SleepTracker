@@ -122,31 +122,34 @@
   }
 </script>
 
-<section class="space-y-4">
-  <header class="flex items-end justify-between gap-4">
-    <h2 class="text-xl font-semibold text-gray-900">Trends</h2>
-    <form class="flex items-end gap-2" on:submit={refresh}>
+<section class="space-y-6">
+  <header class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <h2 class="text-2xl font-semibold text-slate-900">Trends</h2>
+      <p class="text-sm text-slate-500">Review sleep duration and quality over time.</p>
+    </div>
+    <form class="flex flex-wrap items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm" on:submit={refresh}>
       <div>
-        <label for="from-date" class="block text-xs text-gray-600">From</label>
+        <label for="from-date" class="block text-xs text-slate-500">From</label>
         <input
           id="from-date"
           type="date"
           bind:value={from}
-          class="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          class="rounded-md border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
       <div>
-        <label for="to-date" class="block text-xs text-gray-600">To</label>
+        <label for="to-date" class="block text-xs text-slate-500">To</label>
         <input
           id="to-date"
           type="date"
           bind:value={to}
-          class="rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+          class="rounded-md border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
       </div>
       <button
         type="submit"
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
         disabled={loading}
       >
         {#if loading}Loading...{:else}Apply{/if}
@@ -155,12 +158,12 @@
   </header>
 
   {#if errorMsg}
-    <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
       {errorMsg}
     </div>
   {/if}
 
-  <div class="rounded-lg border bg-white p-3">
+  <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     <canvas bind:this={canvasEl} height="200"></canvas>
   </div>
 </section>

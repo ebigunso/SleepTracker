@@ -79,26 +79,31 @@
 </script>
 
 <section class="space-y-4">
-  <div class="flex items-center justify-between">
-    <h2 class="text-xl font-semibold text-gray-900">Edit sleep entry</h2>
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-2xl font-semibold text-slate-900">Edit sleep entry</h2>
+      <p class="text-sm text-slate-500">Update details or remove this session.</p>
+    </div>
     <button
-      class="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+      class="inline-flex items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
       on:click={onDelete}
     >
       Delete
     </button>
   </div>
 
-  <SleepForm
-    mode="edit"
-    {id}
-    {initialDate}
-    {initialBed}
-    {initialWake}
-    {initialLatency}
-    {initialAwakenings}
-    {initialQuality}
-    {initialIntensity}
-    on:saved={onSaved}
-  />
+  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+    <SleepForm
+      mode="edit"
+      {id}
+      {initialDate}
+      {initialBed}
+      {initialWake}
+      {initialLatency}
+      {initialAwakenings}
+      {initialQuality}
+      {initialIntensity}
+      on:saved={onSaved}
+    />
+  </div>
 </section>
