@@ -136,8 +136,7 @@ async fn test_sleep_flow() {
         awakenings: 1,
         quality: Quality(4),
     };
-    let id = create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &input)
-        .await;
+    let id = create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &input).await;
 
     // Fetch by id and verify
     let res = client
@@ -282,7 +281,14 @@ async fn test_sleep_multi_sessions_and_wake_date_lookup() {
         quality: Quality(3),
     };
 
-    create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &overnight).await;
+    create_sleep_session(
+        &client,
+        &addr.to_string(),
+        &csrf,
+        &session_cookie,
+        &overnight,
+    )
+    .await;
     create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &nap).await;
 
     let res = client
@@ -353,7 +359,14 @@ async fn test_sleep_overlap_rejection_inclusive() {
         awakenings: 0,
         quality: Quality(4),
     };
-    create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &overnight).await;
+    create_sleep_session(
+        &client,
+        &addr.to_string(),
+        &csrf,
+        &session_cookie,
+        &overnight,
+    )
+    .await;
 
     let overlap = SleepInput {
         date: wake_date,
