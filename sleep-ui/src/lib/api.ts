@@ -154,6 +154,7 @@ export interface SleepListItem {
   awakenings: number;
   quality: number;
   duration_min: number | null;
+  session_count?: number | null;
 }
 
 export interface SleepInput {
@@ -167,6 +168,8 @@ export interface SleepInput {
 
 export interface SleepSession extends SleepInput {
   id: number;
+  duration_min?: number | null;
+  session_date?: IsoDate | null;
 }
 
 export interface ExerciseUpsert {
@@ -199,6 +202,22 @@ export async function updateSleep(id: number, input: SleepInput): Promise<void> 
 
 export async function deleteSleep(id: number): Promise<void> {
   await apiDelete(`/api/sleep/${id}`);
+}
+
+export async function setUserTimezoneIfSupported(timezone: string): Promise<boolean> {
+  if (!timezone) return false;
+  try {
+    const res = await apiFetch('/api/settings/timezone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timezone })
+    });
+    if (res.ok) return true;
+    if (res.status === 404 || res.status === 405 || res.status === 501) return false;
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 export async function getExerciseIntensity(from: IsoDate, to: IsoDate): Promise<{ date: IsoDate; intensity: 'none' | 'light' | 'hard' }[]> {

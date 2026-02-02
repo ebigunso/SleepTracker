@@ -1,11 +1,30 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   import { toasts, pushToast, dismissToast } from '$lib/stores/toast';
-  import { readCsrfToken } from '$lib/api';
+  import { readCsrfToken, setUserTimezoneIfSupported } from '$lib/api';
   import '../app.css';
   const AUTH_PREFIX = '/api';
 
   export let data: { session?: boolean; pathname?: string };
+
+  onMount(async () => {
+    if (!browser || !data.session) return;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!tz) return;
+      const key = 'sleeptracker.userTimezone';
+      const last = localStorage.getItem(key);
+      if (last === tz) return;
+      const ok = await setUserTimezoneIfSupported(tz);
+      if (ok) {
+        localStorage.setItem(key, tz);
+      }
+    } catch {
+      // ignore
+    }
+  });
 
 
   async function logout() {

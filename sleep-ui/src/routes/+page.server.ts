@@ -1,7 +1,7 @@
 
-type SleepListItem = {
+type SleepSession = {
   id: number;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD (wake date)
   bed_time: string;
   wake_time: string;
   latency_min: number;
@@ -44,7 +44,7 @@ function diffDays(from: Date, to: Date): number {
 }
 
 export const load = async ({ fetch, url }: any) => {
-  let items: SleepListItem[] = [];
+  let items: SleepSession[] = [];
   let intensities: { date: string; intensity: 'none' | 'light' | 'hard' }[] = [];
 
   const today = startOfDay(new Date());
