@@ -22,6 +22,10 @@
     goto(`/sleep/${id}/edit?date=${encodeURIComponent(itemDate)}`);
   }
 
+  function sessionDateFor(item: SleepSession): string {
+    return item.session_date ?? item.date;
+  }
+
   function onDelete(id: number) {
     dispatch('delete', { id, date });
   }
@@ -91,7 +95,7 @@
             <div class="mt-2 flex gap-2 justify-end">
               <button
                 class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-                on:click={() => onEdit(item.id, item.date)}
+                on:click={() => onEdit(item.id, sessionDateFor(item))}
                 aria-label="Edit"
               >
                 Edit

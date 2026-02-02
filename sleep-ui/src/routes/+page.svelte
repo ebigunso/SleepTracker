@@ -43,6 +43,10 @@
     return new Date(`${date}T00:00:00`);
   }
 
+  function sessionDate(item: SleepSession): string {
+    return item.session_date ?? item.date;
+  }
+
   function shiftIsoDate(date: string, days: number): string {
     const d = parseDate(date);
     d.setDate(d.getDate() + days);
@@ -72,7 +76,7 @@
   $: jumpTo = data.to;
 
   $: rows = rangeDates.map((date) => {
-    const items = recentItems.filter((x) => x.date === date);
+    const items = recentItems.filter((x) => sessionDate(x) === date);
     const intensity = intensityMap[date];
     return { date, items, intensity };
   });
