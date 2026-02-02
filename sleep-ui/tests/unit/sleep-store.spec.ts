@@ -34,15 +34,16 @@ describe('recentSleep store', () => {
     expect(values[0]).toEqual(updated);
   });
 
-  it('replaces entry with same date while keeping newest data', () => {
-    const first = makeItem({ id: 11, date: '2026-02-01', quality: 2 });
-    const second = makeItem({ id: 12, date: '2026-02-01', quality: 5 });
+  it('keeps multiple entries for the same date and sorts by wake time desc', () => {
+    const first = makeItem({ id: 11, date: '2026-02-01', wake_time: '06:30:00', quality: 2 });
+    const second = makeItem({ id: 12, date: '2026-02-01', wake_time: '07:00:00', quality: 5 });
 
     upsertRecent(first);
     upsertRecent(second);
 
     const values = get(recentSleep);
-    expect(values).toHaveLength(1);
+    expect(values).toHaveLength(2);
     expect(values[0]).toEqual(second);
+    expect(values[1]).toEqual(first);
   });
 });
