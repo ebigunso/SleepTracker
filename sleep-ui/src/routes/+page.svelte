@@ -112,24 +112,24 @@
   }
 </script>
 
-<section class="space-y-4">
-  <div class="flex flex-wrap items-start justify-between gap-3">
+<section class="space-y-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h2 class="text-xl font-semibold text-gray-900" data-testid="dashboard-heading">
+      <h2 class="text-2xl font-semibold text-slate-900" data-testid="dashboard-heading">
         Last {windowDays} days
       </h2>
-      <p class="text-sm text-gray-600">{data.from} – {data.to}</p>
+      <p class="text-sm text-slate-500">{data.from} – {data.to}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
         on:click={goPrev}
       >
         Prev
       </button>
       <button
-        class={`inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold ring-1 ring-inset ${
-          canNext ? 'bg-white text-gray-700 ring-gray-300 hover:bg-gray-50' : 'bg-gray-100 text-gray-400 ring-gray-200'
+        class={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
+          canNext ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border border-slate-100 bg-slate-100 text-slate-400'
         }`}
         on:click={goNext}
         disabled={!canNext}
@@ -137,7 +137,7 @@
         Next
       </button>
       <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+        class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
         on:click={quickLog}
       >
         Quick Log
@@ -145,24 +145,24 @@
     </div>
   </div>
 
-  <div class="flex flex-wrap items-center gap-2 text-sm">
-    <label class="text-gray-600" for="jump-date">Jump to date</label>
+  <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
+    <label class="text-slate-500" for="jump-date">Jump to date</label>
     <input
       id="jump-date"
       type="date"
-      class="rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-700"
+      class="rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-700 focus:border-indigo-500 focus:ring-indigo-500"
       bind:value={jumpTo}
       max={data.today}
     />
     <button
-      class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+      class="inline-flex items-center rounded-full bg-sky-500 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-600"
       on:click={jumpToDate}
     >
       Go
     </button>
   </div>
 
-  <div class="rounded-md bg-white shadow divide-y divide-gray-200">
+  <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70 divide-y divide-slate-200/70">
     {#each rows as r (r.date)}
       <WeekRow
         date={r.date}

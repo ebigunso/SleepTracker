@@ -58,15 +58,15 @@
 
   const badgeColor =
     intensity === 'hard'
-      ? 'bg-red-100 text-red-700'
+      ? 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-200'
       : intensity === 'light'
-      ? 'bg-emerald-100 text-emerald-700'
-      : 'bg-gray-100 text-gray-700';
+      ? 'bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200'
+      : 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200';
 </script>
 
-<div class="flex items-center gap-3 py-2 border-b border-gray-200">
-  <div class="w-28 shrink-0 text-sm text-gray-700 font-medium">
-    <a class="text-indigo-600 hover:text-indigo-700" href={`/day/${date}`}>{date}</a>
+<div class="flex items-center gap-3 py-3 border-b border-gray-200">
+  <div class="w-28 shrink-0 text-sm text-gray-700 font-semibold">
+    <a class="text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
   </div>
 
   {#if sessionCount > 0}
@@ -78,30 +78,30 @@
         <span>Avg Latency: <span class="font-medium">{avgLatency ?? '—'}m</span></span>
         <span>Awakenings: <span class="font-medium">{totalAwakenings}</span></span>
         {#if intensity}
-          <span class={`inline-flex items-center rounded px-1.5 py-0.5 ${badgeColor}`}>Exercise: {intensity}</span>
+          <span class={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${badgeColor}`}>Exercise: {intensity}</span>
         {/if}
       </div>
       <div class="space-y-2">
         {#each sortedItems as item (item.id)}
-          <div class="rounded border border-gray-200 bg-white p-2">
+          <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
             <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
-            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
               <span>Bed: <span class="font-medium">{item.bed_time}</span></span>
               <span>Wake: <span class="font-medium">{item.wake_time}</span></span>
               <span>Duration: <span class="font-medium">{fmtMin(durationFor(item))}</span></span>
               <span>Quality: <span class="font-medium">{item.quality}</span></span>
               <span>Latency: <span class="font-medium">{item.latency_min}m</span></span>
             </div>
-            <div class="mt-2 flex gap-2 justify-end">
+            <div class="mt-3 flex gap-2 justify-end">
               <button
-                class="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
                 on:click={() => onEdit(item.id, sessionDateFor(item))}
                 aria-label="Edit"
               >
                 Edit
               </button>
               <button
-                class="inline-flex items-center rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700"
+                class="inline-flex items-center rounded-md bg-rose-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-600"
                 on:click={() => onDelete(item.id)}
                 aria-label="Delete"
               >
@@ -114,7 +114,7 @@
     </div>
     <div class="flex gap-2 shrink-0">
       <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
         on:click={onAdd}
       >
         Add entry
@@ -124,7 +124,7 @@
     <div class="flex-1 text-sm text-gray-500">No entry</div>
     <div class="shrink-0">
       <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
         on:click={onAdd}
       >
         Add entry

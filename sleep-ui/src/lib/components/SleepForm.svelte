@@ -162,7 +162,7 @@
 </script>
 
 {#if errorMsg}
-  <div class="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+  <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
     {errorMsg}
   </div>
 {/if}
@@ -171,33 +171,33 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
       <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-      <input id="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="date" bind:value={date} required />
+      <input id="date" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="date" bind:value={date} required />
     </div>
     <div>
       <label for="quality" class="block text-sm font-medium text-gray-700">Quality (1-5)</label>
-      <input id="quality" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="1" max="5" bind:value={quality} required />
+      <input id="quality" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="1" max="5" bind:value={quality} required />
     </div>
     <div>
       <label for="bed" class="block text-sm font-medium text-gray-700">Bed time</label>
-      <input id="bed" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={bed} required />
+      <input id="bed" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={bed} required />
     </div>
     <div>
       <label for="wake" class="block text-sm font-medium text-gray-700">Wake time</label>
-      <input id="wake" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={wake} required />
+      <input id="wake" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={wake} required />
     </div>
     <div>
       <label for="latency" class="block text-sm font-medium text-gray-700">Latency (min)</label>
-      <input id="latency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="180" bind:value={latency} required />
+      <input id="latency" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="180" bind:value={latency} required />
     </div>
     <div>
       <label for="awakenings" class="block text-sm font-medium text-gray-700">Awakenings</label>
-      <input id="awakenings" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="10" bind:value={awakenings} required />
+      <input id="awakenings" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="10" bind:value={awakenings} required />
     </div>
     <div class="sm:col-span-2">
       <label for="intensity" class="block text-sm font-medium text-gray-700">Exercise intensity</label>
       <select
         id="intensity"
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         bind:value={intensity}
         on:change={() => (intensityDirty = true)}
       >
@@ -208,12 +208,12 @@
     </div>
     <div class="sm:col-span-2">
       <label for="notes" class="block text-sm font-medium text-gray-700">Notes (optional, ≤280)</label>
-      <textarea id="notes" maxlength="280" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" bind:value={notes}></textarea>
+      <textarea id="notes" maxlength="280" rows="3" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" bind:value={notes}></textarea>
     </div>
   </div>
 
   <div class="flex justify-end gap-2">
-    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60" disabled={loading}>
+    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60" disabled={loading}>
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
     </button>
   </div>
