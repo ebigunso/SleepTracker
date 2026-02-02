@@ -40,6 +40,7 @@ Routes:
 - `POST /api/login.json`
 - `POST /api/logout`
 - `GET /api/session`
+- `POST /api/settings/timezone`
 - `POST /api/sleep`
 - `GET /api/sleep/date/{date}`
 - `PUT /api/sleep/{id}`
@@ -122,6 +123,7 @@ pub fn router(db: Db) -> Router {
         .route("/api/login.json", post(post_login_json))
         .route("/api/logout", post(post_logout))
         .route("/api/session", get(api_session))
+        .route("/api/settings/timezone", post(post_settings_timezone))
         .route("/api/sleep", post(create_sleep))
         .route("/api/sleep/date/{date}", get(get_sleep))
         // Register methods for /api/sleep/{id} explicitly to avoid any chaining ambiguity
@@ -152,6 +154,11 @@ async fn health_head() -> StatusCode {
 async fn api_session(jar: PrivateCookieJar) -> Json<serde_json::Value> {
     let authed = current_user_from_cookie(&jar).is_some();
     Json(json!({"authenticated": authed}))
+}
+
+#[derive(serde::Deserialize)]
+struct TimezonePayload {
+    timezone: String,
 }
 
 #[doc = r#"Root endpoint.
@@ -281,6 +288,31 @@ async fn post_logout(mut jar: PrivateCookieJar, _csrf: CsrfGuard) -> axum::respo
     (jar, StatusCode::NO_CONTENT).into_response()
 }
 
+#[doc = r#"Set the user timezone.
+
+Accepts: `POST /api/settings/timezone` (`application/json`)
+- Body: `{ "timezone": "Asia/Tokyo" }`
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF header equal to CSRF cookie ([`CsrfGuard`])
+
+Responses:
+- 204 No Content — updated
+- 400 Bad Request — invalid timezone
+- 401 Unauthorized — no/invalid session
+- 403 Forbidden — CSRF failure
+"#]
+async fn post_settings_timezone(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
+    Json(payload): Json<TimezonePayload>,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    handlers::set_user_timezone(&db, payload.timezone).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 #[doc = r#"Create a sleep session.
 
 Accepts: `POST /api/sleep` (`application/json`)
@@ -316,7 +348,7 @@ async fn create_sleep(
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
 }
 
-#[doc = r#"Get a sleep session for a wake date.
+#[doc = r#"Get sleep sessions for a wake date.
 
 Accepts: `GET /api/sleep/date/{date}`
 - Path param `date`: `YYYY-MM-DD` (wake date)
@@ -325,9 +357,8 @@ Security:
 - Requires authenticated session ([`RequireSessionJson`])
 
 Responses:
-- 200 OK — [`SleepSession`]
+- 200 OK — `Vec<SleepSession>` (may be empty)
 - 401 Unauthorized — no/invalid session
-- 404 Not Found — no entry for date
 
 See also: [`crate::handlers::get_sleep_by_date`]
 "#]
@@ -336,10 +367,8 @@ async fn get_sleep(
     RequireSessionJson { _user_id: _ }: RequireSessionJson,
     Path(date): Path<chrono::NaiveDate>,
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
-    match handlers::get_sleep_by_date(&db, date).await? {
-        Some(s) => Ok(Json(s)),
-        None => Err(ApiError::NotFound),
-    }
+    let sessions = handlers::get_sleep_by_date(&db, date).await?;
+    Ok(Json(sessions))
 }
 
 #[doc = r#"Update a sleep session by id.
