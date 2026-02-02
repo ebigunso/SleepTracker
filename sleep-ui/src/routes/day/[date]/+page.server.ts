@@ -18,8 +18,6 @@ export const load = async ({ fetch, params }: any) => {
       const data = await res.json();
       if (Array.isArray(data)) {
         items = data as SleepSession[];
-      } else if (data) {
-        items = [data as SleepSession];
       }
     }
   } catch {

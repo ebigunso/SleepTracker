@@ -3,18 +3,20 @@
   import { goto } from '$app/navigation';
   import { computeDurationMin } from '$lib/utils/sleep';
 
+  type SleepSession = {
+    id: number;
+    date: string;
+    bed_time: string;
+    wake_time: string;
+    latency_min: number;
+    awakenings: number;
+    quality: number;
+    duration_min: number | null;
+  };
+
   export let data: {
     date: string;
-    items: {
-      id: number;
-      date: string;
-      bed_time: string;
-      wake_time: string;
-      latency_min: number;
-      awakenings: number;
-      quality: number;
-      duration_min: number | null;
-    }[];
+    items: SleepSession[];
   };
 
   function edit(id: number, date: string) {
@@ -32,7 +34,7 @@
     return `${h}h ${m}m`;
   }
 
-  function durationFor(item: any): number {
+  function durationFor(item: SleepSession): number {
     return item.duration_min ?? computeDurationMin(item.bed_time, item.wake_time);
   }
 
