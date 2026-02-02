@@ -74,6 +74,26 @@ async fn login_and_get_auth(
     (csrf, session)
 }
 
+async fn create_sleep_session(
+    client: &Client,
+    addr: &str,
+    csrf: &str,
+    session_cookie: &str,
+    input: &SleepInput,
+) -> i64 {
+    let res = client
+        .post(format!("http://{addr}/api/sleep"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", csrf)
+        .json(input)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 201, "create sleep failed: {}", res.status());
+    let id: serde_json::Value = res.json().await.unwrap();
+    id["id"].as_i64().unwrap()
+}
+
 #[tokio::test]
 async fn test_sleep_flow() {
     unsafe {
@@ -116,17 +136,8 @@ async fn test_sleep_flow() {
         awakenings: 1,
         quality: Quality(4),
     };
-    let res = client
-        .post(format!("http://{addr}/api/sleep"))
-        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
-        .header("X-CSRF-Token", &csrf)
-        .json(&input)
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(res.status(), 201);
-    let id: serde_json::Value = res.json().await.unwrap();
-    let id = id["id"].as_i64().unwrap();
+    let id = create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &input)
+        .await;
 
     // Fetch by id and verify
     let res = client
@@ -144,7 +155,9 @@ async fn test_sleep_flow() {
         .await
         .unwrap();
     assert_eq!(res.status(), 200);
-    let mut session: SleepSession = res.json().await.unwrap();
+    let mut sessions: Vec<SleepSession> = res.json().await.unwrap();
+    assert_eq!(sessions.len(), 1);
+    let session = sessions.pop().unwrap();
     assert_eq!(session.id, id);
     assert_eq!(session.wake_time, input.wake_time);
     assert_eq!(session.latency_min, input.latency_min);
@@ -170,7 +183,9 @@ async fn test_sleep_flow() {
         .await
         .unwrap();
     assert_eq!(res.status(), 200);
-    session = res.json().await.unwrap();
+    sessions = res.json().await.unwrap();
+    assert_eq!(sessions.len(), 1);
+    let session = sessions.pop().unwrap();
     assert_eq!(session.quality, 5);
     assert_eq!(session.latency_min, updated.latency_min);
 
@@ -209,7 +224,172 @@ async fn test_sleep_flow() {
         .send()
         .await
         .unwrap();
-    assert_eq!(res.status(), 404);
+    assert_eq!(res.status(), 200);
+    let sessions: Vec<SleepSession> = res.json().await.unwrap();
+    assert!(sessions.is_empty());
+
+    server.abort();
+}
+
+#[tokio::test]
+async fn test_sleep_multi_sessions_and_wake_date_lookup() {
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
+    set_admin_env("admin@example.com", "password123");
+
+    let pool = db::connect().await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
+    let app = app::router(pool.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.2:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let client = Client::builder().cookie_store(true).build().unwrap();
+    wait_ready(&client, &addr.to_string()).await;
+
+    let (csrf, session_cookie) = login_and_get_auth(
+        &client,
+        &addr.to_string(),
+        "admin@example.com",
+        "password123",
+    )
+    .await;
+
+    let wake_date = chrono::NaiveDate::from_ymd_opt(2025, 6, 20).unwrap();
+    let overnight = SleepInput {
+        date: wake_date,
+        bed_time: chrono::NaiveTime::from_hms_opt(23, 30, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(6, 30, 0).unwrap(),
+        latency_min: 15,
+        awakenings: 1,
+        quality: Quality(4),
+    };
+    let nap = SleepInput {
+        date: wake_date,
+        bed_time: chrono::NaiveTime::from_hms_opt(14, 0, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(15, 0, 0).unwrap(),
+        latency_min: 5,
+        awakenings: 0,
+        quality: Quality(3),
+    };
+
+    create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &overnight).await;
+    create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &nap).await;
+
+    let res = client
+        .get(format!("http://{addr}/api/sleep/date/{wake_date}"))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    let sessions: Vec<SleepSession> = res.json().await.unwrap();
+    assert_eq!(sessions.len(), 2);
+    assert_eq!(sessions[0].wake_time, overnight.wake_time);
+    assert_eq!(sessions[1].wake_time, nap.wake_time);
+
+    let res = client
+        .get(format!(
+            "http://{addr}/api/sleep/date/{}",
+            wake_date.pred_opt().unwrap()
+        ))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    let sessions: Vec<SleepSession> = res.json().await.unwrap();
+    assert!(sessions.is_empty());
+
+    server.abort();
+}
+
+#[tokio::test]
+async fn test_sleep_overlap_rejection_inclusive() {
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
+    set_admin_env("admin@example.com", "password123");
+
+    let pool = db::connect().await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
+    let app = app::router(pool.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.2:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let client = Client::builder().cookie_store(true).build().unwrap();
+    wait_ready(&client, &addr.to_string()).await;
+
+    let (csrf, session_cookie) = login_and_get_auth(
+        &client,
+        &addr.to_string(),
+        "admin@example.com",
+        "password123",
+    )
+    .await;
+
+    let wake_date = chrono::NaiveDate::from_ymd_opt(2025, 6, 21).unwrap();
+    let overnight = SleepInput {
+        date: wake_date,
+        bed_time: chrono::NaiveTime::from_hms_opt(22, 0, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap(),
+        latency_min: 10,
+        awakenings: 0,
+        quality: Quality(4),
+    };
+    create_sleep_session(&client, &addr.to_string(), &csrf, &session_cookie, &overnight).await;
+
+    let overlap = SleepInput {
+        date: wake_date,
+        bed_time: chrono::NaiveTime::from_hms_opt(5, 0, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+        latency_min: 5,
+        awakenings: 0,
+        quality: Quality(3),
+    };
+    let res = client
+        .post(format!("http://{addr}/api/sleep"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", &csrf)
+        .json(&overlap)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 400, "overlap should be rejected");
+
+    let touching = SleepInput {
+        date: wake_date,
+        bed_time: chrono::NaiveTime::from_hms_opt(6, 0, 0).unwrap(),
+        wake_time: chrono::NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+        latency_min: 5,
+        awakenings: 0,
+        quality: Quality(3),
+    };
+    let res = client
+        .post(format!("http://{addr}/api/sleep"))
+        .header("Cookie", format!("session={session_cookie}; csrf={csrf}"))
+        .header("X-CSRF-Token", &csrf)
+        .json(&touching)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 400, "end==start should be rejected");
 
     server.abort();
 }
