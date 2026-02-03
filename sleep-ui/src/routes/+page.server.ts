@@ -57,7 +57,18 @@ function getTodayPartsForTimeZone(now: Date, timeZone: string): { year: number; 
     const year = Number(lookup.year);
     const month = Number(lookup.month);
     const day = Number(lookup.day);
-    if (!year || !month || !day) return null;
+    if (
+      Number.isNaN(year) ||
+      Number.isNaN(month) ||
+      Number.isNaN(day) ||
+      year <= 0 ||
+      month < 1 ||
+      month > 12 ||
+      day < 1 ||
+      day > 31
+    ) {
+      return null;
+    }
     return { year, month, day };
   } catch {
     return null;
@@ -87,7 +98,11 @@ export const load = async ({ fetch, url }: any) => {
     todayParts = getTodayPartsForTimeZone(now, timezone);
   }
   if (!todayParts) {
-    todayParts = { year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() };
+    todayParts = {
+      year: now.getUTCFullYear(),
+      month: now.getUTCMonth() + 1,
+      day: now.getUTCDate()
+    };
   }
 
   const today = startOfDay(dateFromParts(todayParts.year, todayParts.month, todayParts.day));
