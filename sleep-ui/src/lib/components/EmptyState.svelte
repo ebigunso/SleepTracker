@@ -1,6 +1,6 @@
 <script lang="ts">
-  export let title = 'Nothing here yet';
-  export let message = 'Once you add data, it will show up here.';
+  export let title = 'No sleep logged yet';
+  export let message = 'Use + Log sleep to add your first entry.';
   export let className = '';
 </script>
 
