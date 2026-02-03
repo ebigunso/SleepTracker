@@ -48,11 +48,11 @@
       <p class="text-sm text-slate-500">Sign in to track your sleep and trends.</p>
     </div>
     {#if errorMsg}
-      <div class="state-card state-card--error mb-3" role="alert" aria-live="polite">
+      <div class="state-card state-card--error mb-3" role="alert">
         {errorMsg}
       </div>
     {/if}
-    <form on:submit={submit} class="space-y-4">
+    <form on:submit={submit} class="space-y-4" novalidate>
       <div>
         <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
         <input

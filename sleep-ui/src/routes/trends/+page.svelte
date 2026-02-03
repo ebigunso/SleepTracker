@@ -158,7 +158,7 @@
   </header>
 
   {#if errorMsg}
-    <div class="state-card state-card--error" role="alert" aria-live="polite">
+    <div class="state-card state-card--error" role="alert">
       {errorMsg}
     </div>
   {/if}

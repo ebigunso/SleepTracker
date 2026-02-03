@@ -162,7 +162,7 @@
 </script>
 
 {#if errorMsg}
-  <div class="state-card state-card--error mb-3" role="alert" aria-live="polite">
+  <div class="state-card state-card--error mb-3" role="alert">
     {errorMsg}
   </div>
 {/if}
