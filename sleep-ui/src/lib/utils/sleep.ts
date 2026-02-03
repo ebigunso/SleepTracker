@@ -31,6 +31,27 @@ export function computeDurationMin(bed_time: string, wake_time: string): number 
   return (24 * 60 - bedMin) + wakeMin;
 }
 
+export function formatDurationHMM(minutes: number | null | undefined): string {
+  if (minutes == null || !Number.isFinite(minutes)) return '—';
+  const total = Math.max(0, Math.round(minutes));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+export function formatMinutesAsTime(minutes: number | null | undefined): string {
+  if (minutes == null || !Number.isFinite(minutes)) return '—';
+  const total = ((Math.round(minutes) % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+export function formatTimeHHMM(time: string | null | undefined): string {
+  if (!time) return '—';
+  return formatMinutesAsTime(toMinutes(time));
+}
+
 /**
  * Compute 24h track segments for a sleep interval that may cross midnight.
  * Inputs are "HH:mm" or "HH:mm:ss" local times.
