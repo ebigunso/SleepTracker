@@ -1,7 +1,7 @@
 <script lang="ts">
   import SleepBar from '$lib/components/SleepBar.svelte';
   import { goto } from '$app/navigation';
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import type { SleepSession } from '$lib/api';
   import { computeDurationMin, formatDurationMin, formatIsoTime } from '$lib/utils/sleep';
 
@@ -12,6 +12,7 @@
   }>();
 
   let menuOpen = false;
+  let detailsEl: HTMLDetailsElement | null = null;
 
   function sessionDateFor(session: SleepSession): string {
     return session.session_date ?? session.date;
@@ -32,6 +33,20 @@
     menuOpen = false;
   }
 
+  onMount(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      if (!menuOpen) return;
+      const target = event.target as Node | null;
+      if (detailsEl && target && detailsEl.contains(target)) return;
+      menuOpen = false;
+    };
+
+    document.addEventListener('click', handleDocumentClick, true);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick, true);
+    };
+  });
+
   $: timeRange = `${formatIsoTime(item.bed_time)}–${formatIsoTime(item.wake_time)}`;
   $: durationLabel = formatDurationMin(durationFor(item));
   $: qualityLabel = item.quality ?? '—';
@@ -46,11 +61,10 @@
         <span>Quality <span class="font-medium text-slate-700">{qualityLabel}</span></span>
       </div>
     </div>
-    <details bind:open={menuOpen} class="relative">
+    <details bind:open={menuOpen} bind:this={detailsEl} class="relative">
       <summary
         class="inline-flex h-8 w-8 list-none items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
         aria-label="Session actions"
-        style="list-style: none;"
       >
         &#8942;
       </summary>

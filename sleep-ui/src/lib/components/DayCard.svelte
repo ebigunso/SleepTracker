@@ -23,11 +23,12 @@
 
   $: sessionCount = sortedItems.length;
   $: totalDuration = sortedItems.reduce((sum, it) => sum + durationFor(it), 0);
-  $: avgQuality = sessionCount > 0
+  $: avgQualityValue = sessionCount > 0
     ? Math.round(sortedItems.reduce((sum, it) => sum + (it.quality ?? 0), 0) / sessionCount)
     : null;
+  $: avgQualityLabel = avgQualityValue == null ? '—' : `${avgQualityValue}`;
 
-  const intensityChip =
+  $: intensityChip =
     intensity === 'hard'
       ? 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-200'
       : intensity === 'light'
@@ -50,7 +51,7 @@
         {sessionCount} sessions
       </span>
       <span class="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-        Avg quality {avgQuality ?? '—'}
+        Avg quality {avgQualityLabel}
       </span>
       {#if intensity}
         <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${intensityChip}`}>

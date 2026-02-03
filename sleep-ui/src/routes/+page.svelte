@@ -91,9 +91,10 @@
   $: totalSessions = recentItems.length;
   $: totalSleepMin = recentItems.reduce((sum, it) => sum + durationFor(it), 0);
   $: avgDurationMin = totalSessions > 0 ? Math.round(totalSleepMin / totalSessions) : 0;
-  $: avgQuality = totalSessions > 0
+  $: avgQualityValue = totalSessions > 0
     ? Math.round(recentItems.reduce((sum, it) => sum + (it.quality ?? 0), 0) / totalSessions)
-    : '—';
+    : null;
+  $: avgQuality = avgQualityValue == null ? '—' : `${avgQualityValue}`;
   $: avgLatencyMin = totalSessions > 0
     ? Math.round(recentItems.reduce((sum, it) => sum + (it.latency_min ?? 0), 0) / totalSessions)
     : 0;
