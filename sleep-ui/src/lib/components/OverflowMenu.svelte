@@ -54,7 +54,7 @@
   <Button
     variant={variant === 'outline' ? 'outline' : 'ghost'}
     size={size}
-    aria-haspopup="menu"
+    aria-haspopup="true"
     aria-expanded={open}
     aria-label={label}
     on:click={toggle}
@@ -67,7 +67,6 @@
       class={`absolute z-20 mt-2 min-w-[10rem] rounded-lg border border-slate-200 bg-white shadow-lg ${
         align === 'right' ? 'right-0' : 'left-0'
       }`}
-      role="menu"
     >
       {#each items as item (item.id ?? item.label)}
         <button
@@ -76,7 +75,6 @@
             item.disabled ? 'cursor-not-allowed opacity-50 hover:bg-white' : ''
           } ${item.variant === 'danger' ? 'text-rose-600' : ''}`}
           on:click={() => onSelect(item)}
-          role="menuitem"
           disabled={item.disabled}
         >
           {item.label}
