@@ -9,6 +9,8 @@
   const AUTH_PREFIX = '/api';
 
   export let data: { session?: boolean; pathname?: string };
+  let isAuthRoute = false;
+  $: isAuthRoute = data?.pathname === '/login';
 
   type NavItem = {
     href: string;
@@ -89,63 +91,69 @@
 
 <!-- App shell -->
 <div class="min-h-screen bg-slate-50 text-slate-900">
-  <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur" aria-label="Site header">
-    <div class="app-container grid grid-cols-[auto,1fr,auto] items-center gap-4 py-4">
-      <div class="flex items-center gap-3">
-        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-900">SleepTracker</h1>
-          <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
+  {#if isAuthRoute}
+    <main class="mx-auto flex min-h-screen items-center justify-center px-4 py-10">
+      <slot />
+    </main>
+  {:else}
+    <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur" aria-label="Site header">
+      <div class="app-container grid grid-cols-[auto,1fr,auto] items-center gap-4 py-4">
+        <div class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-900">SleepTracker</h1>
+            <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
+          </div>
+        </div>
+        <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation">
+          {#if data.session}
+            {#each navItems as item (item.href)}
+              <a
+                href={item.href}
+                class={navLinkClass(item)}
+                aria-current={isActive(item) ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            {/each}
+          {/if}
+        </nav>
+        <div class="flex items-center justify-end gap-2">
+          {#if data.session}
+            <ProfileMenu on:logout={logout} />
+          {:else}
+            <a
+              href="/login"
+              class="rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+            >
+              Login
+            </a>
+          {/if}
         </div>
       </div>
-      <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation">
-        {#if data.session}
-          {#each navItems as item (item.href)}
-            <a
-              href={item.href}
-              class={navLinkClass(item)}
-              aria-current={isActive(item) ? 'page' : undefined}
-            >
-              {item.label}
-            </a>
-          {/each}
-        {/if}
+    </header>
+
+    <main class={`app-container py-8 ${data.session ? 'pb-24 md:pb-8' : ''}`}>
+      <slot />
+    </main>
+
+    {#if data.session}
+      <nav class="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden" aria-label="Bottom navigation">
+        <div class="app-container">
+          <div class="flex items-center gap-2 py-2">
+            {#each navItems as item (item.href)}
+              <a
+                href={item.href}
+                class={bottomNavClass(item)}
+                aria-current={isActive(item) ? 'page' : undefined}
+              >
+                <span>{item.label}</span>
+              </a>
+            {/each}
+          </div>
+        </div>
       </nav>
-      <div class="flex items-center justify-end gap-2">
-        {#if data.session}
-          <ProfileMenu on:logout={logout} />
-        {:else}
-          <a
-            href="/login"
-            class="rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-          >
-            Login
-          </a>
-        {/if}
-      </div>
-    </div>
-  </header>
-
-  <main class={`app-container py-8 ${data.session ? 'pb-24 md:pb-8' : ''}`}>
-    <slot />
-  </main>
-
-  {#if data.session}
-    <nav class="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden" aria-label="Bottom navigation">
-      <div class="app-container">
-        <div class="flex items-center gap-2 py-2">
-          {#each navItems as item (item.href)}
-            <a
-              href={item.href}
-              class={bottomNavClass(item)}
-              aria-current={isActive(item) ? 'page' : undefined}
-            >
-              <span>{item.label}</span>
-            </a>
-          {/each}
-        </div>
-      </div>
-    </nav>
+    {/if}
   {/if}
 </div>
 

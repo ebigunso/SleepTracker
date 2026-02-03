@@ -1,5 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import Button from '$lib/components/Button.svelte';
+  import Card from '$lib/components/Card.svelte';
 
   export let open = false;
   export let title = 'Confirm';
@@ -47,25 +49,15 @@
     role="dialog"
     tabindex="-1"
   >
-    <div class="w-full sm:max-w-sm bg-white rounded-t-lg sm:rounded-lg shadow-lg p-4 sm:p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+    <Card className="w-full sm:max-w-sm rounded-t-lg sm:rounded-xl" padding="lg">
+      <h3 class="section-title mb-2">{title}</h3>
       {#if message}
-        <p class="text-sm text-gray-700 mb-4">{message}</p>
+        <p class="text-sm text-slate-600 mb-4">{message}</p>
       {/if}
       <div class="mt-2 flex gap-2 justify-end">
-        <button
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          on:click={onCancel}
-        >
-          {cancelText}
-        </button>
-        <button
-          class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-700"
-          on:click={onConfirm}
-        >
-          {confirmText}
-        </button>
+        <Button variant="outline" size="sm" on:click={onCancel}>{cancelText}</Button>
+        <Button variant="primary" size="sm" on:click={onConfirm}>{confirmText}</Button>
       </div>
-    </div>
+    </Card>
   </div>
 {/if}
