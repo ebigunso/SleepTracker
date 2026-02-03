@@ -172,6 +172,20 @@
       ChartJS.register(...mod.registerables);
     }
 
+    const isTimeMetric = selectedMetric === 'bedtime' || selectedMetric === 'waketime';
+    const yAxisTitle = selectedMetric === 'duration'
+      ? 'Duration (h:mm)'
+      : selectedMetric === 'quality'
+        ? 'Quality'
+        : 'Time (24h)';
+    const yAxisMin = isTimeMetric ? 0 : undefined;
+    let yAxisMax: number | undefined;
+    if (isTimeMetric) {
+      yAxisMax = 24 * 60;
+    } else if (selectedMetric === 'quality') {
+      yAxisMax = 5;
+    }
+
     chart?.destroy();
     chart = new ChartJS(canvasEl, {
       type: 'bar',
@@ -195,15 +209,11 @@
           y: {
             title: {
               display: true,
-              text: selectedMetric === 'duration'
-                ? 'Duration (h:mm)'
-                : selectedMetric === 'quality'
-                  ? 'Quality'
-                  : 'Time (24h)'
+              text: yAxisTitle
             },
-            beginAtZero: selectedMetric !== 'bedtime' && selectedMetric !== 'waketime',
-            min: selectedMetric === 'bedtime' || selectedMetric === 'waketime' ? 0 : undefined,
-            max: selectedMetric === 'bedtime' || selectedMetric === 'waketime' ? 24 * 60 : selectedMetric === 'quality' ? 5 : undefined,
+            beginAtZero: !isTimeMetric,
+            min: yAxisMin,
+            max: yAxisMax,
             ticks: {
               callback: (value: string | number) => {
                 if (selectedMetric === 'duration') return formatDurationHMM(Number(value));
@@ -228,15 +238,18 @@
           tooltip: {
             callbacks: {
               title(ctx: any) {
+                if (!ctx?.length) return '';
                 const i = ctx[0].dataIndex;
                 const label = labels[i] ?? '';
                 return label ? formatDateLong(label) : '';
               },
               label(ctx: any) {
-                const value = ctx.parsed.y as number | null | undefined;
+                if (!ctx) return '';
+                const value = ctx.parsed?.y as number | null | undefined;
                 return `${meta.label}: ${formatMetricValue(selectedMetric, value)}`;
               },
               afterBody(ctx: any) {
+                if (!ctx?.length) return '';
                 const i = ctx[0].dataIndex;
                 const entry = data[i];
                 if (!entry) return '';
