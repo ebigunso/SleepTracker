@@ -1,9 +1,15 @@
 <script lang="ts">
+  import Button from '$lib/components/Button.svelte';
+  import Card from '$lib/components/Card.svelte';
+  import Chip from '$lib/components/Chip.svelte';
+  import EmptyState from '$lib/components/EmptyState.svelte';
+  import OverflowMenu from '$lib/components/OverflowMenu.svelte';
   import SleepBar from '$lib/components/SleepBar.svelte';
   import { goto } from '$app/navigation';
   import { createEventDispatcher } from 'svelte';
   import type { SleepSession } from '$lib/api';
   import { computeDurationMin } from '$lib/utils/sleep';
+  import { formatDuration, formatTimeHHmm } from '$lib/utils/time';
 
   export let date: string; // YYYY-MM-DD (display date)
   export let items: SleepSession[] = [];
@@ -31,10 +37,7 @@
   }
 
   function fmtMin(n: number | null | undefined): string {
-    if (n == null) return '—';
-    const h = Math.floor(n / 60);
-    const m = n % 60;
-    return `${h}h ${m}m`;
+    return formatDuration(n ?? null);
   }
 
   function durationFor(item: SleepSession): number {
@@ -58,77 +61,95 @@
 
   const badgeColor =
     intensity === 'hard'
-      ? 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-200'
+      ? 'success'
       : intensity === 'light'
-      ? 'bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200'
-      : 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200';
+      ? 'info'
+      : 'neutral';
+
+  const itemActions = [
+    { id: 'edit', label: 'Edit' },
+    { id: 'delete', label: 'Delete', variant: 'danger' }
+  ] as const;
+
+  function onSelectAction(actionId: string, item: SleepSession) {
+    if (actionId === 'edit') {
+      onEdit(item.id, sessionDateFor(item));
+      return;
+    }
+    if (actionId === 'delete') {
+      onDelete(item.id);
+    }
+  }
 </script>
 
 <div class="flex items-center gap-3 py-3 border-b border-gray-200">
-  <div class="w-28 shrink-0 text-sm text-gray-700 font-semibold">
-    <a class="text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
+  <div class="w-28 shrink-0">
+    <a class="section-title text-sm text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
   </div>
 
   {#if sessionCount > 0}
     <div class="flex-1 min-w-0 space-y-2">
-      <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-        <span>Sessions: <span class="font-medium">{sessionCount}</span></span>
-        <span>Total: <span class="font-medium">{fmtMin(totalDuration)}</span></span>
-        <span>Avg Quality: <span class="font-medium">{avgQuality ?? '—'}</span></span>
-        <span>Avg Latency: <span class="font-medium">{avgLatency ?? '—'}m</span></span>
-        <span>Awakenings: <span class="font-medium">{totalAwakenings}</span></span>
+      <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+        <span><span class="meta-text">Sessions</span> <span class="font-medium text-slate-800">{sessionCount}</span></span>
+        <span><span class="meta-text">Total</span> <span class="text-base stat-value">{fmtMin(totalDuration)}</span></span>
+        <span><span class="meta-text">Avg Quality</span> <span class="font-medium text-slate-800">{avgQuality ?? '—'}</span></span>
+        <span><span class="meta-text">Avg Latency</span> <span class="font-medium text-slate-800">{avgLatency ?? '—'}m</span></span>
+        <span><span class="meta-text">Awakenings</span> <span class="font-medium text-slate-800">{totalAwakenings}</span></span>
         {#if intensity}
-          <span class={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${badgeColor}`}>Exercise: {intensity}</span>
+          <Chip variant={badgeColor} size="sm">Exercise: {intensity}</Chip>
         {/if}
       </div>
       <div class="space-y-2">
         {#each sortedItems as item (item.id)}
-          <div class="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+          <Card padding="md">
             <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <span>Bed: <span class="font-medium">{item.bed_time}</span></span>
-              <span>Wake: <span class="font-medium">{item.wake_time}</span></span>
-              <span>Duration: <span class="font-medium">{fmtMin(durationFor(item))}</span></span>
-              <span>Quality: <span class="font-medium">{item.quality}</span></span>
-              <span>Latency: <span class="font-medium">{item.latency_min}m</span></span>
+              <span><span class="meta-text">Bed</span> <span class="font-medium text-slate-800">{formatTimeHHmm(item.bed_time)}</span></span>
+              <span><span class="meta-text">Wake</span> <span class="font-medium text-slate-800">{formatTimeHHmm(item.wake_time)}</span></span>
+              <span><span class="meta-text">Duration</span> <span class="font-medium text-slate-800">{fmtMin(durationFor(item))}</span></span>
+              <span><span class="meta-text">Quality</span> <span class="font-medium text-slate-800">{item.quality}</span></span>
+              <span><span class="meta-text">Latency</span> <span class="font-medium text-slate-800">{item.latency_min}m</span></span>
             </div>
-            <div class="mt-3 flex gap-2 justify-end">
-              <button
-                class="inline-flex items-center rounded-md bg-white px-2.5 py-1.5 text-xs font-semibold text-indigo-600 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-50"
-                on:click={() => onEdit(item.id, sessionDateFor(item))}
-                aria-label="Edit"
-              >
-                Edit
-              </button>
-              <button
-                class="inline-flex items-center rounded-md bg-rose-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-rose-600"
-                on:click={() => onDelete(item.id)}
-                aria-label="Delete"
-              >
-                Delete
-              </button>
+            <div class="mt-3 flex justify-end">
+              <div class="hidden sm:flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  on:click={() => onEdit(item.id, sessionDateFor(item))}
+                  aria-label="Edit"
+                >
+                  Edit
+                </Button>
+                <Button variant="danger" size="sm" on:click={() => onDelete(item.id)} aria-label="Delete">
+                  Delete
+                </Button>
+              </div>
+              <div class="sm:hidden">
+                <OverflowMenu
+                  items={itemActions}
+                  on:select={(event) => onSelectAction(event.detail.id ?? event.detail.label.toLowerCase(), item)}
+                >
+                  <span slot="trigger">Actions</span>
+                </OverflowMenu>
+              </div>
             </div>
-          </div>
+          </Card>
         {/each}
       </div>
     </div>
     <div class="flex gap-2 shrink-0">
-      <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
-        on:click={onAdd}
-      >
-        Add entry
-      </button>
+      <Button size="sm" on:click={onAdd}>Add entry</Button>
     </div>
   {:else}
-    <div class="flex-1 text-sm text-gray-500">No entry</div>
+    <div class="flex-1">
+      <EmptyState title="No entry" message="Log your sleep to start tracking trends.">
+        <span slot="action">
+          <Button size="sm" on:click={onAdd}>Add entry</Button>
+        </span>
+      </EmptyState>
+    </div>
     <div class="shrink-0">
-      <button
-        class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
-        on:click={onAdd}
-      >
-        Add entry
-      </button>
+      <Button size="sm" on:click={onAdd}>Add entry</Button>
     </div>
   {/if}
 </div>

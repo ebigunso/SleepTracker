@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import Button from '$lib/components/Button.svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+  import Input from '$lib/components/Input.svelte';
   import type { SleepInput, ExerciseUpsert, SleepSession } from '$lib/api';
   import { createSleep, updateSleep, upsertExercise, apiPost } from '$lib/api';
   import { upsertRecent, setIntensity } from '$lib/stores/sleep';
@@ -170,52 +172,53 @@
 <form on:submit={onSubmit} class="space-y-4">
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
-      <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-      <input id="date" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="date" bind:value={date} required />
+      <label for="date" class="meta-text">Date</label>
+      <Input id="date" className="mt-1" type="date" bind:value={date} required />
     </div>
     <div>
-      <label for="quality" class="block text-sm font-medium text-gray-700">Quality (1-5)</label>
-      <input id="quality" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="1" max="5" bind:value={quality} required />
+      <label for="quality" class="meta-text">Quality (1-5)</label>
+      <Input id="quality" className="mt-1" type="number" min="1" max="5" bind:value={quality} required />
     </div>
     <div>
-      <label for="bed" class="block text-sm font-medium text-gray-700">Bed time</label>
-      <input id="bed" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={bed} required />
+      <label for="bed" class="meta-text">Bed time</label>
+      <Input id="bed" className="mt-1" type="time" step="60" bind:value={bed} required />
     </div>
     <div>
-      <label for="wake" class="block text-sm font-medium text-gray-700">Wake time</label>
-      <input id="wake" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="time" step="60" bind:value={wake} required />
+      <label for="wake" class="meta-text">Wake time</label>
+      <Input id="wake" className="mt-1" type="time" step="60" bind:value={wake} required />
     </div>
     <div>
-      <label for="latency" class="block text-sm font-medium text-gray-700">Latency (min)</label>
-      <input id="latency" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="180" bind:value={latency} required />
+      <label for="latency" class="meta-text">Latency (min)</label>
+      <Input id="latency" className="mt-1" type="number" min="0" max="180" bind:value={latency} required />
     </div>
     <div>
-      <label for="awakenings" class="block text-sm font-medium text-gray-700">Awakenings</label>
-      <input id="awakenings" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" type="number" min="0" max="10" bind:value={awakenings} required />
+      <label for="awakenings" class="meta-text">Awakenings</label>
+      <Input id="awakenings" className="mt-1" type="number" min="0" max="10" bind:value={awakenings} required />
     </div>
     <div class="sm:col-span-2">
-      <label for="intensity" class="block text-sm font-medium text-gray-700">Exercise intensity</label>
-      <select
+      <label for="intensity" class="meta-text">Exercise intensity</label>
+      <Input
         id="intensity"
-        class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        as="select"
+        className="mt-1"
         bind:value={intensity}
         on:change={() => (intensityDirty = true)}
       >
         <option value="none">none</option>
         <option value="light">light</option>
         <option value="hard">hard</option>
-      </select>
+      </Input>
     </div>
     <div class="sm:col-span-2">
-      <label for="notes" class="block text-sm font-medium text-gray-700">Notes (optional, ≤280)</label>
-      <textarea id="notes" maxlength="280" rows="3" class="mt-1 block w-full rounded-md border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" bind:value={notes}></textarea>
+      <label for="notes" class="meta-text">Notes (optional, ≤280)</label>
+      <Input id="notes" as="textarea" maxlength="280" rows={3} className="mt-1" bind:value={notes}></Input>
     </div>
   </div>
 
   <div class="flex justify-end gap-2">
-    <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-60" disabled={loading}>
+    <Button type="submit" disabled={loading}>
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
-    </button>
+    </Button>
   </div>
 </form>
 
