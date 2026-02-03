@@ -63,7 +63,7 @@
         {errorMsg}
       </div>
     {/if}
-    <form on:submit={submit} class="space-y-5">
+    <form on:submit={submit} class="space-y-5" novalidate>
       <div class="space-y-2">
         <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
         <input
