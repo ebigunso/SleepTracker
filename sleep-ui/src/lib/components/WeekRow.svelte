@@ -82,9 +82,9 @@
   }
 </script>
 
-<div class="flex items-center gap-3 py-3 border-b border-gray-200">
-  <div class="w-28 shrink-0">
-    <a class="section-title text-sm text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>{date}</a>
+<div class="flex flex-col xs:flex-row xs:items-center gap-3 py-3 border-b border-gray-200">
+  <div class="w-full xs:w-28 shrink-0">
+    <a class="section-title text-sm text-indigo-600 hover:text-indigo-500 focus-ring touch-target inline-flex items-center" href={`/day/${date}`}>{date}</a>
   </div>
 
   {#if sessionCount > 0}
@@ -137,7 +137,7 @@
         {/each}
       </div>
     </div>
-    <div class="flex gap-2 shrink-0">
+    <div class="flex gap-2 shrink-0 w-full xs:w-auto">
       <Button size="sm" on:click={onAdd}>Add entry</Button>
     </div>
   {:else}

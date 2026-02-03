@@ -61,7 +61,7 @@
       <p class="text-sm text-slate-500">{data.date}</p>
     </div>
     <button
-      class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+      class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
       on:click={add}
     >
       Add session
@@ -91,7 +91,7 @@
             </div>
             <div class="mt-4 flex justify-end">
               <button
-                class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                class="focus-ring touch-target inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
                 on:click={() => edit(item.id, item.date)}
               >
                 Edit
@@ -102,7 +102,7 @@
       </div>
     </div>
   {:else}
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">
+    <div class="state-card state-card--empty">
       No sleep entry for this date.
     </div>
   {/if}

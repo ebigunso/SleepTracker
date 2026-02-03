@@ -362,7 +362,7 @@
         </div>
         <button
           type="submit"
-          class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+          class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
           disabled={loading}
         >
           {#if loading}Loading...{:else}Apply{/if}
@@ -372,11 +372,10 @@
   </div>
 
   {#if errorMsg}
-    <div class="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+    <div class="state-card state-card--error" role="alert">
       {errorMsg}
     </div>
   {/if}
-
   <div class="grid gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm shadow-sm sm:grid-cols-2 lg:grid-cols-4">
     <div>
       <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Nights</div>

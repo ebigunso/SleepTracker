@@ -124,7 +124,7 @@
           {:else}
             <a
               href="/login"
-              class="rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+              class="focus-ring touch-target rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
             >
               Login
             </a>
@@ -158,13 +158,13 @@
 </div>
 
 <!-- Toasts -->
-<div class="fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 md:bottom-4">
+<div class="fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 md:bottom-4" role="status" aria-live="polite">
   {#each $toasts as t (t.id)}
     <div class="flex w-[95%] max-w-md items-start gap-3 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg">
       <span class="text-sm {t.type === 'error' ? 'text-rose-600' : t.type === 'success' ? 'text-emerald-600' : 'text-slate-700'}">
         {t.message}
       </span>
-      <button class="ml-auto text-xs text-slate-500 hover:text-slate-800" on:click={() => dismissToast(t.id)}>Dismiss</button>
+      <button class="focus-ring touch-target ml-auto text-xs text-slate-500 hover:text-slate-800" on:click={() => dismissToast(t.id)}>Dismiss</button>
     </div>
   {/each}
 </div>

@@ -140,13 +140,13 @@
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+        class="focus-ring touch-target inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
         on:click={goPrev}
       >
         Prev
       </button>
       <button
-        class={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
+        class={`focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
           canNext ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border border-slate-100 bg-slate-100 text-slate-400'
         }`}
         on:click={goNext}
@@ -155,7 +155,7 @@
         Next
       </button>
       <button
-        class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+        class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
         on:click={quickLog}
       >
         + Log sleep
@@ -181,7 +181,7 @@
       max={data.today}
     />
     <button
-      class="inline-flex items-center rounded-full bg-sky-500 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-600"
+      class="focus-ring touch-target inline-flex items-center rounded-full bg-sky-500 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-600"
       on:click={jumpToDate}
     >
       Go

@@ -18,6 +18,9 @@ module.exports = {
       }
     },
     extend: {
+      screens: {
+        xs: '480px'
+      },
       colors: {
         brand: {
           50: '#eef2ff',

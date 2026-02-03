@@ -59,7 +59,7 @@
       <p class="text-sm text-slate-500">Sign in to track your sleep and trends.</p>
     </div>
     {#if errorMsg}
-      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
         {errorMsg}
       </div>
     {/if}

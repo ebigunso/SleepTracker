@@ -9,6 +9,9 @@
   export let confirmText = 'Proceed';
   export let cancelText = 'Cancel';
 
+  const titleId = 'confirm-dialog-title';
+  const messageId = 'confirm-dialog-message';
+
   const dispatch = createEventDispatcher<{ confirm: void; cancel: void }>();
 
   function onConfirm() {
@@ -46,6 +49,8 @@
     on:click={onBackdrop}
     on:keydown={onBackdropKeydown}
     aria-modal="true"
+    aria-labelledby={titleId}
+    aria-describedby={message ? messageId : undefined}
     role="dialog"
     tabindex="-1"
   >

@@ -164,12 +164,12 @@
 </script>
 
 {#if errorMsg}
-  <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+  <div class="state-card state-card--error mb-3" role="alert">
     {errorMsg}
   </div>
 {/if}
 
-<form on:submit={onSubmit} class="space-y-4">
+<form on:submit={onSubmit} class="space-y-4" aria-busy={loading}>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
       <label for="date" class="meta-text">Date</label>
