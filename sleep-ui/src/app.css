@@ -94,6 +94,16 @@
 }
 
 @layer components {
+  .app-container {
+    max-width: 64rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .mobile-bottom-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.25rem);
+  }
+
   .page-container {
     @apply container;
   }
