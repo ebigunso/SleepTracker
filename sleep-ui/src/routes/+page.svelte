@@ -1,10 +1,13 @@
 <script lang="ts">
-  import WeekRow from '$lib/components/WeekRow.svelte';
+  import DayCard from '$lib/components/DayCard.svelte';
+  import EmptyState from '$lib/components/EmptyState.svelte';
+  import SummaryStrip from '$lib/components/SummaryStrip.svelte';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import type { SleepSession } from '$lib/api';
   import { deleteSleep } from '$lib/api';
   import { recentSleep, exerciseIntensityByDate, removeRecentById } from '$lib/stores/sleep';
+  import { computeDurationMin, formatDurationMin } from '$lib/utils/sleep';
 
   export let data: {
     items: SleepSession[];
@@ -81,6 +84,21 @@
     return { date, items, intensity };
   });
 
+  function durationFor(item: SleepSession): number {
+    return item.duration_min ?? computeDurationMin(item.bed_time, item.wake_time);
+  }
+
+  $: totalSessions = recentItems.length;
+  $: totalSleepMin = recentItems.reduce((sum, it) => sum + durationFor(it), 0);
+  $: avgDurationMin = totalSessions > 0 ? Math.round(totalSleepMin / totalSessions) : 0;
+  $: avgQualityValue = totalSessions > 0
+    ? Math.round(recentItems.reduce((sum, it) => sum + (it.quality ?? 0), 0) / totalSessions)
+    : null;
+  $: avgQuality = avgQualityValue == null ? '—' : `${avgQualityValue}`;
+  $: avgLatencyMin = totalSessions > 0
+    ? Math.round(recentItems.reduce((sum, it) => sum + (it.latency_min ?? 0), 0) / totalSessions)
+    : 0;
+
   async function handleDelete(e: CustomEvent<{ id: number; date: string }>) {
     const { id } = e.detail;
     if (!confirm('Delete this entry?')) return;
@@ -140,10 +158,18 @@
         class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
         on:click={quickLog}
       >
-        Quick Log
+        + Log sleep
       </button>
     </div>
   </div>
+
+  <SummaryStrip
+    totalSessions={totalSessions}
+    totalSleep={formatDurationMin(totalSleepMin)}
+    avgDuration={totalSessions > 0 ? formatDurationMin(avgDurationMin) : '—'}
+    avgQuality={avgQuality}
+    avgLatency={totalSessions > 0 ? `${avgLatencyMin}m` : '—'}
+  />
 
   <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
     <label class="text-slate-500" for="jump-date">Jump to date</label>
@@ -162,14 +188,18 @@
     </button>
   </div>
 
-  <div class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200/70 divide-y divide-slate-200/70">
-    {#each rows as r (r.date)}
-      <WeekRow
-        date={r.date}
-        items={r.items}
-        intensity={r.intensity}
-        on:delete={handleDelete}
-      />
-    {/each}
-  </div>
+  {#if totalSessions === 0}
+    <EmptyState />
+  {:else}
+    <div class="space-y-4">
+      {#each rows as r (r.date)}
+        <DayCard
+          date={r.date}
+          items={r.items}
+          intensity={r.intensity}
+          on:delete={handleDelete}
+        />
+      {/each}
+    </div>
+  {/if}
 </section>
