@@ -89,7 +89,7 @@
 
 <!-- App shell -->
 <div class="min-h-screen bg-slate-50 text-slate-900">
-  <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur">
+  <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur" aria-label="Site header">
     <div class="app-container grid grid-cols-[auto,1fr,auto] items-center gap-4 py-4">
       <div class="flex items-center gap-3">
         <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
@@ -98,7 +98,7 @@
           <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
         </div>
       </div>
-      <nav class="hidden items-center justify-center gap-2 text-sm md:flex">
+      <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation">
         {#if data.session}
           {#each navItems as item (item.href)}
             <a
@@ -131,7 +131,7 @@
   </main>
 
   {#if data.session}
-    <nav class="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
+    <nav class="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur md:hidden" aria-label="Bottom navigation">
       <div class="app-container">
         <div class="flex items-center gap-2 py-2">
           {#each navItems as item (item.href)}
