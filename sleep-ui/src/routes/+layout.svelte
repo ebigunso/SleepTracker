@@ -8,6 +8,8 @@
   const AUTH_PREFIX = '/api';
 
   export let data: { session?: boolean; pathname?: string };
+  let isAuthRoute = false;
+  $: isAuthRoute = data?.pathname === '/login';
 
   onMount(async () => {
     if (!browser || !data.session) return;
@@ -49,40 +51,46 @@
 
 <!-- App shell -->
 <div class="min-h-screen bg-slate-50 text-slate-900">
-  <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4 xs:flex-row xs:items-center xs:justify-between">
-      <div class="flex items-center gap-3">
-        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
-        <div>
-          <h1 class="text-lg font-semibold text-slate-900">SleepTracker</h1>
-          <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
+  {#if isAuthRoute}
+    <main class="mx-auto flex min-h-screen items-center justify-center px-4 py-10">
+      <slot />
+    </main>
+  {:else}
+    <header class="border-b border-slate-200/70 bg-white/90 backdrop-blur">
+      <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4 xs:flex-row xs:items-center xs:justify-between">
+        <div class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-sm font-semibold text-white">ST</span>
+          <div>
+            <h1 class="text-lg font-semibold text-slate-900">SleepTracker</h1>
+            <p class="text-xs text-slate-500">Calm rhythms, better rest</p>
+          </div>
         </div>
+        <nav class="flex flex-wrap items-center gap-2 text-sm">
+          {#if data.session}
+            <a href="/" class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Home</a>
+            <a href="/trends" class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Trends</a>
+            <button
+              class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-rose-600 hover:bg-rose-50"
+              on:click|preventDefault={logout}
+            >
+              Logout
+            </button>
+          {:else}
+            <a
+              href="/login"
+              class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-1.5 font-semibold text-white shadow-sm hover:bg-indigo-700"
+            >
+              Login
+            </a>
+          {/if}
+        </nav>
       </div>
-      <nav class="flex flex-wrap items-center gap-2 text-sm">
-        {#if data.session}
-          <a href="/" class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Home</a>
-          <a href="/trends" class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50">Trends</a>
-          <button
-            class="focus-ring touch-target inline-flex items-center rounded-full px-3 py-1.5 text-rose-600 hover:bg-rose-50"
-            on:click|preventDefault={logout}
-          >
-            Logout
-          </button>
-        {:else}
-          <a
-            href="/login"
-            class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-1.5 font-semibold text-white shadow-sm hover:bg-indigo-700"
-          >
-            Login
-          </a>
-        {/if}
-      </nav>
-    </div>
-  </header>
+    </header>
 
-  <main class="mx-auto max-w-5xl px-4 py-8">
-    <slot />
-  </main>
+    <main class="mx-auto max-w-5xl px-4 py-8">
+      <slot />
+    </main>
+  {/if}
 </div>
 
 <!-- Toasts -->

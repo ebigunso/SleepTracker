@@ -14,6 +14,13 @@
   --color-ring: rgba(79, 70, 229, 0.4);
   --radius-base: 0.75rem;
   --shadow-card: 0 10px 30px -20px rgba(15, 23, 42, 0.35);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
 }
 
 @layer base {
@@ -89,6 +96,34 @@
 }
 
 @layer components {
+  .page-container {
+    @apply container;
+  }
+
+  .page-stack {
+    @apply space-y-6;
+  }
+
+  .section-stack {
+    @apply space-y-4;
+  }
+
+  .page-title {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold tracking-tight text-slate-900;
+  }
+
+  .stat-value {
+    @apply text-2xl font-semibold text-slate-900;
+  }
+
+  .meta-text {
+    @apply text-xs uppercase tracking-[0.2em] text-slate-500;
+  }
+
   .card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
