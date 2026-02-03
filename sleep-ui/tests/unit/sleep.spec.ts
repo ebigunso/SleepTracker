@@ -23,7 +23,6 @@ describe('computeSegments', () => {
   });
 });
 
-<<<<<<< HEAD
 describe('formatDurationHMM', () => {
   it('formats minutes as h:mm', () => {
     expect(formatDurationHMM(125)).toBe('2:05');
