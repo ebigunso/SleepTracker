@@ -40,6 +40,7 @@ Routes:
 - `POST /api/login.json`
 - `POST /api/logout`
 - `GET /api/session`
+- `GET /api/settings/timezone`
 - `POST /api/settings/timezone`
 - `POST /api/sleep`
 - `GET /api/sleep/date/{date}`
@@ -123,7 +124,10 @@ pub fn router(db: Db) -> Router {
         .route("/api/login.json", post(post_login_json))
         .route("/api/logout", post(post_logout))
         .route("/api/session", get(api_session))
-        .route("/api/settings/timezone", post(post_settings_timezone))
+        .route(
+            "/api/settings/timezone",
+            get(get_settings_timezone).post(post_settings_timezone),
+        )
         .route("/api/sleep", post(create_sleep))
         .route("/api/sleep/date/{date}", get(get_sleep))
         // Register methods for /api/sleep/{id} explicitly to avoid any chaining ambiguity
@@ -158,6 +162,11 @@ async fn api_session(jar: PrivateCookieJar) -> Json<serde_json::Value> {
 
 #[derive(serde::Deserialize)]
 struct TimezonePayload {
+    timezone: String,
+}
+
+#[derive(serde::Serialize)]
+struct TimezoneResponse {
     timezone: String,
 }
 
@@ -311,6 +320,25 @@ async fn post_settings_timezone(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     handlers::set_user_timezone(&db, payload.timezone).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[doc = r#"Get the user timezone.
+
+Accepts: `GET /api/settings/timezone`
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — `{ "timezone": "Asia/Tokyo" }`
+- 401 Unauthorized — no/invalid session
+"#]
+async fn get_settings_timezone(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    let timezone = handlers::get_user_timezone(&db).await;
+    Ok(Json(TimezoneResponse { timezone }))
 }
 
 #[doc = r#"Create a sleep session.

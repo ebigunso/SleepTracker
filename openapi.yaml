@@ -90,6 +90,24 @@ paths:
                     type: boolean
 
   /api/settings/timezone:
+    get:
+      summary: Get user timezone
+      description: Returns the stored IANA timezone name (falls back to APP_TZ when unset).
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimezoneResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
       summary: Set user timezone
       description: Persist an IANA timezone name for DST-aware duration calculations.
@@ -656,6 +674,12 @@ components:
         password:
           type: string
     TimezonePayload:
+      type: object
+      properties:
+        timezone:
+          type: string
+          description: IANA timezone name (e.g., Asia/Tokyo)
+    TimezoneResponse:
       type: object
       properties:
         timezone:

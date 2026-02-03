@@ -91,6 +91,11 @@ pub async fn set_user_timezone(db: &Db, timezone: String) -> Result<(), ApiError
     Ok(())
 }
 
+pub async fn get_user_timezone(db: &Db) -> String {
+    let tz = repository::get_user_timezone(db).await;
+    tz.name().to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
