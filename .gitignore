@@ -35,3 +35,5 @@ sleep-ui/test-results
 # Coding Agent Documents
 docs/agent/rules/
 docs/plans/
+docs/coding-agent/rules/
+docs/coding-agent/plans/
