@@ -12,11 +12,11 @@
   export let className = '';
 
   const base =
-    'block w-full rounded-md border bg-white text-sm text-slate-900 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-500';
+    'input-base text-sm';
   const variants: Record<Variant, string> = {
-    default: 'border-slate-200',
-    ghost: 'border-transparent bg-slate-50',
-    error: 'border-rose-300 text-rose-700 focus:border-rose-500 focus:ring-rose-400/40'
+    default: '',
+    ghost: 'input-ghost',
+    error: 'input-error'
   };
   const sizes: Record<Size, string> = {
     sm: 'px-2.5 py-1.5 text-xs',

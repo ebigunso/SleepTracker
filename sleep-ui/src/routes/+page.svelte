@@ -133,29 +133,27 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <h2 class="text-2xl font-semibold text-slate-900" data-testid="dashboard-heading">
+      <h2 class="page-title" data-testid="dashboard-heading">
         Last {windowDays} days
       </h2>
-      <p class="text-sm text-slate-500">{data.from} – {data.to}</p>
+      <p class="text-sm text-muted">{data.from} – {data.to}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button
-        class="focus-ring touch-target inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+        class="btn-outline focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm"
         on:click={goPrev}
       >
         Prev
       </button>
       <button
-        class={`focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm ${
-          canNext ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50' : 'border border-slate-100 bg-slate-100 text-slate-400'
-        }`}
+        class="btn-outline focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         on:click={goNext}
         disabled={!canNext}
       >
         Next
       </button>
       <button
-        class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+        class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm"
         on:click={quickLog}
       >
         + Log sleep
@@ -171,17 +169,17 @@
     avgLatency={totalSessions > 0 ? `${avgLatencyMin}m` : '—'}
   />
 
-  <div class="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-    <label class="text-slate-500" for="jump-date">Jump to date</label>
+  <div class="surface-card flex flex-wrap items-center gap-2 rounded-xl px-4 py-3 text-sm">
+    <label class="text-muted" for="jump-date">Jump to date</label>
     <input
       id="jump-date"
       type="date"
-      class="rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-700 focus:border-indigo-500 focus:ring-indigo-500"
+      class="input-base text-sm"
       bind:value={jumpTo}
       max={data.today}
     />
     <button
-      class="focus-ring touch-target inline-flex items-center rounded-full bg-sky-500 px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-600"
+      class="btn-secondary focus-ring touch-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm shadow-sm"
       on:click={jumpToDate}
     >
       Go

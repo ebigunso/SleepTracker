@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { apiGet } from '$lib/api';
   import SleepBar from '$lib/components/SleepBar.svelte';
+  import { theme } from '$lib/stores/theme';
   import {
     computeDurationMin,
     formatDurationHMM,
@@ -28,34 +29,34 @@
     { label: '30d', days: 30 }
   ];
 
-  const metrics: { key: MetricKey; label: string; helper: string; color: string; border: string }[] = [
+  const metrics: { key: MetricKey; label: string; helper: string; colorVar: string; borderVar: string }[] = [
     {
       key: 'duration',
       label: 'Duration',
       helper: 'Total sleep time',
-      color: 'rgba(99, 102, 241, 0.45)',
-      border: 'rgb(99, 102, 241)'
+      colorVar: '--color-primary-soft',
+      borderVar: '--color-primary'
     },
     {
       key: 'quality',
       label: 'Quality',
       helper: 'Sleep quality scores',
-      color: 'rgba(14, 165, 233, 0.35)',
-      border: 'rgb(14, 165, 233)'
+      colorVar: '--color-secondary-soft',
+      borderVar: '--color-secondary'
     },
     {
       key: 'bedtime',
       label: 'Bedtime',
       helper: 'Start time (24h)',
-      color: 'rgba(34, 197, 94, 0.35)',
-      border: 'rgb(34, 197, 94)'
+      colorVar: '--color-accent-soft',
+      borderVar: '--color-accent'
     },
     {
       key: 'waketime',
       label: 'Wake time',
       helper: 'End time (24h)',
-      color: 'rgba(248, 113, 113, 0.35)',
-      border: 'rgb(248, 113, 113)'
+      colorVar: '--color-danger-soft',
+      borderVar: '--color-danger'
     }
   ];
 
@@ -153,7 +154,11 @@
     }
   }
 
-  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey) {
+  function cssVar(name: string): string {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: 'light' | 'dark') {
     if (!canvasEl) return;
     if (!data.length) {
       chart?.destroy();
@@ -164,6 +169,12 @@
     const labels = data.map((b) => b.date);
     const values = data.map((b) => metricValue(b, selectedMetric));
     const meta = metrics.find((m) => m.key === selectedMetric) ?? metrics[0];
+    const isDark = themeValue === 'dark';
+    const textColor = cssVar('--color-text');
+    const mutedColor = cssVar('--color-text-muted');
+    const borderColor = cssVar('--color-border');
+    const surfaceColor = cssVar('--color-surface');
+    const gridColor = isDark ? borderColor : borderColor;
 
     if (!ChartJS) {
       // typed dynamic import for chart.js to satisfy TS under bundler mode
@@ -196,8 +207,8 @@
             label: meta.label,
             data: values,
             borderWidth: 1,
-            backgroundColor: meta.color,
-            borderColor: meta.border
+            backgroundColor: cssVar(meta.colorVar),
+            borderColor: cssVar(meta.borderVar)
           }
         ]
       },
@@ -209,33 +220,47 @@
           y: {
             title: {
               display: true,
-              text: yAxisTitle
+              text: yAxisTitle,
+              color: mutedColor
             },
             beginAtZero: !isTimeMetric,
             min: yAxisMin,
             max: yAxisMax,
             ticks: {
+              color: mutedColor,
               callback: (value: string | number) => {
                 if (selectedMetric === 'duration') return formatDurationHMM(Number(value));
                 if (selectedMetric === 'quality') return `${value}`;
                 return formatMinutesAsTime(Number(value));
               }
+            },
+            grid: {
+              color: gridColor
             }
           },
           x: {
-            title: { display: true, text: 'Date' },
+            title: { display: true, text: 'Date', color: mutedColor },
             ticks: {
+              color: mutedColor,
               maxTicksLimit: 6,
               callback: (_value: string | number, index: number) => {
                 const label = labels[index] ?? '';
                 return label ? formatDateShort(label) : '';
               }
+            },
+            grid: {
+              color: gridColor
             }
           }
         },
         plugins: {
           legend: { display: false },
           tooltip: {
+            backgroundColor: surfaceColor,
+            borderColor,
+            borderWidth: 1,
+            titleColor: textColor,
+            bodyColor: mutedColor,
             callbacks: {
               title(ctx: any) {
                 if (!ctx?.length) return '';
@@ -295,7 +320,7 @@
   $: avgQuality = average(sortedBars.map((b) => b.quality).filter((v): v is number => v != null));
   $: totalNights = sortedBars.length;
   $: if (view === 'chart') {
-    void renderChart(sortedBars, metric);
+    void renderChart(sortedBars, metric, $theme);
   } else {
     chart?.destroy();
     chart = null;
@@ -303,20 +328,18 @@
 </script>
 
 <section class="space-y-6">
-  <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+  <div class="surface-card rounded-2xl px-5 py-4">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-semibold text-slate-900">Trends</h2>
-        <p class="text-sm text-slate-500">{rangeLabel} · {from} – {to}</p>
+        <h2 class="text-default text-2xl font-semibold">Trends</h2>
+        <p class="text-muted text-sm">{rangeLabel} · {from} – {to}</p>
       </div>
       <div class="flex flex-wrap items-center gap-2">
         {#each views as option}
           <button
             type="button"
-            class={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
-              option.key !== view
-                ? 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700'
+            class={`focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
+              option.key !== view ? 'btn-outline' : 'btn-primary'
             }`}
             on:click={() => (view = option.key)}
           >
@@ -326,14 +349,12 @@
       </div>
     </div>
     <div class="mt-4 flex flex-wrap items-end gap-3">
-      <div class="flex flex-wrap items-center gap-1 rounded-full bg-slate-100 p-1">
+      <div class="toggle-group flex flex-wrap items-center gap-1 rounded-full p-1">
         {#each presets as preset}
           <button
             type="button"
-            class={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-              currentRangeDays === preset.days
-                ? 'bg-white text-slate-700 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+            class={`toggle-pill rounded-full px-3 py-1 text-xs font-semibold transition ${
+              currentRangeDays === preset.days ? 'toggle-pill--active' : ''
             }`}
             on:click={() => applyPreset(preset.days)}
           >
@@ -343,26 +364,26 @@
       </div>
       <form class="flex flex-wrap items-end gap-2" on:submit={refresh}>
         <div>
-          <label for="from-date" class="block text-xs text-slate-500">From</label>
+          <label for="from-date" class="text-muted block text-xs">From</label>
           <input
             id="from-date"
             type="date"
             bind:value={from}
-            class="rounded-md border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="input-base text-sm"
           />
         </div>
         <div>
-          <label for="to-date" class="block text-xs text-slate-500">To</label>
+          <label for="to-date" class="text-muted block text-xs">To</label>
           <input
             id="to-date"
             type="date"
             bind:value={to}
-            class="rounded-md border-slate-200 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+            class="input-base text-sm"
           />
         </div>
         <button
           type="submit"
-          class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
+          class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
           disabled={loading}
         >
           {#if loading}Loading...{:else}Apply{/if}
@@ -376,36 +397,34 @@
       {errorMsg}
     </div>
   {/if}
-  <div class="grid gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+  <div class="surface-card grid gap-3 rounded-2xl px-5 py-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
     <div>
-      <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Nights</div>
-      <div class="mt-1 text-lg font-semibold text-slate-900">{totalNights}</div>
+      <div class="text-muted text-xs font-semibold uppercase tracking-wide">Nights</div>
+      <div class="text-default mt-1 text-lg font-semibold">{totalNights}</div>
     </div>
     <div>
-      <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Avg duration</div>
-      <div class="mt-1 text-lg font-semibold text-slate-900">{formatDurationHMM(avgDuration)}</div>
+      <div class="text-muted text-xs font-semibold uppercase tracking-wide">Avg duration</div>
+      <div class="text-default mt-1 text-lg font-semibold">{formatDurationHMM(avgDuration)}</div>
     </div>
     <div>
-      <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Avg quality</div>
-      <div class="mt-1 text-lg font-semibold text-slate-900">{formatQuality(avgQuality)}</div>
+      <div class="text-muted text-xs font-semibold uppercase tracking-wide">Avg quality</div>
+      <div class="text-default mt-1 text-lg font-semibold">{formatQuality(avgQuality)}</div>
     </div>
     <div>
-      <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Range</div>
-      <div class="mt-1 text-lg font-semibold text-slate-900">{from} – {to}</div>
+      <div class="text-muted text-xs font-semibold uppercase tracking-wide">Range</div>
+      <div class="text-default mt-1 text-lg font-semibold">{from} – {to}</div>
     </div>
   </div>
 
   {#if view === 'chart'}
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+    <div class="surface-card space-y-4 rounded-2xl p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2 rounded-full bg-slate-100 p-1">
+        <div class="toggle-group flex flex-wrap items-center gap-2 rounded-full p-1">
           {#each metrics as option}
             <button
               type="button"
-              class={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                metric === option.key
-                  ? 'bg-white text-slate-700 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+              class={`toggle-pill rounded-full px-3 py-1 text-xs font-semibold transition ${
+                metric === option.key ? 'toggle-pill--active' : ''
               }`}
               on:click={() => (metric = option.key)}
             >
@@ -413,41 +432,41 @@
             </button>
           {/each}
         </div>
-        <div class="text-xs text-slate-500">
+        <div class="text-muted text-xs">
           {metrics.find((m) => m.key === metric)?.helper}
         </div>
       </div>
       <div class="h-72">
         {#if loading}
-          <div class="flex h-full items-center justify-center text-sm text-slate-500">Loading chart…</div>
+          <div class="text-muted flex h-full items-center justify-center text-sm">Loading chart…</div>
         {:else if sortedBars.length === 0}
-          <div class="flex h-full items-center justify-center text-sm text-slate-500">No data in range.</div>
+          <div class="text-muted flex h-full items-center justify-center text-sm">No data in range.</div>
         {:else}
           <canvas bind:this={canvasEl}></canvas>
         {/if}
       </div>
     </div>
   {:else}
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+    <div class="surface-card space-y-4 rounded-2xl p-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3 class="text-sm font-semibold text-slate-700">Schedule view</h3>
-        <span class="text-xs text-slate-500">24h timeline</span>
+        <h3 class="text-default text-sm font-semibold">Schedule view</h3>
+        <span class="text-muted text-xs">24h timeline</span>
       </div>
       {#if loading}
-        <div class="text-sm text-slate-500">Loading schedule…</div>
+        <div class="text-muted text-sm">Loading schedule…</div>
       {:else if sortedBars.length === 0}
-        <div class="text-sm text-slate-500">No data in range.</div>
+        <div class="text-muted text-sm">No data in range.</div>
       {:else}
         <div class="space-y-3">
           {#each sortedBars as bar (bar.date)}
-            <div class="grid gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-3 sm:grid-cols-[160px,1fr]">
+            <div class="surface-muted grid gap-3 rounded-xl px-3 py-3 sm:grid-cols-[160px,1fr]">
               <div>
-                <div class="text-sm font-semibold text-slate-900">{bar.date}</div>
-                <div class="text-xs text-slate-500">{formatTimeHHMM(bar.bed_time)} – {formatTimeHHMM(bar.wake_time)}</div>
+                <div class="text-default text-sm font-semibold">{bar.date}</div>
+                <div class="text-muted text-xs">{formatTimeHHMM(bar.bed_time)} – {formatTimeHHMM(bar.wake_time)}</div>
               </div>
               <div class="space-y-2">
                 <SleepBar bed_time={bar.bed_time} wake_time={bar.wake_time} />
-                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                <div class="text-muted flex flex-wrap items-center gap-3 text-xs">
                   <span>Duration {formatDurationHMM(bar.duration_min ?? computeDurationMin(bar.bed_time, bar.wake_time))}</span>
                   {#if bar.quality != null}
                     <span>Quality {formatQuality(bar.quality)}</span>
