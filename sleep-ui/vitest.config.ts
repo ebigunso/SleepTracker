@@ -5,6 +5,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '$app/environment': resolve('tests/mocks/app-environment.ts'),
+      '$lib': resolve('src/lib'),
     },
   },
   test: {
