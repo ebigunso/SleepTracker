@@ -4,10 +4,10 @@
   export let className = '';
 </script>
 
-<div class={`rounded-xl border border-dashed border-slate-200 bg-white/60 p-6 text-center ${className}`}>
+<div class={`empty-state p-6 text-center ${className}`}>
   <div class="space-y-2">
     <p class="page-title">{title}</p>
-    <p class="text-sm text-slate-500">{message}</p>
+    <p class="text-sm">{message}</p>
   </div>
   {#if $$slots.action}
     <div class="mt-4 flex justify-center">

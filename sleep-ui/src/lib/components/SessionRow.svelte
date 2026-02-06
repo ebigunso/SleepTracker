@@ -52,25 +52,25 @@
   $: qualityLabel = item.quality ?? '—';
 </script>
 
-<div class="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+<div class="card px-4 py-3">
   <div class="flex items-start justify-between gap-4">
     <div class="min-w-0">
-      <p class="text-sm font-semibold text-slate-900">{timeRange}</p>
-      <div class="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
-        <span>Duration <span class="font-medium text-slate-700">{durationLabel}</span></span>
-        <span>Quality <span class="font-medium text-slate-700">{qualityLabel}</span></span>
+      <p class="text-sm font-semibold text-default">{timeRange}</p>
+      <div class="mt-1 flex flex-wrap gap-3 text-xs text-muted">
+        <span>Duration <span class="font-medium text-default">{durationLabel}</span></span>
+        <span>Quality <span class="font-medium text-default">{qualityLabel}</span></span>
       </div>
     </div>
     <details bind:open={menuOpen} bind:this={detailsEl} class="relative">
       <summary
-        class="inline-flex h-8 w-8 list-none items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50"
+        class="inline-flex h-8 w-8 list-none items-center justify-center rounded-full border border-[color:var(--color-border)] text-muted hover:bg-[color:var(--color-surface-muted)]"
         aria-label="Session actions"
       >
         &#8942;
       </summary>
-      <div class="absolute right-0 z-10 mt-2 w-28 rounded-lg border border-slate-200 bg-white p-1 text-sm shadow-lg">
+      <div class="surface-card absolute right-0 z-10 mt-2 w-28 rounded-lg p-1 text-sm">
         <button
-          class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-slate-700 hover:bg-slate-50"
+          class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-default hover:bg-[color:var(--color-surface-muted)]"
           on:click={onEdit}
         >
           Edit

@@ -10,13 +10,13 @@
   export let className = '';
 
   const base =
-    'inline-flex items-center justify-center font-semibold rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 disabled:opacity-60 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center font-semibold rounded-md transition-colors focus-ring disabled:opacity-60 disabled:cursor-not-allowed';
   const variants: Record<Variant, string> = {
-    primary: 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-500',
-    secondary: 'bg-indigo-50 text-indigo-700 ring-1 ring-inset ring-indigo-200 hover:bg-indigo-100',
-    outline: 'bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50',
-    ghost: 'bg-transparent text-slate-600 hover:bg-slate-100',
-    danger: 'bg-rose-500 text-white shadow-sm hover:bg-rose-600'
+    primary: 'btn-primary shadow-sm',
+    secondary: 'btn-secondary',
+    outline: 'btn-outline',
+    ghost: 'btn-ghost',
+    danger: 'btn-danger shadow-sm'
   };
   const sizes: Record<Size, string> = {
     sm: 'px-2.5 py-1.5 text-xs',

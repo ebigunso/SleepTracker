@@ -1,5 +1,6 @@
 <script lang="ts">
   import SessionRow from '$lib/components/SessionRow.svelte';
+  import Chip from '$lib/components/Chip.svelte';
   import { createEventDispatcher } from 'svelte';
   import type { SleepSession } from '$lib/api';
   import { computeDurationMin, formatDurationMin } from '$lib/utils/sleep';
@@ -7,6 +8,8 @@
   export let date: string;
   export let items: SleepSession[] = [];
   export let intensity: 'none' | 'light' | 'hard' | undefined;
+
+  type ChipVariant = 'neutral' | 'primary' | 'success' | 'warning' | 'info';
 
   const dispatch = createEventDispatcher<{
     delete: { id: number; date: string };
@@ -28,37 +31,36 @@
     : null;
   $: avgQualityLabel = avgQualityValue == null ? '—' : `${avgQualityValue}`;
 
-  $: intensityChip =
+  let intensityVariant: ChipVariant = 'neutral';
+
+  $: intensityVariant =
     intensity === 'hard'
-      ? 'bg-green-100 text-green-700 ring-1 ring-inset ring-green-200'
+      ? 'success'
       : intensity === 'light'
-      ? 'bg-sky-100 text-sky-700 ring-1 ring-inset ring-sky-200'
-      : 'bg-gray-100 text-gray-700 ring-1 ring-inset ring-gray-200';
+      ? 'info'
+      : 'neutral';
 
   function handleDelete(e: CustomEvent<{ id: number; date: string }>) {
     dispatch('delete', e.detail);
   }
 </script>
 
-<article class="w-full rounded-2xl border border-slate-200 bg-slate-50/40 p-4 shadow-sm">
+<article class="surface-card w-full rounded-2xl p-4">
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
-      <a class="text-lg font-semibold text-slate-900 hover:text-indigo-600" href={`/day/${date}`}>{date}</a>
-      <p class="text-sm text-slate-500">Total {formatDurationMin(totalDuration)}</p>
+      <a
+        class="text-lg font-semibold text-[color:var(--color-text)] hover:text-[color:var(--color-primary)]"
+        href={`/day/${date}`}
+      >{date}</a>
+      <p class="text-sm text-muted">Total {formatDurationMin(totalDuration)}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      <span class="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-        {sessionCount} sessions
-      </span>
-      <span class="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-        Avg quality {avgQualityLabel}
-      </span>
+      <Chip variant="neutral">{sessionCount} sessions</Chip>
+      <Chip variant="neutral">Avg quality {avgQualityLabel}</Chip>
       {#if intensity}
-        <span class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${intensityChip}`}>
-          Exercise {intensity}
-        </span>
+        <Chip variant={intensityVariant}>Exercise {intensity}</Chip>
       {/if}
-      <a class="text-xs font-semibold text-indigo-600 hover:text-indigo-500" href={`/day/${date}`}>View day</a>
+      <a class="text-xs font-semibold text-[color:var(--color-primary)] hover:text-[color:var(--color-primary-hover)]" href={`/day/${date}`}>View day</a>
     </div>
   </header>
 
@@ -68,7 +70,7 @@
         <SessionRow item={item} on:delete={handleDelete} />
       {/each}
     {:else}
-      <div class="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+      <div class="empty-state-box rounded-xl px-4 py-6 text-sm">
         No sleep logged for this day.
       </div>
     {/if}

@@ -1,8 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // Apply persisted theme before Svelte hydrates to avoid flash.
+      (() => {
+        try {
+          const key = 'sleeptracker.theme';
+          const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`));
+          const stored = match ? decodeURIComponent(match[1]) : null;
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.dataset.theme = stored;
+          }
+        } catch {
+          // no-op
+        }
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

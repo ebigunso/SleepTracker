@@ -9,8 +9,8 @@
 
   const base = 'rounded-xl';
   const variants: Record<Variant, string> = {
-    elevated: 'bg-white shadow-card border border-slate-200',
-    outline: 'bg-white border border-slate-200',
+    elevated: 'card',
+    outline: 'card card-outline',
     ghost: 'bg-transparent'
   };
   const paddings: Record<Padding, string> = {
