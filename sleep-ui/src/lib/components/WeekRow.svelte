@@ -82,19 +82,19 @@
   }
 </script>
 
-<div class="flex flex-col xs:flex-row xs:items-center gap-3 py-3 border-b border-gray-200">
+<div class="flex flex-col xs:flex-row xs:items-center gap-3 py-3 border-b border-[color:var(--color-border)]">
   <div class="w-full xs:w-28 shrink-0">
     <a class="section-title text-sm text-indigo-600 hover:text-indigo-500 focus-ring touch-target inline-flex items-center" href={`/day/${date}`}>{date}</a>
   </div>
 
   {#if sessionCount > 0}
     <div class="flex-1 min-w-0 space-y-2">
-      <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-        <span><span class="meta-text">Sessions</span> <span class="font-medium text-slate-800">{sessionCount}</span></span>
+      <div class="flex flex-wrap items-center gap-3 text-xs text-muted">
+        <span><span class="meta-text">Sessions</span> <span class="font-medium text-default">{sessionCount}</span></span>
         <span><span class="meta-text">Total</span> <span class="text-base stat-value">{fmtMin(totalDuration)}</span></span>
-        <span><span class="meta-text">Avg Quality</span> <span class="font-medium text-slate-800">{avgQuality ?? '—'}</span></span>
-        <span><span class="meta-text">Avg Latency</span> <span class="font-medium text-slate-800">{avgLatency ?? '—'}m</span></span>
-        <span><span class="meta-text">Awakenings</span> <span class="font-medium text-slate-800">{totalAwakenings}</span></span>
+        <span><span class="meta-text">Avg Quality</span> <span class="font-medium text-default">{avgQuality ?? '—'}</span></span>
+        <span><span class="meta-text">Avg Latency</span> <span class="font-medium text-default">{avgLatency ?? '—'}m</span></span>
+        <span><span class="meta-text">Awakenings</span> <span class="font-medium text-default">{totalAwakenings}</span></span>
         {#if intensity}
           <Chip variant={badgeColor} size="sm">Exercise: {intensity}</Chip>
         {/if}
@@ -103,12 +103,12 @@
         {#each sortedItems as item (item.id)}
           <Card padding="md">
             <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <span><span class="meta-text">Bed</span> <span class="font-medium text-slate-800">{formatTimeHHmm(item.bed_time)}</span></span>
-              <span><span class="meta-text">Wake</span> <span class="font-medium text-slate-800">{formatTimeHHmm(item.wake_time)}</span></span>
-              <span><span class="meta-text">Duration</span> <span class="font-medium text-slate-800">{fmtMin(durationFor(item))}</span></span>
-              <span><span class="meta-text">Quality</span> <span class="font-medium text-slate-800">{item.quality}</span></span>
-              <span><span class="meta-text">Latency</span> <span class="font-medium text-slate-800">{item.latency_min}m</span></span>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span><span class="meta-text">Bed</span> <span class="font-medium text-default">{formatTimeHHmm(item.bed_time)}</span></span>
+              <span><span class="meta-text">Wake</span> <span class="font-medium text-default">{formatTimeHHmm(item.wake_time)}</span></span>
+              <span><span class="meta-text">Duration</span> <span class="font-medium text-default">{fmtMin(durationFor(item))}</span></span>
+              <span><span class="meta-text">Quality</span> <span class="font-medium text-default">{item.quality}</span></span>
+              <span><span class="meta-text">Latency</span> <span class="font-medium text-default">{item.latency_min}m</span></span>
             </div>
             <div class="mt-3 flex justify-end">
               <div class="hidden sm:flex gap-2">

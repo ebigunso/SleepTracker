@@ -31,6 +31,10 @@
   --color-accent-soft: rgba(34, 197, 94, 0.15);
   --color-accent-soft-hover: rgba(34, 197, 94, 0.22);
   --color-accent-border: rgba(34, 197, 94, 0.35);
+  --color-chart-primary: var(--color-primary-soft);
+  --color-chart-secondary: var(--color-secondary-soft);
+  --color-chart-accent: var(--color-accent-soft);
+  --color-chart-danger: var(--color-danger-soft);
   --color-success: #16a34a;
   --color-success-soft: rgba(34, 197, 94, 0.16);
   --color-danger: #e11d48;
@@ -64,7 +68,7 @@
   --color-surface: #111827;
   --color-surface-muted: #0f172a;
   --color-text: #e2e8f0;
-  --color-text-muted: #94a3b8;
+  --color-text-muted: #cbd5e1;
   --color-placeholder: #64748b;
   --color-border: #1f2937;
   --color-ring: rgba(129, 140, 248, 0.5);
@@ -84,6 +88,10 @@
   --color-accent-soft: rgba(52, 211, 153, 0.18);
   --color-accent-soft-hover: rgba(52, 211, 153, 0.28);
   --color-accent-border: rgba(52, 211, 153, 0.35);
+  --color-chart-primary: rgba(129, 140, 248, 0.45);
+  --color-chart-secondary: rgba(56, 189, 248, 0.42);
+  --color-chart-accent: rgba(52, 211, 153, 0.4);
+  --color-chart-danger: rgba(251, 113, 133, 0.4);
   --color-success: #34d399;
   --color-success-soft: rgba(52, 211, 153, 0.18);
   --color-danger: #fb7185;
@@ -438,6 +446,7 @@
   .btn-secondary:hover {
     background: var(--color-secondary-soft-hover);
   }
+
 
   .btn-outline {
     background: var(--color-surface);

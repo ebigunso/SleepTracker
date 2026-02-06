@@ -179,7 +179,7 @@
       max={data.today}
     />
     <button
-      class="btn-secondary focus-ring touch-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm shadow-sm"
+      class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm shadow-sm"
       on:click={jumpToDate}
     >
       Go

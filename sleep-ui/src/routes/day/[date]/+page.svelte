@@ -57,8 +57,8 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="text-2xl font-semibold text-slate-900">Day view</h2>
-      <p class="text-sm text-slate-500">{data.date}</p>
+      <h2 class="text-2xl font-semibold text-default">Day view</h2>
+      <p class="text-sm text-muted">{data.date}</p>
     </div>
     <button
       class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
@@ -69,29 +69,29 @@
   </div>
 
   {#if sessionCount > 0}
-    <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 space-y-4">
-      <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-        <span>Sessions: <span class="font-semibold text-slate-700">{sessionCount}</span></span>
-        <span>Total: <span class="font-semibold text-slate-700">{fmtMin(totalDuration)}</span></span>
-        <span>Avg Quality: <span class="font-semibold text-slate-700">{avgQuality ?? '—'}</span></span>
-        <span>Avg Latency: <span class="font-semibold text-slate-700">{avgLatency ?? '—'}m</span></span>
-        <span>Awakenings: <span class="font-semibold text-slate-700">{totalAwakenings}</span></span>
+    <div class="card p-4 space-y-4">
+      <div class="flex flex-wrap items-center gap-3 text-xs text-muted">
+        <span>Sessions: <span class="font-semibold text-default">{sessionCount}</span></span>
+        <span>Total: <span class="font-semibold text-default">{fmtMin(totalDuration)}</span></span>
+        <span>Avg Quality: <span class="font-semibold text-default">{avgQuality ?? '—'}</span></span>
+        <span>Avg Latency: <span class="font-semibold text-default">{avgLatency ?? '—'}m</span></span>
+        <span>Awakenings: <span class="font-semibold text-default">{totalAwakenings}</span></span>
       </div>
       <div class="space-y-4">
         {#each sortedItems as item (item.id)}
-          <div class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div class="card p-4">
             <SleepBar bed_time={item.bed_time} wake_time={item.wake_time} />
-            <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-700 sm:grid-cols-3">
-              <div><span class="text-slate-500">Bed:</span> <span class="font-medium">{item.bed_time}</span></div>
-              <div><span class="text-slate-500">Wake:</span> <span class="font-medium">{item.wake_time}</span></div>
-              <div><span class="text-slate-500">Duration:</span> <span class="font-medium">{fmtMin(durationFor(item))}</span></div>
-              <div><span class="text-slate-500">Latency:</span> <span class="font-medium">{item.latency_min}m</span></div>
-              <div><span class="text-slate-500">Awakenings:</span> <span class="font-medium">{item.awakenings}</span></div>
-              <div><span class="text-slate-500">Quality:</span> <span class="font-medium">{item.quality}</span></div>
+            <div class="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm text-default sm:grid-cols-3">
+              <div><span class="text-muted">Bed:</span> <span class="font-medium">{item.bed_time}</span></div>
+              <div><span class="text-muted">Wake:</span> <span class="font-medium">{item.wake_time}</span></div>
+              <div><span class="text-muted">Duration:</span> <span class="font-medium">{fmtMin(durationFor(item))}</span></div>
+              <div><span class="text-muted">Latency:</span> <span class="font-medium">{item.latency_min}m</span></div>
+              <div><span class="text-muted">Awakenings:</span> <span class="font-medium">{item.awakenings}</span></div>
+              <div><span class="text-muted">Quality:</span> <span class="font-medium">{item.quality}</span></div>
             </div>
             <div class="mt-4 flex justify-end">
               <button
-                class="focus-ring touch-target inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                class="focus-ring touch-target inline-flex items-center rounded-full border border-[color:var(--color-border)] bg-[color:var(--color-surface)] px-4 py-2 text-sm font-semibold text-default shadow-sm hover:bg-[color:var(--color-surface-muted)]"
                 on:click={() => edit(item.id, item.date)}
               >
                 Edit
