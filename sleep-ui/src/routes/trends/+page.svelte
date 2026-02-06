@@ -29,12 +29,20 @@
     { label: '30d', days: 30 }
   ];
 
-  const metrics: { key: MetricKey; label: string; helper: string; colorVar: string; borderVar: string }[] = [
+  const metrics: {
+    key: MetricKey;
+    label: string;
+    helper: string;
+    colorVar: string;
+    chartColorVar: string;
+    borderVar: string;
+  }[] = [
     {
       key: 'duration',
       label: 'Duration',
       helper: 'Total sleep time',
       colorVar: '--color-primary-soft',
+      chartColorVar: '--color-chart-primary',
       borderVar: '--color-primary'
     },
     {
@@ -42,6 +50,7 @@
       label: 'Quality',
       helper: 'Sleep quality scores',
       colorVar: '--color-secondary-soft',
+      chartColorVar: '--color-chart-secondary',
       borderVar: '--color-secondary'
     },
     {
@@ -49,6 +58,7 @@
       label: 'Bedtime',
       helper: 'Start time (24h)',
       colorVar: '--color-accent-soft',
+      chartColorVar: '--color-chart-accent',
       borderVar: '--color-accent'
     },
     {
@@ -56,6 +66,7 @@
       label: 'Wake time',
       helper: 'End time (24h)',
       colorVar: '--color-danger-soft',
+      chartColorVar: '--color-chart-danger',
       borderVar: '--color-danger'
     }
   ];
@@ -207,7 +218,7 @@
             label: meta.label,
             data: values,
             borderWidth: 1,
-            backgroundColor: cssVar(meta.colorVar),
+            backgroundColor: cssVar(meta.chartColorVar),
             borderColor: cssVar(meta.borderVar)
           }
         ]
