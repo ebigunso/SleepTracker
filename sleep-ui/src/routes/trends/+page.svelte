@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { apiGet } from '$lib/api';
   import SleepBar from '$lib/components/SleepBar.svelte';
-  import { theme } from '$lib/stores/theme';
+  import { theme, type Theme } from '$lib/stores/theme';
   import {
     computeDurationMin,
     formatDurationHMM,
@@ -33,7 +33,6 @@
     key: MetricKey;
     label: string;
     helper: string;
-    colorVar: string;
     chartColorVar: string;
     borderVar: string;
   }[] = [
@@ -41,7 +40,6 @@
       key: 'duration',
       label: 'Duration',
       helper: 'Total sleep time',
-      colorVar: '--color-primary-soft',
       chartColorVar: '--color-chart-primary',
       borderVar: '--color-primary'
     },
@@ -49,7 +47,6 @@
       key: 'quality',
       label: 'Quality',
       helper: 'Sleep quality scores',
-      colorVar: '--color-secondary-soft',
       chartColorVar: '--color-chart-secondary',
       borderVar: '--color-secondary'
     },
@@ -57,7 +54,6 @@
       key: 'bedtime',
       label: 'Bedtime',
       helper: 'Start time (24h)',
-      colorVar: '--color-accent-soft',
       chartColorVar: '--color-chart-accent',
       borderVar: '--color-accent'
     },
@@ -65,7 +61,6 @@
       key: 'waketime',
       label: 'Wake time',
       helper: 'End time (24h)',
-      colorVar: '--color-danger-soft',
       chartColorVar: '--color-chart-danger',
       borderVar: '--color-danger'
     }
@@ -169,7 +164,7 @@
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: 'light' | 'dark') {
+  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: Theme) {
     if (!canvasEl) return;
     if (!data.length) {
       chart?.destroy();
@@ -180,12 +175,11 @@
     const labels = data.map((b) => b.date);
     const values = data.map((b) => metricValue(b, selectedMetric));
     const meta = metrics.find((m) => m.key === selectedMetric) ?? metrics[0];
-    const isDark = themeValue === 'dark';
     const textColor = cssVar('--color-text');
     const mutedColor = cssVar('--color-text-muted');
     const borderColor = cssVar('--color-border');
     const surfaceColor = cssVar('--color-surface');
-    const gridColor = isDark ? borderColor : borderColor;
+    const gridColor = borderColor;
 
     if (!ChartJS) {
       // typed dynamic import for chart.js to satisfy TS under bundler mode
