@@ -22,6 +22,23 @@ export function getCookie(name: string): string | null {
   return null;
 }
 
+export interface CookieOptions {
+  path?: string;
+  maxAge?: number;
+  sameSite?: 'Lax' | 'Strict' | 'None';
+  secure?: boolean;
+}
+
+export function setCookie(name: string, value: string, options: CookieOptions = {}): void {
+  if (!isBrowser()) return;
+  const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`];
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (typeof options.maxAge === 'number') parts.push(`Max-Age=${options.maxAge}`);
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  if (options.secure) parts.push('Secure');
+  document.cookie = parts.join('; ');
+}
+
 /**
  * Reads CSRF token from either "__Host-csrf" (secure) or "csrf" (dev)
  */

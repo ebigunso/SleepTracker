@@ -9,7 +9,7 @@
   import '../app.css';
   const AUTH_PREFIX = '/api';
 
-  export let data: { session?: boolean; pathname?: string };
+  export let data: { session?: boolean; pathname?: string; theme?: 'light' | 'dark' };
   let isAuthRoute = false;
   $: isAuthRoute = data?.pathname === '/login';
 

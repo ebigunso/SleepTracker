@@ -6,10 +6,10 @@ type ThemeModule = typeof import('../../src/lib/stores/theme');
 vi.mock('$app/environment', () => ({ browser: true }));
 
 async function loadThemeModule(stored?: string): Promise<ThemeModule> {
-  localStorage.clear();
   document.documentElement.dataset.theme = '';
+  document.cookie = 'sleeptracker.theme=; Max-Age=0; path=/';
   if (stored) {
-    localStorage.setItem('sleeptracker.theme', stored);
+    document.cookie = `sleeptracker.theme=${stored}; path=/`;
   }
   vi.resetModules();
   return await import('../../src/lib/stores/theme');
@@ -17,8 +17,8 @@ async function loadThemeModule(stored?: string): Promise<ThemeModule> {
 
 describe('theme store', () => {
   beforeEach(() => {
-    localStorage.clear();
     document.documentElement.dataset.theme = '';
+    document.cookie = 'sleeptracker.theme=; Max-Age=0; path=/';
   });
 
   it('reads persisted theme on load', async () => {
@@ -28,12 +28,12 @@ describe('theme store', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
   });
 
-  it('writes to localStorage when setting theme', async () => {
+  it('writes to cookie when setting theme', async () => {
     const { theme } = await loadThemeModule();
 
     theme.set('dark');
 
-    expect(localStorage.getItem('sleeptracker.theme')).toBe('dark');
+    expect(document.cookie).toContain('sleeptracker.theme=dark');
     expect(document.documentElement.dataset.theme).toBe('dark');
   });
 
@@ -43,7 +43,7 @@ describe('theme store', () => {
     toggleTheme();
 
     expect(get(theme)).toBe('dark');
-    expect(localStorage.getItem('sleeptracker.theme')).toBe('dark');
+    expect(document.cookie).toContain('sleeptracker.theme=dark');
     expect(document.documentElement.dataset.theme).toBe('dark');
   });
 });
