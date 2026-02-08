@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { apiGet } from '$lib/api';
   import SleepBar from '$lib/components/SleepBar.svelte';
   import { theme, type Theme } from '$lib/stores/theme';
@@ -157,6 +157,12 @@
       errorMsg = 'Failed to load trends';
     } finally {
       loading = false;
+      if (view === 'chart') {
+        await tick();
+        if (canvasEl) {
+          void renderChart(sortedBars, metric, $theme);
+        }
+      }
     }
   }
 
