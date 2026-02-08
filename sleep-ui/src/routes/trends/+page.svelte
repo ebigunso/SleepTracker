@@ -325,7 +325,9 @@
   $: avgQuality = average(sortedBars.map((b) => b.quality).filter((v): v is number => v != null));
   $: totalNights = sortedBars.length;
   $: if (view === 'chart') {
-    void renderChart(sortedBars, metric, $theme);
+    if (canvasEl) {
+      void renderChart(sortedBars, metric, $theme);
+    }
   } else {
     chart?.destroy();
     chart = null;
