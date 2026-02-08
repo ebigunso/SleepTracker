@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { onMount } from 'svelte';
   import { browser } from '$app/environment';
   import { toasts, pushToast, dismissToast } from '$lib/stores/toast';
@@ -9,9 +10,8 @@
   import '../app.css';
   const AUTH_PREFIX = '/api';
 
-  export let data: { session?: boolean; pathname?: string; theme?: 'light' | 'dark' };
+  export let data: { session?: boolean; theme?: 'light' | 'dark' };
   let isAuthRoute = false;
-  $: isAuthRoute = data?.pathname === '/login';
 
   type NavItem = {
     href: string;
@@ -51,7 +51,8 @@
     }
   ];
 
-  $: pathname = data?.pathname ?? '';
+  $: pathname = $page.url.pathname ?? '';
+  $: isAuthRoute = pathname === '/login';
 
   function isActive(item: NavItem) {
     return item.match(pathname);
