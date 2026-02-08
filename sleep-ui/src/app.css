@@ -408,6 +408,7 @@
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-card);
+    z-index: 60;
   }
 
   .menu-item {
