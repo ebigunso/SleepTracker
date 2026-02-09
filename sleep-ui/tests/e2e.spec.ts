@@ -17,13 +17,29 @@ function formatDate(d: Date): string {
 // Helper to skip when creds are not provided
 test.skip(!EMAIL || !PASSWORD, 'PLAYWRIGHT_EMAIL and PLAYWRIGHT_PASSWORD are required for this test');
 
-test('dashboard quick log -> edit -> delete, with duration warning', async ({ page }) => {
-  // Login
+async function login(page: import('@playwright/test').Page) {
+  await page.context().clearCookies();
   await page.goto('/login');
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(500);
+  await expect(page.getByLabel('Email')).toBeVisible();
   await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
-  await Promise.all([page.waitForURL('**/'), page.getByRole('button', { name: /sign in/i }).click()]);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
+
+  const [loginRequest] = await Promise.all([
+    page.waitForRequest('**/api/login'),
+    page.getByRole('button', { name: 'Sign in' }).click()
+  ]);
+
+  if (loginRequest.method() !== 'POST') {
+    throw new Error(`Login request used unexpected method: ${loginRequest.method()}`);
+  }
+
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
+}
+
+test('dashboard quick log -> edit -> delete, with duration warning', async ({ page }) => {
+  await login(page);
 
   // Quick Log: navigate to create form
   await page.getByRole('button', { name: /quick log/i }).click();
@@ -71,12 +87,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
 test('multiple sessions per day display and edit', async ({ page }) => {
   const targetDate = formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
-  // Login
-  await page.goto('/login');
-  await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
-  await Promise.all([page.waitForURL('**/'), page.getByRole('button', { name: /sign in/i }).click()]);
-  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
+  await login(page);
 
   const createSession = async (bed: string, wake: string, quality: string) => {
     await page.goto(`/sleep/new?date=${targetDate}`);

@@ -8,23 +8,34 @@ const PASSWORD = process.env.PLAYWRIGHT_PASSWORD;
 // Helper to skip when creds are not provided
 test.skip(!EMAIL || !PASSWORD, 'PLAYWRIGHT_EMAIL and PLAYWRIGHT_PASSWORD are required for this test');
 
-test('login smoke: visit /login, authenticate, and reach home', async ({ page }) => {
-  // Visit login page
+async function login(page: import('@playwright/test').Page) {
+  await page.context().clearCookies();
   await page.goto('/login');
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(500);
+  await expect(page.getByLabel('Email')).toBeVisible();
 
-  // Fill credentials and submit
   await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
-  await Promise.all([
-    page.waitForURL('http://localhost:5173/'),
-    page.getByRole('button', { name: /sign in/i }).click()
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
+
+  const [loginRequest] = await Promise.all([
+    page.waitForRequest('**/api/login'),
+    page.getByRole('button', { name: 'Sign in' }).click()
   ]);
+
+  if (loginRequest.method() !== 'POST') {
+    throw new Error(`Login request used unexpected method: ${loginRequest.method()}`);
+  }
+}
+
+test('login smoke: visit /login, authenticate, and reach home', async ({ page }) => {
+  await login(page);
 
   // Expect home/dashboard to be visible (header, Logout button etc.)
   await expect(page.getByRole('heading', { name: /SleepTracker/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /profile/i })).toBeVisible();
 
   // Refresh: session should persist
   await page.reload();
-  await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /profile/i })).toBeVisible();
 });
