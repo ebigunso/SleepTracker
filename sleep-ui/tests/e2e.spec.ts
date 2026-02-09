@@ -18,18 +18,19 @@ function formatDate(d: Date): string {
 test.skip(!EMAIL || !PASSWORD, 'PLAYWRIGHT_EMAIL and PLAYWRIGHT_PASSWORD are required for this test');
 
 async function login(page: import('@playwright/test').Page) {
+  await page.context().clearCookies();
   await page.goto('/login');
+  await expect(page.getByLabel('Email')).toBeVisible();
   await page.getByLabel('Email').fill(EMAIL!);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
 
-  const [loginResponse] = await Promise.all([
-    page.waitForResponse((response) => response.url().includes('/api/login')),
-    page.getByRole('button', { name: /sign in/i }).click()
+  const [loginRequest] = await Promise.all([
+    page.waitForRequest('**/api/login'),
+    page.getByRole('button', { name: 'Sign in' }).click()
   ]);
 
-  const status = loginResponse.status();
-  if (status >= 400) {
-    throw new Error(`Login failed with status ${status}. Check backend auth config (ADMIN_EMAIL/password, COOKIE_SECURE=0 for http).`);
+  if (loginRequest.method() !== 'POST') {
+    throw new Error(`Login request used unexpected method: ${loginRequest.method()}`);
   }
 
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
