@@ -171,12 +171,12 @@
   }
 
   async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: Theme) {
-    if (!canvasEl) return;
     if (!data.length) {
       chart?.destroy();
       chart = null;
       return;
     }
+    if (!canvasEl) return;
 
     const labels = data.map((b) => b.date);
     const values = data.map((b) => metricValue(b, selectedMetric));
@@ -331,9 +331,7 @@
   $: avgQuality = average(sortedBars.map((b) => b.quality).filter((v): v is number => v != null));
   $: totalNights = sortedBars.length;
   $: if (view === 'chart') {
-    if (canvasEl) {
-      void renderChart(sortedBars, metric, $theme);
-    }
+    void renderChart(sortedBars, metric, $theme);
   } else {
     chart?.destroy();
     chart = null;
