@@ -14,7 +14,7 @@ test('login smoke: visit /login, authenticate, and reach home', async ({ page })
 
   // Fill credentials and submit
   await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
   await Promise.all([
     page.waitForURL('http://localhost:5173/'),
     page.getByRole('button', { name: /sign in/i }).click()

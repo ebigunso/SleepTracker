@@ -21,7 +21,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
   // Login
   await page.goto('/login');
   await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
   await Promise.all([page.waitForURL('**/'), page.getByRole('button', { name: /sign in/i }).click()]);
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
@@ -74,7 +74,7 @@ test('multiple sessions per day display and edit', async ({ page }) => {
   // Login
   await page.goto('/login');
   await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password').fill(PASSWORD!);
+  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
   await Promise.all([page.waitForURL('**/'), page.getByRole('button', { name: /sign in/i }).click()]);
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
