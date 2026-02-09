@@ -16,9 +16,12 @@ async function login(page: import('@playwright/test').Page) {
   await page.getByLabel('Email').fill(EMAIL!);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
 
+  const form = page.locator('form');
+  await expect(form).toBeVisible();
+
   const [loginRequest] = await Promise.all([
     page.waitForRequest('**/api/login'),
-    page.getByRole('button', { name: 'Sign in' }).click()
+    form.evaluate((el) => (el as HTMLFormElement).requestSubmit())
   ]);
 
   if (loginRequest.method() !== 'POST') {
