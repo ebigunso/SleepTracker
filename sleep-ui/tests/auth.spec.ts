@@ -33,9 +33,9 @@ test('login smoke: visit /login, authenticate, and reach home', async ({ page })
 
   // Expect home/dashboard to be visible (header, Logout button etc.)
   await expect(page.getByRole('heading', { name: /SleepTracker/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /profile/i })).toBeVisible();
 
   // Refresh: session should persist
   await page.reload();
-  await expect(page.getByRole('button', { name: /logout/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /profile/i })).toBeVisible();
 });
