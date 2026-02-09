@@ -20,8 +20,8 @@ test.skip(!EMAIL || !PASSWORD, 'PLAYWRIGHT_EMAIL and PLAYWRIGHT_PASSWORD are req
 async function login(page: import('@playwright/test').Page) {
   await page.context().clearCookies();
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
-  await page.waitForFunction(() => Boolean((window as any).__sveltekit));
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(500);
   await expect(page.getByLabel('Email')).toBeVisible();
   await page.getByLabel('Email').fill(EMAIL!);
   await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
