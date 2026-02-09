@@ -54,23 +54,6 @@
   $: pathname = $page.url.pathname ?? '';
   $: isAuthRoute = pathname === '/login';
 
-  function isActive(item: NavItem) {
-    return item.match(pathname);
-  }
-
-  function navLinkClass(item: NavItem) {
-    return isActive(item)
-      ? 'nav-link nav-link--active focus-ring'
-      : 'nav-link focus-ring';
-  }
-
-  function bottomNavClass(item: NavItem) {
-    return isActive(item)
-      ? 'bottom-nav-link bottom-nav-link--active focus-ring'
-      : 'bottom-nav-link focus-ring';
-  }
-
-
   async function logout() {
     try {
       const csrf = readCsrfToken();
@@ -112,8 +95,9 @@
             {#each navItems as item (item.href)}
               <a
                 href={item.href}
-                class={navLinkClass(item)}
-                aria-current={isActive(item) ? 'page' : undefined}
+                class="nav-link focus-ring"
+                class:nav-link--active={item.match(pathname)}
+                aria-current={item.match(pathname) ? 'page' : undefined}
               >
                 {item.label}
               </a>
@@ -146,8 +130,9 @@
             {#each navItems as item (item.href)}
               <a
                 href={item.href}
-                class={bottomNavClass(item)}
-                aria-current={isActive(item) ? 'page' : undefined}
+                class="bottom-nav-link focus-ring"
+                class:bottom-nav-link--active={item.match(pathname)}
+                aria-current={item.match(pathname) ? 'page' : undefined}
               >
                 <span>{item.label}</span>
               </a>
