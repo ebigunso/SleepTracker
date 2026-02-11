@@ -422,12 +422,29 @@
     background: var(--color-surface-muted);
   }
 
+  .menu-item:focus-visible {
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+    box-shadow: 0 0 0 3px var(--color-ring);
+  }
+
   .menu-item--danger {
     color: var(--color-danger);
   }
 
   .menu-item--danger:hover {
     background: var(--color-danger-soft);
+  }
+
+  .menu-item--danger:focus-visible {
+    background: var(--color-danger-soft);
+    box-shadow: 0 0 0 3px var(--color-ring);
+  }
+
+  .menu-divider {
+    height: 1px;
+    margin: 0.35rem 0.5rem;
+    background: var(--color-border);
   }
 
   .btn-primary {
