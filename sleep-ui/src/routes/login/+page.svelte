@@ -55,20 +55,20 @@
       <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-base font-semibold text-white">
         ST
       </div>
-      <h2 class="text-2xl font-semibold text-slate-900">Welcome back</h2>
-      <p class="text-sm text-slate-500">Sign in to track your sleep and trends.</p>
+      <h2 class="auth-title text-2xl font-semibold">Welcome back</h2>
+      <p class="auth-helper text-sm">Sign in to track your sleep and trends.</p>
     </div>
     {#if errorMsg}
-      <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
+      <div class="auth-error-box mb-4 rounded-lg border px-3 py-2 text-sm" role="alert">
         {errorMsg}
       </div>
     {/if}
     <form on:submit={submit} class="space-y-5" novalidate>
       <div class="space-y-2">
-        <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+        <label for="email" class="auth-label block text-sm font-medium">Email</label>
         <input
           id="email"
-          class={`block w-full rounded-md shadow-sm focus:ring-2 ${emailError ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-200'}`}
+          class={`auth-input ${emailError ? 'auth-input--error' : ''}`}
           type="email"
           name="email"
           bind:value={email}
@@ -81,15 +81,15 @@
           }}
         />
         {#if emailError}
-          <p class="text-xs text-rose-600">{emailError}</p>
+          <p class="auth-error-text text-xs">{emailError}</p>
         {/if}
       </div>
       <div class="space-y-2">
-        <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+        <label for="password" class="auth-label block text-sm font-medium">Password</label>
         <div class="relative">
           <input
             id="password"
-            class={`block w-full rounded-md pr-12 shadow-sm focus:ring-2 ${passwordError ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-200' : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-200'}`}
+            class={`auth-input pr-14 ${passwordError ? 'auth-input--error' : ''}`}
             type={showPassword ? 'text' : 'password'}
             name="password"
             bind:value={password}
@@ -103,7 +103,7 @@
           />
           <button
             type="button"
-            class="absolute inset-y-0 right-2 my-auto rounded-full px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+            class="auth-show-toggle absolute inset-y-0 right-2 my-auto rounded-full px-3 text-xs font-semibold"
             aria-pressed={showPassword}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             on:click={() => (showPassword = !showPassword)}
@@ -112,12 +112,12 @@
           </button>
         </div>
         {#if passwordError}
-          <p class="text-xs text-rose-600">{passwordError}</p>
+          <p class="auth-error-text text-xs">{passwordError}</p>
         {/if}
       </div>
       <button
         type="submit"
-        class="w-full inline-flex items-center justify-center rounded-full bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-60"
+        class="auth-primary-button inline-flex w-full items-center justify-center rounded-full px-3 py-2.5 text-sm font-semibold shadow-sm disabled:opacity-60"
         disabled={loading}
       >
         {#if loading}Signing in...{:else}Sign in{/if}
