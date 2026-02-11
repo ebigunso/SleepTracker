@@ -10,6 +10,7 @@
   --color-background: #f8fafc;
   --color-surface: #ffffff;
   --color-surface-muted: #f1f5f9;
+  --color-surface-2: var(--color-surface-muted);
   --color-text: #0f172a;
   --color-text-muted: #475569;
   --color-placeholder: #94a3b8;
@@ -67,6 +68,7 @@
   --color-background: #0b1020;
   --color-surface: #111827;
   --color-surface-muted: #0f172a;
+  --color-surface-2: var(--color-surface-muted);
   --color-text: #e2e8f0;
   --color-text-muted: #cbd5e1;
   --color-placeholder: #64748b;
@@ -511,6 +513,10 @@
     min-height: 44px;
     padding: 0.6rem 0.75rem;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+
+  .surface-2 {
+    background: var(--color-surface-2);
   }
 
   .input-base:disabled {
