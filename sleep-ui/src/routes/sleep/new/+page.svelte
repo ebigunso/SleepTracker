@@ -10,6 +10,9 @@
   function onSaved() {
     goto('/');
   }
+  function onCancel() {
+    goto('/');
+  }
 </script>
 
 <section class="space-y-4">
@@ -18,6 +21,6 @@
     <p class="text-sm text-slate-500">Log bedtime, wake time, and how you feel.</p>
   </div>
   <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
-    <SleepForm mode="create" {initialDate} on:saved={onSaved} />
+    <SleepForm mode="create" {initialDate} showCancel on:saved={onSaved} on:cancel={onCancel} />
   </div>
 </section>
