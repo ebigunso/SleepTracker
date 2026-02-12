@@ -70,6 +70,12 @@
         role="menuitem"
         on:click={handleToggleTheme}
       >
+        <img
+          class="menu-item-icon"
+          src={theme === 'dark' ? '/icons/sun-brightness.png' : '/icons/moon-night.png'}
+          alt=""
+          aria-hidden="true"
+        />
         {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       </button>
       <div class="menu-divider" role="separator"></div>
@@ -79,6 +85,7 @@
         role="menuitem"
         on:click={handleLogout}
       >
+        <img class="menu-item-icon" src="/icons/logout-door.png" alt="" aria-hidden="true" />
         Logout
       </button>
     </div>

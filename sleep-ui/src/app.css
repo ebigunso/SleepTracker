@@ -46,6 +46,7 @@
   --color-info: #0ea5e9;
   --color-info-soft: rgba(14, 165, 233, 0.12);
   --color-info-border: rgba(14, 165, 233, 0.3);
+  --menu-icon-filter: none;
   --shadow-primary-hover: 0 12px 24px -16px rgba(79, 70, 229, 0.6);
   --radius-base: 0.75rem;
   --shadow-card: 0 10px 30px -20px rgba(15, 23, 42, 0.35);
@@ -103,6 +104,7 @@
   --color-info: #38bdf8;
   --color-info-soft: rgba(56, 189, 248, 0.18);
   --color-info-border: rgba(56, 189, 248, 0.35);
+  --menu-icon-filter: invert(1) brightness(1.15);
   --shadow-card: 0 16px 32px -22px rgba(15, 23, 42, 0.7);
   --shadow-primary-hover: 0 12px 24px -16px rgba(129, 140, 248, 0.45);
 }
@@ -430,6 +432,14 @@
     color: var(--color-text);
     background: var(--color-surface-muted);
     box-shadow: 0 0 0 3px var(--color-ring);
+  }
+
+  .menu-item-icon {
+    width: 1rem;
+    height: 1rem;
+    object-fit: contain;
+    filter: var(--menu-icon-filter);
+    opacity: 0.92;
   }
 
   .menu-divider {
