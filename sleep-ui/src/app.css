@@ -179,6 +179,7 @@
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
     -webkit-text-fill-color: var(--color-text);
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset;
     box-shadow: 0 0 0 1000px var(--color-surface) inset;
     border-color: var(--color-border);
     caret-color: var(--color-text);
@@ -192,6 +193,13 @@
   a:focus-visible {
     outline: 2px solid transparent;
     box-shadow: 0 0 0 3px var(--color-ring);
+  }
+
+  input:-webkit-autofill:focus-visible,
+  textarea:-webkit-autofill:focus-visible,
+  select:-webkit-autofill:focus-visible {
+    -webkit-box-shadow: 0 0 0 1000px var(--color-surface) inset, 0 0 0 3px var(--color-ring);
+    box-shadow: 0 0 0 1000px var(--color-surface) inset, 0 0 0 3px var(--color-ring);
   }
 }
 
@@ -258,7 +266,7 @@
   }
 
   .auth-input {
-    @apply block w-full rounded-md shadow-sm;
+    @apply block w-full shadow-sm;
     background: var(--color-surface);
     color: var(--color-text);
     border: 1px solid var(--color-border);
