@@ -84,6 +84,36 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 });
 
+test('new sleep entry cancel returns home without creating session', async ({ page }) => {
+  await login(page);
+
+  let sleepMutationRequests = 0;
+  const onRequest = (request: import('@playwright/test').Request) => {
+    if (
+      request.url().includes('/api/sleep') &&
+      ['POST', 'PUT', 'PATCH'].includes(request.method())
+    ) {
+      sleepMutationRequests += 1;
+    }
+  };
+
+  page.on('request', onRequest);
+
+  await page.getByRole('button', { name: /quick log/i }).click();
+  await expect(page.getByRole('heading', { name: /new sleep entry/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^cancel$/i })).toBeVisible();
+
+  await Promise.all([
+    page.waitForURL('**/'),
+    page.getByRole('button', { name: /^cancel$/i }).click()
+  ]);
+
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
+  expect(sleepMutationRequests).toBe(0);
+
+  page.off('request', onRequest);
+});
+
 test('multiple sessions per day display and edit', async ({ page }) => {
   const targetDate = formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
 

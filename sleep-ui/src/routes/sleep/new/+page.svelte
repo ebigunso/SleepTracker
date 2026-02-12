@@ -7,11 +7,16 @@
   // Prefill date from query (?date=YYYY-MM-DD) if present
   const url = get(page).url;
   const initialDate = url.searchParams.get('date');
-  function onSaved() {
+  function goHome() {
     goto('/');
   }
+
+  function onSaved() {
+    goHome();
+  }
+
   function onCancel() {
-    goto('/');
+    goHome();
   }
 </script>
 
