@@ -42,6 +42,7 @@
 
   let warnOpen = false;
   let pendingSubmit = false;
+  const inputClass = 'mt-1 surface-2';
 
   $: if (!intensityDirty && intensity !== initialIntensity) {
     intensity = initialIntensity;
@@ -178,34 +179,34 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
       <label for="date" class="meta-text">Date</label>
-      <Input id="date" className="mt-1" type="date" bind:value={date} required />
+      <Input id="date" className={inputClass} type="date" bind:value={date} required />
     </div>
     <div>
       <label for="quality" class="meta-text">Quality (1-5)</label>
-      <Input id="quality" className="mt-1" type="number" min="1" max="5" bind:value={quality} required />
+      <Input id="quality" className={inputClass} type="number" min="1" max="5" bind:value={quality} required />
     </div>
     <div>
       <label for="bed" class="meta-text">Bed time</label>
-      <Input id="bed" className="mt-1" type="time" step="60" bind:value={bed} required />
+      <Input id="bed" className={inputClass} type="time" step="60" bind:value={bed} required />
     </div>
     <div>
       <label for="wake" class="meta-text">Wake time</label>
-      <Input id="wake" className="mt-1" type="time" step="60" bind:value={wake} required />
+      <Input id="wake" className={inputClass} type="time" step="60" bind:value={wake} required />
     </div>
     <div>
       <label for="latency" class="meta-text">Latency (min)</label>
-      <Input id="latency" className="mt-1" type="number" min="0" max="180" bind:value={latency} required />
+      <Input id="latency" className={inputClass} type="number" min="0" max="180" bind:value={latency} required />
     </div>
     <div>
       <label for="awakenings" class="meta-text">Awakenings</label>
-      <Input id="awakenings" className="mt-1" type="number" min="0" max="10" bind:value={awakenings} required />
+      <Input id="awakenings" className={inputClass} type="number" min="0" max="10" bind:value={awakenings} required />
     </div>
     <div class="sm:col-span-2">
       <label for="intensity" class="meta-text">Exercise intensity</label>
       <Input
         id="intensity"
         as="select"
-        className="mt-1"
+        className={inputClass}
         bind:value={intensity}
         on:change={() => (intensityDirty = true)}
       >
@@ -216,7 +217,7 @@
     </div>
     <div class="sm:col-span-2">
       <label for="notes" class="meta-text">Notes (optional, ≤280)</label>
-      <Input id="notes" as="textarea" maxlength="280" rows={3} className="mt-1" bind:value={notes}></Input>
+      <Input id="notes" as="textarea" maxlength="280" rows={3} className={inputClass} bind:value={notes}></Input>
     </div>
   </div>
 
@@ -226,7 +227,7 @@
         Cancel
       </Button>
     {/if}
-    <Button type="submit" disabled={loading}>
+    <Button type="submit" variant="primary" disabled={loading}>
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
     </Button>
   </div>
