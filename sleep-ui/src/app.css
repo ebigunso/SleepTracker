@@ -420,7 +420,16 @@
   }
 
   .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 0;
     color: var(--color-text-muted);
+  }
+
+  .menu-item-label {
+    white-space: nowrap;
   }
 
   .menu-item:hover {
@@ -428,9 +437,16 @@
     background: var(--color-surface-muted);
   }
 
+  .menu-item:active {
+    color: var(--color-text);
+    background: var(--color-surface-2);
+  }
+
   .menu-item:focus-visible {
     color: var(--color-text);
     background: var(--color-surface-muted);
+    outline: 2px solid var(--color-ring);
+    outline-offset: -2px;
     box-shadow: 0 0 0 3px var(--color-ring);
   }
 
@@ -440,6 +456,21 @@
     object-fit: contain;
     filter: var(--menu-icon-filter);
     opacity: 0.92;
+  }
+
+  .menu-item-icon--danger {
+    display: inline-block;
+    background-color: var(--color-danger);
+    mask-image: url('/icons/logout-door.png');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-image: url('/icons/logout-door.png');
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    filter: none;
+    opacity: 1;
   }
 
   .menu-divider {
@@ -456,9 +487,16 @@
     background: var(--color-danger-soft);
   }
 
+  .menu-item--danger:active {
+    background: var(--color-danger-soft);
+    box-shadow: inset 0 0 0 1px var(--color-danger-border);
+  }
+
   .menu-item--danger:focus-visible {
     color: var(--color-danger);
     background: var(--color-danger-soft);
+    outline: 2px solid var(--color-ring);
+    outline-offset: -2px;
     box-shadow: 0 0 0 3px var(--color-ring);
   }
 
