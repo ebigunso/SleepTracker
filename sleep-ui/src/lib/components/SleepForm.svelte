@@ -22,8 +22,9 @@
   export let initialQuality = 3;
   export let initialIntensity: 'none' | 'light' | 'hard' = 'none';
   export let initialNotes: string = '';
+  export let showCancel = false;
 
-  const dispatch = createEventDispatcher<{ saved: SleepSession; deleted: void }>();
+  const dispatch = createEventDispatcher<{ saved: SleepSession; deleted: void; cancel: void }>();
 
   let date = initialDate ?? today();
   let bed = normalizeTime(initialBed ?? '22:00:00');
@@ -162,6 +163,10 @@
     warnOpen = false;
     pendingSubmit = false;
   }
+
+  function onCancel() {
+    dispatch('cancel');
+  }
 </script>
 
 {#if errorMsg}
@@ -217,6 +222,11 @@
   </div>
 
   <div class="flex justify-end gap-2">
+    {#if showCancel}
+      <Button type="button" variant="secondary" disabled={loading} on:click={onCancel}>
+        Cancel
+      </Button>
+    {/if}
     <Button type="submit" variant="primary" disabled={loading}>
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
     </Button>

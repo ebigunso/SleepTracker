@@ -7,8 +7,16 @@
   // Prefill date from query (?date=YYYY-MM-DD) if present
   const url = get(page).url;
   const initialDate = url.searchParams.get('date');
-  function onSaved() {
+  function goHome() {
     goto('/');
+  }
+
+  function onSaved() {
+    goHome();
+  }
+
+  function onCancel() {
+    goHome();
   }
 </script>
 
@@ -18,6 +26,6 @@
     <p class="text-muted text-sm">Log bedtime, wake time, and how you feel.</p>
   </div>
   <div class="surface-card rounded-xl p-4">
-    <SleepForm mode="create" {initialDate} on:saved={onSaved} />
+    <SleepForm mode="create" {initialDate} showCancel on:saved={onSaved} on:cancel={onCancel} />
   </div>
 </section>

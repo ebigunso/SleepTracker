@@ -27,6 +27,6 @@
   $: classes = `${base} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`.trim();
 </script>
 
-<button {type} {disabled} class={classes} {...$$restProps}>
+<button {type} {disabled} class={classes} on:click {...$$restProps}>
   <slot />
 </button>
