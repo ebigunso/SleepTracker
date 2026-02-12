@@ -14,10 +14,10 @@
 
 <section class="space-y-4">
   <div>
-    <h2 class="text-2xl font-semibold text-slate-900">New sleep entry</h2>
-    <p class="text-sm text-slate-500">Log bedtime, wake time, and how you feel.</p>
+    <h2 class="page-title">New sleep entry</h2>
+    <p class="text-muted text-sm">Log bedtime, wake time, and how you feel.</p>
   </div>
-  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70">
+  <div class="surface-card rounded-xl p-4">
     <SleepForm mode="create" {initialDate} on:saved={onSaved} />
   </div>
 </section>
