@@ -72,7 +72,7 @@
       >
         {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
       </button>
-      <div class="menu-divider" role="separator" aria-hidden="true"></div>
+      <div class="menu-divider" role="separator"></div>
       <button
         type="button"
         class="menu-item menu-item--danger flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
