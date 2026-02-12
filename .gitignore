@@ -32,5 +32,8 @@ sleep-ui/.env
 sleep-ui/playwright-report
 sleep-ui/test-results
 
+# Playwright MCP artifacts
+.playwright-mcp/
+
 # Coding Agent Documents
 docs/coding-agent/
