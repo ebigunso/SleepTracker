@@ -61,24 +61,32 @@
   </button>
   {#if open}
     <div
-      class="menu-dropdown absolute right-0 mt-2 w-44 rounded-xl p-1"
+      class="menu-dropdown absolute right-0 mt-2 w-52 rounded-xl p-0"
       role="menu"
     >
       <button
         type="button"
-        class="menu-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
+        class="menu-item flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold"
         role="menuitem"
         on:click={handleToggleTheme}
       >
-        {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        <img
+          class="menu-item-icon"
+          src={theme === 'dark' ? '/icons/sun-brightness.svg' : '/icons/moon-night.svg'}
+          alt=""
+          aria-hidden="true"
+        />
+        <span class="menu-item-label">{theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}</span>
       </button>
+      <div class="menu-divider" role="separator"></div>
       <button
         type="button"
-        class="menu-item menu-item--danger flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold"
+        class="menu-item menu-item--danger flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold"
         role="menuitem"
         on:click={handleLogout}
       >
-        Logout
+        <span class="menu-item-icon menu-item-icon--danger" aria-hidden="true"></span>
+        <span class="menu-item-label">Logout</span>
       </button>
     </div>
   {/if}
