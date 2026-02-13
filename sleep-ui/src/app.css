@@ -461,11 +461,11 @@
   .menu-item-icon--danger {
     display: inline-block;
     background-color: var(--color-danger);
-    mask-image: url('/icons/logout-door.png');
+    mask-image: url('/icons/logout-door.svg');
     mask-repeat: no-repeat;
     mask-position: center;
     mask-size: contain;
-    -webkit-mask-image: url('/icons/logout-door.png');
+    -webkit-mask-image: url('/icons/logout-door.svg');
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
     -webkit-mask-size: contain;

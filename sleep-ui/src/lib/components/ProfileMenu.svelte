@@ -72,7 +72,7 @@
       >
         <img
           class="menu-item-icon"
-          src={theme === 'dark' ? '/icons/sun-brightness.png' : '/icons/moon-night.png'}
+          src={theme === 'dark' ? '/icons/sun-brightness.svg' : '/icons/moon-night.svg'}
           alt=""
           aria-hidden="true"
         />
