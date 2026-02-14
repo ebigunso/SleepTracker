@@ -83,13 +83,13 @@
   {:else}
     <header class="app-header backdrop-blur" aria-label="Site header">
       <div class="app-container grid grid-cols-[auto,1fr,auto] items-center gap-4 py-4">
-        <div class="flex items-center gap-3">
+        <a href="/" class="focus-ring inline-flex w-fit items-center gap-3 justify-self-start self-start rounded-xl px-3 py-2">
           <span class="brand-badge flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">ST</span>
           <div>
             <h1 class="text-lg font-semibold">SleepTracker</h1>
             <p class="brand-subtitle text-xs">Calm rhythms, better rest</p>
           </div>
-        </div>
+        </a>
         <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation">
           {#if data.session}
             {#each navItems as item (item.href)}
