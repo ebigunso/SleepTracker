@@ -74,6 +74,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>SleepTracker</title>
+</svelte:head>
+
 <!-- App shell -->
 <div class="app-shell">
   {#if isAuthRoute}
