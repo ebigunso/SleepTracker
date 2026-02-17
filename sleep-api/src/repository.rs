@@ -17,7 +17,11 @@ See also:
 
 use crate::{
     db::Db,
-    models::{DateIntensity, ExerciseInput, NoteInput, SleepInput, SleepListItem, SleepSession},
+    models::{
+        DateIntensity, ExerciseInput, FrictionErrorKindAggregate, FrictionTelemetryEvent,
+        FrictionTelemetryInput, FrictionWindowAggregate, NoteInput, SleepInput, SleepListItem,
+        SleepSession,
+    },
 };
 use chrono::{NaiveDate, NaiveDateTime};
 use chrono_tz::Tz;
@@ -480,4 +484,145 @@ pub async fn insert_note(db: &Db, input: &NoteInput) -> Result<i64, sqlx::Error>
         .execute(db)
         .await?;
     Ok(res.last_insert_rowid())
+}
+
+#[doc = r#"Insert one append-only friction telemetry event.
+
+Stored in `personalization_friction_events` for rolling-window personalization analysis.
+"#]
+#[allow(dead_code)]
+pub async fn insert_friction_telemetry(
+    db: &Db,
+    input: &FrictionTelemetryInput,
+) -> Result<i64, sqlx::Error> {
+    let res = sqlx::query::<Sqlite>(
+        r#"INSERT INTO personalization_friction_events(
+                form_time_ms,
+                error_kind,
+                retry_count,
+                immediate_edit,
+                follow_up_failure
+            ) VALUES (?, ?, ?, ?, ?)"#,
+    )
+    .bind(input.form_time_ms)
+    .bind(input.error_kind.as_deref())
+    .bind(input.retry_count)
+    .bind(input.immediate_edit)
+    .bind(input.follow_up_failure)
+    .execute(db)
+    .await?;
+    Ok(res.last_insert_rowid())
+}
+
+#[doc = r#"List friction telemetry events in the inclusive datetime window [from, to]."#]
+#[allow(dead_code)]
+pub async fn list_friction_telemetry_window(
+    db: &Db,
+    from: NaiveDateTime,
+    to: NaiveDateTime,
+) -> Result<Vec<FrictionTelemetryEvent>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, FrictionTelemetryEvent>(
+        r#"SELECT
+                id,
+                recorded_at,
+                form_time_ms,
+                error_kind,
+                retry_count,
+                immediate_edit,
+                follow_up_failure
+           FROM personalization_friction_events
+           WHERE recorded_at BETWEEN ? AND ?
+           ORDER BY recorded_at ASC, id ASC"#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
+    .await
+}
+
+#[doc = r#"Compute aggregate friction metrics for an inclusive datetime window [from, to]."#]
+#[allow(dead_code)]
+pub async fn aggregate_friction_window(
+    db: &Db,
+    from: NaiveDateTime,
+    to: NaiveDateTime,
+) -> Result<FrictionWindowAggregate, sqlx::Error> {
+    sqlx::query_as::<Sqlite, FrictionWindowAggregate>(
+        r#"WITH windowed AS (
+               SELECT
+                 form_time_ms,
+                 error_kind,
+                 retry_count,
+                 immediate_edit,
+                 follow_up_failure
+               FROM personalization_friction_events
+               WHERE recorded_at BETWEEN ? AND ?
+           ),
+           ordered AS (
+               SELECT
+                 form_time_ms,
+                 ROW_NUMBER() OVER (ORDER BY form_time_ms) AS rn,
+                 COUNT(*) OVER () AS cnt
+               FROM windowed
+           )
+           SELECT
+             COUNT(*) AS submit_count,
+             COALESCE((SELECT AVG(CAST(form_time_ms AS REAL))
+                       FROM ordered
+                       WHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)), 0.0) AS median_form_time_ms,
+             COALESCE(AVG(CAST(form_time_ms AS REAL)), 0.0) AS avg_form_time_ms,
+             COALESCE(SUM(CASE WHEN error_kind IS NOT NULL AND TRIM(error_kind) != '' THEN 1 ELSE 0 END), 0) AS error_count,
+             COALESCE(SUM(retry_count), 0) AS retries_total,
+             COALESCE(AVG(CAST(retry_count AS REAL)), 0.0) AS retries_avg,
+             COALESCE(SUM(CASE WHEN immediate_edit = 1 THEN 1 ELSE 0 END), 0) AS immediate_edit_count,
+             COALESCE(SUM(CASE WHEN follow_up_failure = 1 THEN 1 ELSE 0 END), 0) AS follow_up_failure_count,
+             COALESCE(
+                CAST(SUM(CASE WHEN error_kind IS NOT NULL AND TRIM(error_kind) != '' THEN 1 ELSE 0 END) AS REAL)
+                / NULLIF(COUNT(*), 0),
+                0.0
+             ) AS error_rate,
+             COALESCE(
+                CAST(SUM(CASE WHEN immediate_edit = 1 THEN 1 ELSE 0 END) AS REAL)
+                / NULLIF(COUNT(*), 0),
+                0.0
+             ) AS immediate_edit_rate,
+             COALESCE(
+                CAST(SUM(CASE WHEN follow_up_failure = 1 THEN 1 ELSE 0 END) AS REAL)
+                / NULLIF(COUNT(*), 0),
+                0.0
+             ) AS follow_up_failure_rate
+           FROM windowed"#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_one(db)
+    .await
+}
+
+#[doc = r#"Aggregate recurrent friction clusters by normalized `error_kind` over [from, to]."#]
+#[allow(dead_code)]
+pub async fn aggregate_friction_error_kinds_window(
+    db: &Db,
+    from: NaiveDateTime,
+    to: NaiveDateTime,
+) -> Result<Vec<FrictionErrorKindAggregate>, sqlx::Error> {
+    sqlx::query_as::<Sqlite, FrictionErrorKindAggregate>(
+        r#"SELECT
+               LOWER(TRIM(error_kind)) AS error_kind,
+               COUNT(*) AS occurrences,
+               COALESCE(SUM(retry_count), 0) AS retries_total,
+               COALESCE(AVG(CAST(form_time_ms AS REAL)), 0.0) AS avg_form_time_ms,
+               COALESCE(SUM(CASE WHEN immediate_edit = 1 THEN 1 ELSE 0 END), 0) AS immediate_edit_count,
+               COALESCE(SUM(CASE WHEN follow_up_failure = 1 THEN 1 ELSE 0 END), 0) AS follow_up_failure_count
+           FROM personalization_friction_events
+           WHERE recorded_at BETWEEN ? AND ?
+             AND error_kind IS NOT NULL
+             AND TRIM(error_kind) != ''
+           GROUP BY LOWER(TRIM(error_kind))
+           ORDER BY occurrences DESC, retries_total DESC, avg_form_time_ms DESC"#,
+    )
+    .bind(from)
+    .bind(to)
+    .fetch_all(db)
+    .await
 }

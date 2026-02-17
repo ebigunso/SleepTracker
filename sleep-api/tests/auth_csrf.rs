@@ -408,3 +408,146 @@ async fn test_dev_cookie_names_and_flags() {
         .unwrap();
     assert_eq!(res.status(), 201);
 }
+
+#[tokio::test]
+#[serial]
+async fn test_personalization_auth_and_csrf_requirements() {
+    // Env & DB
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "1");
+        std::env::set_var("ENABLE_PERSONALIZATION_FRICTION_TELEMETRY", "1");
+        std::env::set_var("ENABLE_PERSONALIZATION_FRICTION_BACKLOG", "1");
+    }
+    set_admin_env("admin@example.com", "password123");
+
+    let pool = db::connect().await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
+
+    let app = app::router(pool.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let _server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let client = reqwest::Client::builder()
+        .cookie_store(true)
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .unwrap();
+
+    wait_ready(&client, &addr.to_string()).await;
+
+    let telemetry = serde_json::json!({
+        "form_time_ms": 42000,
+        "error_kind": "latency",
+        "retry_count": 1,
+        "immediate_edit": false,
+        "follow_up_failure": false
+    });
+
+    // POST telemetry should be unauthorized without an authenticated session.
+    let res = client
+        .post(format!(
+            "http://{addr}/api/personalization/friction-telemetry"
+        ))
+        .json(&telemetry)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 401);
+
+    // GET backlog should be unauthorized without an authenticated session.
+    let res = client
+        .get(format!(
+            "http://{addr}/api/personalization/friction-backlog"
+        ))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 401);
+
+    // Login and capture CSRF/session cookies.
+    let login_res = client
+        .post(format!("http://{addr}/api/login.json"))
+        .json(&serde_json::json!({
+            "email": "admin@example.com",
+            "password": "password123"
+        }))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(login_res.status(), 200);
+
+    let csrf = parse_cookie(
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
+        "__Host-csrf=",
+    )
+    .expect("missing __Host-csrf cookie in login response");
+    let session = parse_cookie(
+        login_res
+            .headers()
+            .get_all(reqwest::header::SET_COOKIE)
+            .iter(),
+        "__Host-session=",
+    )
+    .expect("missing __Host-session cookie in login response");
+
+    // Authenticated POST telemetry without CSRF header should be forbidden.
+    let res = client
+        .post(format!(
+            "http://{addr}/api/personalization/friction-telemetry"
+        ))
+        .header(
+            "Cookie",
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
+        )
+        .json(&telemetry)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 403);
+
+    // Authenticated POST telemetry with matching CSRF should succeed.
+    let res = client
+        .post(format!(
+            "http://{addr}/api/personalization/friction-telemetry"
+        ))
+        .header(
+            "Cookie",
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
+        )
+        .header("X-CSRF-Token", &csrf)
+        .json(&telemetry)
+        .send()
+        .await
+        .unwrap();
+    assert!(
+        res.status() == 201 || res.status() == 200,
+        "expected telemetry success status 201/200, got {}",
+        res.status()
+    );
+
+    // Authenticated GET backlog should succeed.
+    let res = client
+        .get(format!(
+            "http://{addr}/api/personalization/friction-backlog"
+        ))
+        .header(
+            "Cookie",
+            format!("__Host-session={session}; __Host-csrf={csrf}"),
+        )
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+}

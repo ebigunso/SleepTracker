@@ -9,6 +9,13 @@ time computations. See also: [`time::compute_duration_min`].
 use chrono_tz::Tz;
 use std::str::FromStr;
 
+fn env_flag(name: &str, default: bool) -> bool {
+    match std::env::var(name) {
+        Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),
+        Err(_) => default,
+    }
+}
+
 #[doc = r#"Return the application timezone derived from the `APP_TZ` environment variable.
 
 If `APP_TZ` is not set or contains an unknown zone name, the function falls back to `Asia/Tokyo`.
@@ -98,18 +105,30 @@ pub fn session_key() -> axum_extra::extract::cookie::Key {
 Reads `ENABLE_HSTS` and treats `1` or `true` (case-insensitive) as enabled.
 Only enable when serving over HTTPS or behind TLS-terminating proxy."#]
 pub fn hsts_enabled() -> bool {
-    match std::env::var("ENABLE_HSTS") {
-        Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),
-        Err(_) => false,
-    }
+    env_flag("ENABLE_HSTS", false)
 }
 
 /// Whether to mark cookies as Secure. Controlled by COOKIE_SECURE=1/true (default: true).
 pub fn cookie_secure() -> bool {
-    match std::env::var("COOKIE_SECURE") {
-        Ok(v) => v == "1" || v.eq_ignore_ascii_case("true"),
-        Err(_) => true, // default secure for safety
-    }
+    env_flag("COOKIE_SECURE", true) // default secure for safety
+}
+
+/// Whether `/api/trends/personalization` is exposed.
+/// Controlled by `ENABLE_PERSONALIZATION_TRENDS=1/true` (default: false).
+pub fn personalization_trends_enabled() -> bool {
+    env_flag("ENABLE_PERSONALIZATION_TRENDS", false)
+}
+
+/// Whether `POST /api/personalization/friction-telemetry` is exposed.
+/// Controlled by `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1/true` (default: false).
+pub fn personalization_friction_telemetry_enabled() -> bool {
+    env_flag("ENABLE_PERSONALIZATION_FRICTION_TELEMETRY", false)
+}
+
+/// Whether `GET /api/personalization/friction-backlog` is exposed.
+/// Controlled by `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1/true` (default: false).
+pub fn personalization_friction_backlog_enabled() -> bool {
+    env_flag("ENABLE_PERSONALIZATION_FRICTION_BACKLOG", false)
 }
 
 /// Session cookie name, varies in dev-mode to support HTTP.

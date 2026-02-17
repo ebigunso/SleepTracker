@@ -472,6 +472,86 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/personalization/friction-telemetry:
+    post:
+      summary: Ingest one friction telemetry event
+      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1. When disabled, the route is absent and returns 404.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FrictionTelemetryInput'
+      security:
+        - cookieAuth: []
+          csrfHeader: []
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+        '400':
+          description: Invalid telemetry payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (CSRF)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/personalization/friction-backlog:
+    get:
+      summary: Ranked friction backlog proposals with evidence
+      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1. When disabled, the route is absent and returns 404.'
+      parameters:
+        - in: query
+          name: window_days
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Ranked proposals with evidence and confidence
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrictionBacklogResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/trends/sleep-bars:
     get:
       summary: Sleep bars time range
@@ -592,6 +672,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/trends/personalization:
+    get:
+      summary: Rolling-window personalization metrics and recommendations
+      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_TRENDS=1. When disabled, the route is absent and returns 404.'
+      parameters:
+        - in: query
+          name: window_days
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+        - in: query
+          name: to
+          required: false
+          schema:
+            type: string
+            format: date
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current/prior window metrics and action recommendations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalizationResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   securitySchemes:
@@ -666,6 +785,264 @@ components:
         body:
           type: string
           nullable: true
+    FrictionTelemetryInput:
+      type: object
+      properties:
+        form_time_ms:
+          type: integer
+          minimum: 0
+        error_kind:
+          type: string
+          nullable: true
+        retry_count:
+          type: integer
+          minimum: 0
+        immediate_edit:
+          type: boolean
+        follow_up_failure:
+          type: boolean
+    FrictionProposalConfidence:
+      type: string
+      enum: [high, medium, low]
+    FrictionProposalEvidence:
+      type: object
+      properties:
+        current_occurrences:
+          type: integer
+        prior_occurrences:
+          type: integer
+        current_submit_count:
+          type: integer
+        prior_submit_count:
+          type: integer
+        current_avg_form_time_ms:
+          type: number
+        prior_avg_form_time_ms:
+          type: number
+        current_retry_avg:
+          type: number
+        prior_retry_avg:
+          type: number
+        current_follow_up_failure_rate:
+          type: number
+        prior_follow_up_failure_rate:
+          type: number
+    FrictionBacklogProposal:
+      type: object
+      properties:
+        rank:
+          type: integer
+        action_key:
+          type: string
+        observed_evidence:
+          $ref: '#/components/schemas/FrictionProposalEvidence'
+        expected_benefit:
+          type: string
+        estimated_minutes_saved_per_week:
+          type: number
+        confidence:
+          $ref: '#/components/schemas/FrictionProposalConfidence'
+        persistence_two_windows:
+          type: boolean
+        rollback_condition:
+          type: string
+        auto_promoted:
+          type: boolean
+    FrictionBacklogWindow:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        submit_count:
+          type: integer
+    FrictionBacklogResponse:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date
+        window_days:
+          type: integer
+        minimum_sample_met:
+          type: boolean
+        current_window:
+          $ref: '#/components/schemas/FrictionBacklogWindow'
+        prior_window:
+          $ref: '#/components/schemas/FrictionBacklogWindow'
+        proposals:
+          type: array
+          items:
+            $ref: '#/components/schemas/FrictionBacklogProposal'
+    PersonalizationWindow:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        logged_days:
+          type: integer
+        missing_days:
+          type: integer
+        missing_days_pct:
+          type: number
+    DurationBaselineMetric:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+        sample_days:
+          type: integer
+        p10_min:
+          type: number
+          nullable: true
+        p50_min:
+          type: number
+          nullable: true
+        p90_min:
+          type: number
+          nullable: true
+        iqr_min:
+          type: number
+          nullable: true
+        recent_out_of_range_incidence_pct:
+          type: number
+          nullable: true
+    DayTypeTimingBaselineMetric:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+        weekday_sample_days:
+          type: integer
+        weekend_sample_days:
+          type: integer
+        weekday_bed_median_min:
+          type: number
+          nullable: true
+        weekday_wake_median_min:
+          type: number
+          nullable: true
+        weekend_bed_median_min:
+          type: number
+          nullable: true
+        weekend_wake_median_min:
+          type: number
+          nullable: true
+        midpoint_stable_across_windows:
+          type: boolean
+        recent_14_day_diverges_from_baseline:
+          type: boolean
+    SocialJetlagMetric:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+        weekend_sample_days:
+          type: integer
+        current_delta_min:
+          type: number
+          nullable: true
+        prior_delta_min:
+          type: number
+          nullable: true
+        sustained_two_windows:
+          type: boolean
+    ScheduleVariabilityMetric:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+        current_variability_min:
+          type: number
+          nullable: true
+        prior_variability_min:
+          type: number
+          nullable: true
+        sustained_two_windows:
+          type: boolean
+        high_data_gap:
+          type: boolean
+    RankedQualityFactor:
+      type: object
+      properties:
+        factor:
+          type: string
+        effect:
+          type: number
+    QualityFactorRankingMetric:
+      type: object
+      properties:
+        eligible:
+          type: boolean
+        sessions_with_quality:
+          type: integer
+        distinct_quality_values:
+          type: integer
+        stable_across_adjacent_windows:
+          type: boolean
+        ranked_factors:
+          type: array
+          items:
+            $ref: '#/components/schemas/RankedQualityFactor'
+    PersonalizationMetrics:
+      type: object
+      properties:
+        duration_baseline:
+          $ref: '#/components/schemas/DurationBaselineMetric'
+        day_type_timing_baseline:
+          $ref: '#/components/schemas/DayTypeTimingBaselineMetric'
+        social_jetlag:
+          $ref: '#/components/schemas/SocialJetlagMetric'
+        schedule_variability:
+          $ref: '#/components/schemas/ScheduleVariabilityMetric'
+        quality_factor_ranking:
+          $ref: '#/components/schemas/QualityFactorRankingMetric'
+    RecommendationStatus:
+      type: string
+      enum: [recommended, suppressed]
+    RecommendationConfidence:
+      type: string
+      enum: [high, medium, low]
+    ActionRecommendation:
+      type: object
+      properties:
+        action_key:
+          type: string
+        status:
+          $ref: '#/components/schemas/RecommendationStatus'
+        confidence:
+          $ref: '#/components/schemas/RecommendationConfidence'
+        rationale:
+          type: string
+        suppression_reasons:
+          type: array
+          items:
+            type: string
+    PersonalizationResponse:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date
+        window_days:
+          type: integer
+        current_window:
+          $ref: '#/components/schemas/PersonalizationWindow'
+        prior_window:
+          $ref: '#/components/schemas/PersonalizationWindow'
+        metrics:
+          $ref: '#/components/schemas/PersonalizationMetrics'
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionRecommendation'
     LoginPayload:
       type: object
       properties:
