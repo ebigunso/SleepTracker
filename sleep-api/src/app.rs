@@ -115,15 +115,12 @@ impl axum::extract::FromRef<AppState> for Key {
 pub fn router(db: Db) -> Router {
     let key: Key = crate::config::session_key();
     let enable_hsts = crate::config::hsts_enabled();
-    let enable_personalization_trends = crate::config::personalization_trends_enabled();
-    let enable_friction_telemetry = crate::config::personalization_friction_telemetry_enabled();
-    let enable_friction_backlog = crate::config::personalization_friction_backlog_enabled();
 
     let state = AppState {
         db,
         key: key.clone(),
     };
-    let mut router = Router::new()
+    let router = Router::new()
         .route("/", get(root))
         .route("/api/health", get(health_get).head(health_head))
         .route("/api/login", post(post_login))
@@ -145,24 +142,17 @@ pub fn router(db: Db) -> Router {
         .route("/api/exercise", post(create_exercise))
         .route("/api/exercise/intensity", get(get_exercise_intensity))
         .route("/api/note", post(create_note))
-        .route("/api/trends/sleep-bars", get(trends::sleep_bars))
-        .route("/api/trends/summary", get(trends::summary));
-
-    if enable_friction_telemetry {
-        router = router.route(
+        .route(
             "/api/personalization/friction-telemetry",
             post(post_friction_telemetry),
-        );
-    }
-    if enable_friction_backlog {
-        router = router.route(
+        )
+        .route(
             "/api/personalization/friction-backlog",
             get(get_friction_backlog),
-        );
-    }
-    if enable_personalization_trends {
-        router = router.route("/api/trends/personalization", get(trends::personalization));
-    }
+        )
+        .route("/api/trends/sleep-bars", get(trends::sleep_bars))
+        .route("/api/trends/summary", get(trends::summary))
+        .route("/api/trends/personalization", get(trends::personalization));
 
     let router = router.with_state(state);
 

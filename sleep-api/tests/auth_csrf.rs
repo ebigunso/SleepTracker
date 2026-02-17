@@ -416,8 +416,6 @@ async fn test_personalization_auth_and_csrf_requirements() {
     unsafe {
         std::env::set_var("DATABASE_URL", "sqlite::memory:");
         std::env::set_var("COOKIE_SECURE", "1");
-        std::env::set_var("ENABLE_PERSONALIZATION_FRICTION_TELEMETRY", "1");
-        std::env::set_var("ENABLE_PERSONALIZATION_FRICTION_BACKLOG", "1");
     }
     set_admin_env("admin@example.com", "password123");
 

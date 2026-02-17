@@ -113,24 +113,6 @@ pub fn cookie_secure() -> bool {
     env_flag("COOKIE_SECURE", true) // default secure for safety
 }
 
-/// Whether `/api/trends/personalization` is exposed.
-/// Controlled by `ENABLE_PERSONALIZATION_TRENDS=1/true` (default: false).
-pub fn personalization_trends_enabled() -> bool {
-    env_flag("ENABLE_PERSONALIZATION_TRENDS", false)
-}
-
-/// Whether `POST /api/personalization/friction-telemetry` is exposed.
-/// Controlled by `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1/true` (default: false).
-pub fn personalization_friction_telemetry_enabled() -> bool {
-    env_flag("ENABLE_PERSONALIZATION_FRICTION_TELEMETRY", false)
-}
-
-/// Whether `GET /api/personalization/friction-backlog` is exposed.
-/// Controlled by `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1/true` (default: false).
-pub fn personalization_friction_backlog_enabled() -> bool {
-    env_flag("ENABLE_PERSONALIZATION_FRICTION_BACKLOG", false)
-}
-
 /// Session cookie name, varies in dev-mode to support HTTP.
 /// - When cookie_secure() is true: "__Host-session"
 /// - Otherwise: "session"

@@ -475,7 +475,7 @@ paths:
   /api/personalization/friction-telemetry:
     post:
       summary: Ingest one friction telemetry event
-      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1. When disabled, the route is absent and returns 404.'
+      description: Captures one friction telemetry event from an authenticated user session.
       requestBody:
         required: true
         content:
@@ -516,7 +516,7 @@ paths:
   /api/personalization/friction-backlog:
     get:
       summary: Ranked friction backlog proposals with evidence
-      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1. When disabled, the route is absent and returns 404.'
+      description: Returns ranked friction backlog proposals with evidence and confidence.
       parameters:
         - in: query
           name: window_days
@@ -675,7 +675,7 @@ paths:
   /api/trends/personalization:
     get:
       summary: Rolling-window personalization metrics and recommendations
-      description: 'Rollout-gated endpoint. Enable with ENABLE_PERSONALIZATION_TRENDS=1. When disabled, the route is absent and returns 404.'
+      description: Returns rolling-window personalization metrics and action recommendations.
       parameters:
         - in: query
           name: window_days
