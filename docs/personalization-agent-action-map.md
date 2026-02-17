@@ -9,6 +9,25 @@ It maps each high-priority metric to concrete autonomous actions, including trig
 - Run rules on a rolling window (for example: 28 days), then compare with the prior window.
 - Apply only when trigger + confidence + guardrails are all satisfied.
 
+## Backend endpoint mapping and rollout flags
+
+Backend endpoints used by this map:
+
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
+
+Rollout flags (all default to off):
+
+- `ENABLE_PERSONALIZATION_TRENDS=1`
+- `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1`
+- `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1`
+
+Fallback behavior when a flag is off:
+
+- The endpoint is not registered and returns `404`.
+- This preserves legacy behavior for clients that have not opted into personalization rollout.
+
 ## Metric-to-action matrix
 
 | Metric | Primary analysis question | Agent action candidates | Trigger to act | Guardrail before applying |

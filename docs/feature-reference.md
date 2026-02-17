@@ -150,6 +150,36 @@ This document inventories implemented capabilities by domain, with active user-v
 - `openapi.yaml` (`/api/note`)
 - `sleep-ui/src/lib/components/SleepForm.svelte`
 
+### 8) Personalization (rollout-gated)
+
+**Behavior**
+- Provides rolling-window personalization metrics and recommendation outputs.
+- Captures friction telemetry events and produces ranked friction backlog proposals.
+- All personalization routes are opt-in via backend rollout flags and are disabled by default.
+
+**Endpoints / dependencies**
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
+
+**Rollout flags and fallback behavior**
+- `ENABLE_PERSONALIZATION_TRENDS=1` enables `/api/trends/personalization`.
+- `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1` enables `/api/personalization/friction-telemetry`.
+- `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1` enables `/api/personalization/friction-backlog`.
+- If a flag is off, the route is not registered and requests return `404`.
+
+**Guardrail/confidence/rollback policy**
+- Actions are considered only when trigger conditions and guardrails are satisfied.
+- Auto-promotion requires at least `medium` confidence.
+- Backlog proposals include rollback conditions and are downgraded when persistence or confidence weakens.
+
+**Source evidence**
+- `sleep-api/src/app.rs` (conditional route wiring)
+- `sleep-api/src/config.rs` (rollout flag parsing and defaults)
+- `sleep-api/src/trends.rs` (personalization metrics and recommendations)
+- `sleep-api/src/handlers.rs` (friction telemetry ingestion and backlog policy fields)
+- `docs/personalization-agent-action-map.md` (trigger/guardrail policy)
+
 ---
 
 ## Constraints, assumptions, and known gaps (for product analysis)
