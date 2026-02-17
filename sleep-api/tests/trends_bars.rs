@@ -171,7 +171,6 @@ async fn test_personalization_response_shape_and_guardrails() {
     unsafe {
         std::env::set_var("DATABASE_URL", "sqlite::memory:");
         std::env::set_var("COOKIE_SECURE", "0");
-        std::env::set_var("ENABLE_PERSONALIZATION_TRENDS", "1");
     };
     set_admin_env("admin@example.com", "password123");
 
