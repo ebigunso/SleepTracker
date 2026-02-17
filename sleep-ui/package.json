@@ -11,7 +11,6 @@
     "test:e2e": "playwright test --project=e2e-auth",
     "e2e:auth:bootstrap": "playwright test --project=auth-setup",
     "test:e2e:auth": "playwright test --project=e2e-auth tests/auth.spec.ts",
-    "test:e2e:full": "playwright test --project=e2e-auth",
     "test:unit": "vitest run",
     "sync": "svelte-kit sync"
   },

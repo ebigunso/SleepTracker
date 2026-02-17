@@ -12,12 +12,12 @@ Use the frontend auth bootstrap commands when running authenticated E2E:
 3. Run authenticated E2E:
    - `npm run test:e2e:auth`
 4. (Optional) Run full authenticated suite:
-   - `npm run test:e2e:full`
+   - `npm run test:e2e`
 
 ## Notes
 
 - Bootstrap logs in through the existing `/login` page and stores auth state at `.playwright-cli/auth/storage-state.json`.
 - Missing credentials fail fast with an actionable setup error.
-- `test:e2e:auth` is an auth-smoke check; use `test:e2e:full` for the full authenticated scenario set.
+- `test:e2e:auth` is an auth-smoke check; use `test:e2e` for the full authenticated scenario set.
 - Never log or commit credential values, cookies, or `.playwright-cli/` auth artifacts.
 - `sleep-ui/.env` is local-only and gitignored.
