@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { apiGet } from '$lib/api';
+  import {
+    apiGet,
+    getPersonalization,
+    selectPrioritizedTrendsExplanation,
+    type ActionRecommendation,
+    type PersonalizationResponse
+  } from '$lib/api';
   import SleepBar from '$lib/components/SleepBar.svelte';
   import { theme, type Theme } from '$lib/stores/theme';
   import {
@@ -77,10 +83,15 @@
   let from = '';
   let to = '';
   let bars: SleepBarRecord[] = [];
+  let personalization: PersonalizationResponse | null = null;
   let loading = false;
   let errorMsg: string | null = null;
   let metric: MetricKey = 'duration';
   let view: ViewMode = 'chart';
+
+  const scheduleShiftInsightKey = 'social_jetlag_schedule_shift_insight';
+  const regularityInsightKey = 'regularity_insight_priority';
+  const qualityExplanationKey = 'quality_aligned_factor_explanation';
 
   function iso(d: Date) {
     const yyyy = d.getFullYear();
@@ -144,17 +155,42 @@
     return total / values.length;
   }
 
+  function recommendationByKey(actionKey: string): ActionRecommendation | null {
+    return personalization?.recommendations.find((item) => item.action_key === actionKey) ?? null;
+  }
+
+  function isRecommended(rec: ActionRecommendation | null): boolean {
+    return rec?.status === 'recommended';
+  }
+
+  function formatSignedMinutes(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return '—';
+    const rounded = Math.round(value);
+    const sign = rounded > 0 ? '+' : '';
+    return `${sign}${rounded} min`;
+  }
+
   async function loadBars() {
     if (!from || !to) setDefaultRange();
     loading = true;
     errorMsg = null;
     try {
       const q = new URLSearchParams({ from, to }).toString();
-      const data = await apiGet<SleepBarRecord[]>(`/api/trends/sleep-bars?${q}`);
+      const days = rangeDays(from, to);
+      const personalizationQuery = {
+        to,
+        ...(typeof days === 'number' ? { window_days: days } : {})
+      };
+      const [data, personalizationData] = await Promise.all([
+        apiGet<SleepBarRecord[]>(`/api/trends/sleep-bars?${q}`),
+        getPersonalization(personalizationQuery).catch(() => null)
+      ]);
       bars = data;
+      personalization = personalizationData;
     } catch (e) {
       console.error(e);
       errorMsg = 'Failed to load trends';
+      personalization = null;
     } finally {
       loading = false;
       if (view === 'chart') {
@@ -326,6 +362,17 @@
   $: currentRangeDays = rangeDays(from, to);
   $: rangeLabel = currentRangeDays ? `Last ${currentRangeDays} days` : 'Custom range';
   $: sortedBars = [...bars].sort((a, b) => a.date.localeCompare(b.date));
+  $: scheduleShiftInsight = recommendationByKey(scheduleShiftInsightKey);
+  $: regularityInsight = recommendationByKey(regularityInsightKey);
+  $: qualityExplanation = recommendationByKey(qualityExplanationKey);
+  $: showScheduleShiftInsight = isRecommended(scheduleShiftInsight);
+  $: showVariabilityInsight = isRecommended(regularityInsight);
+  $: hasInsightCards = showScheduleShiftInsight || showVariabilityInsight;
+  $: prioritizedExplanation = selectPrioritizedTrendsExplanation(
+    regularityInsight,
+    qualityExplanation,
+    metrics.find((m) => m.key === metric)?.helper
+  );
   $: durations = sortedBars.map((b) => b.duration_min ?? computeDurationMin(b.bed_time, b.wake_time));
   $: avgDuration = average(durations);
   $: avgQuality = average(sortedBars.map((b) => b.quality).filter((v): v is number => v != null));
@@ -427,6 +474,29 @@
     </div>
   </div>
 
+  {#if hasInsightCards}
+    <div class="surface-card grid gap-3 rounded-2xl px-5 py-4 text-sm md:grid-cols-2">
+      {#if showScheduleShiftInsight}
+        <div class="surface-muted rounded-xl px-4 py-3">
+          <div class="text-muted text-xs font-semibold uppercase tracking-wide">Schedule shift insight</div>
+          <div class="text-default mt-1 text-sm font-semibold">
+            Weekend midpoint shift {formatSignedMinutes(personalization?.metrics.social_jetlag.current_delta_min)}
+          </div>
+          <p class="text-muted mt-1 text-xs">{scheduleShiftInsight?.rationale}</p>
+        </div>
+      {/if}
+      {#if showVariabilityInsight}
+        <div class="surface-muted rounded-xl px-4 py-3">
+          <div class="text-muted text-xs font-semibold uppercase tracking-wide">Variability insight</div>
+          <div class="text-default mt-1 text-sm font-semibold">
+            Current timing variability {formatDurationHMM(personalization?.metrics.schedule_variability.current_variability_min)}
+          </div>
+          <p class="text-muted mt-1 text-xs">{regularityInsight?.rationale}</p>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   {#if view === 'chart'}
     <div class="surface-card space-y-4 rounded-2xl p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
@@ -443,9 +513,7 @@
             </button>
           {/each}
         </div>
-        <div class="text-muted text-xs">
-          {metrics.find((m) => m.key === metric)?.helper}
-        </div>
+        <div class="text-muted text-xs">{prioritizedExplanation}</div>
       </div>
       <div class="h-72">
         {#if loading}

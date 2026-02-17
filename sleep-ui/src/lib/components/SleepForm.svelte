@@ -3,11 +3,26 @@
   import Button from '$lib/components/Button.svelte';
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
   import Input from '$lib/components/Input.svelte';
-  import type { SleepInput, ExerciseUpsert, SleepSession } from '$lib/api';
-  import { createSleep, updateSleep, upsertExercise, apiPost } from '$lib/api';
+  import type {
+    SleepInput,
+    ExerciseUpsert,
+    SleepSession,
+    PersonalizationResponse,
+    ActionRecommendation
+  } from '$lib/api';
+  import {
+    createSleep,
+    updateSleep,
+    upsertExercise,
+    apiPost,
+    getDurationWarningBoundsFromMetric,
+    getDurationWarningMessage,
+    shouldShowDayTypeUsualTimesAction,
+    applyDayTypeUsualTimes
+  } from '$lib/api';
   import { upsertRecent, setIntensity } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
-  import { computeDurationMin } from '$lib/utils/sleep';
+  import { computeDurationMin, formatDurationMin } from '$lib/utils/sleep';
 
   /**
    * Props
@@ -23,12 +38,16 @@
   export let initialIntensity: 'none' | 'light' | 'hard' = 'none';
   export let initialNotes: string = '';
   export let showCancel = false;
+  export let personalization: PersonalizationResponse | null = null;
+
+  type DayType = 'weekday' | 'weekend';
+  type TimePair = { bed: string; wake: string; dayType: DayType };
 
   const dispatch = createEventDispatcher<{ saved: SleepSession; deleted: void; cancel: void }>();
 
   let date = initialDate ?? today();
-  let bed = normalizeTime(initialBed ?? '22:00:00');
-  let wake = normalizeTime(initialWake ?? '06:00:00');
+  let bed = normalizeTime(initialBed ?? getDefaultTimesForDate(date)?.bed ?? '22:00:00');
+  let wake = normalizeTime(initialWake ?? getDefaultTimesForDate(date)?.wake ?? '06:00:00');
   let latency = initialLatency;
   let awakenings = initialAwakenings;
   let quality = initialQuality;
@@ -43,6 +62,17 @@
   let warnOpen = false;
   let pendingSubmit = false;
   const inputClass = 'mt-1 surface-2';
+
+  $: dayTypeDefault = getDefaultTimesForDate(date);
+  $: usualTimesActionEnabled = shouldShowDayTypeUsualTimesAction(
+    findRecommendation('day_type_default_prefill'),
+    dayTypeDefault !== null
+  );
+  $: durationBounds = getDurationWarningBoundsFromMetric(
+    findRecommendation('personal_duration_warning_tuning'),
+    personalization?.metrics?.duration_baseline
+  );
+  $: warningMessage = getDurationWarningMessage(durationBounds, formatDurationMin);
 
   $: if (!intensityDirty && intensity !== initialIntensity) {
     intensity = initialIntensity;
@@ -65,8 +95,59 @@
     return '00:00:00';
   }
 
+  function normalizeClockMinutes(minutes: number): number {
+    const rounded = Math.round(minutes);
+    return ((rounded % (24 * 60)) + (24 * 60)) % (24 * 60);
+  }
+
+  function minutesToIsoTime(minutes: number | null): string | null {
+    if (minutes == null || !Number.isFinite(minutes)) return null;
+    const value = normalizeClockMinutes(minutes);
+    const hh = String(Math.floor(value / 60)).padStart(2, '0');
+    const mm = String(value % 60).padStart(2, '0');
+    return `${hh}:${mm}:00`;
+  }
+
+  function getDayType(value: string): DayType {
+    const d = new Date(`${value}T00:00:00Z`);
+    const weekday = d.getUTCDay();
+    return weekday === 0 || weekday === 6 ? 'weekend' : 'weekday';
+  }
+
+  function findRecommendation(actionKey: string): ActionRecommendation | null {
+    const found = personalization?.recommendations?.find((item) => item.action_key === actionKey);
+    return found ?? null;
+  }
+
+  function getDefaultTimesForDate(value: string): TimePair | null {
+    if (mode !== 'create') return null;
+    const metric = personalization?.metrics?.day_type_timing_baseline;
+    if (!metric?.eligible) return null;
+    const dayType = getDayType(value);
+    const bedMin = dayType === 'weekend' ? metric.weekend_bed_median_min : metric.weekday_bed_median_min;
+    const wakeMin = dayType === 'weekend' ? metric.weekend_wake_median_min : metric.weekday_wake_median_min;
+    const bedTime = minutesToIsoTime(bedMin);
+    const wakeTime = minutesToIsoTime(wakeMin);
+    if (!bedTime || !wakeTime) return null;
+    return { bed: bedTime, wake: wakeTime, dayType };
+  }
+
   function shouldWarn(durationMin: number): boolean {
+    if (durationBounds) {
+      return durationMin < durationBounds.min || durationMin > durationBounds.max;
+    }
     return durationMin < 120 || durationMin > 14 * 60;
+  }
+
+  function applyUsualTimes() {
+    const next = applyDayTypeUsualTimes(
+      bed,
+      wake,
+      dayTypeDefault ? { bed: dayTypeDefault.bed, wake: dayTypeDefault.wake } : null,
+      usualTimesActionEnabled
+    );
+    bed = normalizeTime(next.bed);
+    wake = normalizeTime(next.wake);
   }
 
   function buildSleepInput(): SleepInput {
@@ -193,6 +274,13 @@
       <label for="wake" class="meta-text">Wake time</label>
       <Input id="wake" className={inputClass} type="time" step="60" bind:value={wake} required />
     </div>
+    {#if usualTimesActionEnabled}
+      <div class="sm:col-span-2">
+        <Button type="button" variant="ghost" size="sm" disabled={loading} on:click={applyUsualTimes}>
+          Use your usual {dayTypeDefault?.dayType === 'weekend' ? 'weekend' : 'weekday'} times
+        </Button>
+      </div>
+    {/if}
     <div>
       <label for="latency" class="meta-text">Latency (min)</label>
       <Input id="latency" className={inputClass} type="number" min="0" max="180" bind:value={latency} required />
@@ -236,7 +324,7 @@
 <ConfirmDialog
   bind:open={warnOpen}
   title="Unusual duration"
-  message="The sleep duration is < 2h or > 14h. Proceed anyway?"
+  message={warningMessage}
   on:confirm={onProceed}
   on:cancel={onCancelWarn}
 />
