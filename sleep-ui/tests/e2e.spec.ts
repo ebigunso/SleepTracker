@@ -2,11 +2,6 @@
 
 import { test, expect } from '@playwright/test';
 
-// These must match your backend ADMIN_EMAIL / password.
-// Provide via environment variables or skip the test if absent.
-const EMAIL = process.env.PLAYWRIGHT_EMAIL;
-const PASSWORD = process.env.PLAYWRIGHT_PASSWORD;
-
 function formatDate(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -14,32 +9,9 @@ function formatDate(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// Helper to skip when creds are not provided
-test.skip(!EMAIL || !PASSWORD, 'PLAYWRIGHT_EMAIL and PLAYWRIGHT_PASSWORD are required for this test');
-
-async function login(page: import('@playwright/test').Page) {
-  await page.context().clearCookies();
-  await page.goto('/login');
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(500);
-  await expect(page.getByLabel('Email')).toBeVisible();
-  await page.getByLabel('Email').fill(EMAIL!);
-  await page.getByLabel('Password', { exact: true }).fill(PASSWORD!);
-
-  const [loginRequest] = await Promise.all([
-    page.waitForRequest('**/api/login'),
-    page.getByRole('button', { name: 'Sign in' }).click()
-  ]);
-
-  if (loginRequest.method() !== 'POST') {
-    throw new Error(`Login request used unexpected method: ${loginRequest.method()}`);
-  }
-
-  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
-}
-
 test('dashboard quick log -> edit -> delete, with duration warning', async ({ page }) => {
-  await login(page);
+  await page.goto('/');
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   // Quick Log: navigate to create form
   await page.getByRole('button', { name: /quick log/i }).click();
@@ -85,7 +57,8 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
 });
 
 test('new sleep entry cancel returns home without creating session', async ({ page }) => {
-  await login(page);
+  await page.goto('/');
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   let sleepMutationRequests = 0;
   const onRequest = (request: import('@playwright/test').Request) => {
@@ -117,7 +90,8 @@ test('new sleep entry cancel returns home without creating session', async ({ pa
 test('multiple sessions per day display and edit', async ({ page }) => {
   const targetDate = formatDate(new Date(Date.now() - 24 * 60 * 60 * 1000));
 
-  await login(page);
+  await page.goto('/');
+  await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   const createSession = async (bed: string, wake: string, quality: string) => {
     await page.goto(`/sleep/new?date=${targetDate}`);

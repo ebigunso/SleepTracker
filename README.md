@@ -111,6 +111,25 @@ Server-side route protection:
 Local HTTP note:
 - For local HTTP development, set COOKIE_SECURE=0 in the API environment so non-__Host- cookies are accepted over http. Do not use this setting in production.
 
+## Playwright authenticated E2E bootstrap
+
+Use these commands from `sleep-ui/` when E2E requires an authenticated session:
+
+- `npm run e2e:auth:bootstrap`
+  - Logs in through the real `/login` UI flow.
+  - Reads `PLAYWRIGHT_EMAIL` and `PLAYWRIGHT_PASSWORD` from `sleep-ui/.env` (or process env).
+  - Writes browser storage state to `.playwright-cli/auth/storage-state.json`.
+- `npm run test:e2e:auth`
+  - Runs the authenticated bootstrap smoke check using the generated storage state.
+- `npm run test:e2e`
+  - Runs the full authenticated Playwright suite using the generated storage state.
+
+Secret handling rules:
+
+- Do not print, paste, or commit secret values (`PLAYWRIGHT_EMAIL`, `PLAYWRIGHT_PASSWORD`).
+- Do not commit `.playwright-cli/` artifacts or auth state.
+- Keep credentials in local-only env files (for this repo: `sleep-ui/.env`, already ignored by git).
+
 ## OpenAPI
 
 OpenAPI specification is in openapi.yaml and includes:
@@ -119,6 +138,23 @@ OpenAPI specification is in openapi.yaml and includes:
 - Double-submit CSRF requirement (X-CSRF-Token) on mutating endpoints
 - /api/session endpoint for session probe (GET)
 - HEAD /api/health endpoint
+
+## Personalization rollout flags (safe defaults)
+
+Personalization endpoints are rollout-gated and default to off, preserving legacy behavior.
+
+- `ENABLE_PERSONALIZATION_TRENDS=1` enables `GET /api/trends/personalization`
+- `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1` enables `POST /api/personalization/friction-telemetry`
+- `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1` enables `GET /api/personalization/friction-backlog`
+
+When a flag is off, its endpoint is not registered and returns `404` (same behavior as pre-rollout builds).
+
+Guardrail/confidence policy for personalization actions:
+- Apply actions only when trigger + guardrails are satisfied.
+- Auto-promote only when confidence is `medium` or `high`.
+- Roll back or suppress a proposal when persistence no longer holds for two windows or confidence drops below `medium`.
+
+See `docs/personalization-agent-action-map.md` for the metric-level trigger thresholds and guardrails.
 
 ## Sleep sessions, wake dates, and timezones
 
