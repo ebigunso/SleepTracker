@@ -7,6 +7,15 @@ import {
   formatMinutesAsTime,
   formatTimeHHMM
 } from '../../src/lib/utils/sleep';
+import {
+  applyDayTypeUsualTimes,
+  getDurationWarningBoundsFromMetric,
+  getDurationWarningMessage,
+  selectPrioritizedTrendsExplanation,
+  shouldShowDayTypeUsualTimesAction,
+  type ActionRecommendation,
+  type DurationBaselineMetric
+} from '../../src/lib/api';
 
 describe('computeSegments', () => {
   it('returns single segment when no wrap (22:00 -> 23:00)', () => {
@@ -91,5 +100,157 @@ describe('formatDurationMin', () => {
     expect(formatDurationMin(null)).toBe('—');
     expect(formatDurationMin(Number.NaN)).toBe('—');
     expect(formatDurationMin(-5)).toBe('0m');
+  });
+});
+
+describe('personalization warning message', () => {
+  const recommendedMedium: ActionRecommendation = {
+    action_key: 'personal_duration_warning_tuning',
+    status: 'recommended',
+    confidence: 'medium',
+    rationale: 'Use personalized duration warning range.',
+    suppression_reasons: []
+  };
+
+  it('uses personalized unusual-duration warning when duration baseline is eligible', () => {
+    const metric: DurationBaselineMetric = {
+      eligible: true,
+      sample_days: 28,
+      p10_min: 390,
+      p50_min: 450,
+      p90_min: 510,
+      iqr_min: 50,
+      recent_out_of_range_incidence_pct: 10
+    };
+
+    const bounds = getDurationWarningBoundsFromMetric(recommendedMedium, metric);
+    expect(bounds).toEqual({ min: 390, max: 510 });
+    expect(getDurationWarningMessage(bounds, formatDurationMin)).toBe(
+      'Your recent personal range is 6h 30m to 8h 30m. Proceed anyway?'
+    );
+  });
+
+  it('falls back to static warning when personalization is unavailable or ineligible', () => {
+    const unavailable = getDurationWarningBoundsFromMetric(recommendedMedium, undefined);
+    const ineligible = getDurationWarningBoundsFromMetric(recommendedMedium, {
+      eligible: false,
+      sample_days: 0,
+      p10_min: null,
+      p50_min: null,
+      p90_min: null,
+      iqr_min: null,
+      recent_out_of_range_incidence_pct: null
+    });
+
+    expect(unavailable).toBeNull();
+    expect(ineligible).toBeNull();
+    expect(getDurationWarningMessage(unavailable)).toBe('The sleep duration is < 2h or > 14h. Proceed anyway?');
+    expect(getDurationWarningMessage(ineligible)).toBe('The sleep duration is < 2h or > 14h. Proceed anyway?');
+  });
+
+  it('falls back to static warning when duration recommendation is suppressed even if metric is eligible', () => {
+    const suppressed: ActionRecommendation = {
+      action_key: 'personal_duration_warning_tuning',
+      status: 'suppressed',
+      confidence: 'low',
+      rationale: 'Not enough out-of-range incidence.',
+      suppression_reasons: ['recent out-of-range incidence is below 5% trigger']
+    };
+    const metric: DurationBaselineMetric = {
+      eligible: true,
+      sample_days: 90,
+      p10_min: 390,
+      p50_min: 450,
+      p90_min: 510,
+      iqr_min: 50,
+      recent_out_of_range_incidence_pct: 2
+    };
+
+    const bounds = getDurationWarningBoundsFromMetric(suppressed, metric);
+    expect(bounds).toBeNull();
+    expect(getDurationWarningMessage(bounds, formatDurationMin)).toBe(
+      'The sleep duration is < 2h or > 14h. Proceed anyway?'
+    );
+  });
+});
+
+describe('day-type usual times action', () => {
+  const recommendedMedium: ActionRecommendation = {
+    action_key: 'day_type_default_prefill',
+    status: 'recommended',
+    confidence: 'medium',
+    rationale: 'Apply by day type.',
+    suppression_reasons: []
+  };
+
+  it('shows action only when recommendation is recommended with sufficient confidence and defaults exist', () => {
+    expect(shouldShowDayTypeUsualTimesAction(recommendedMedium, true)).toBe(true);
+    expect(
+      shouldShowDayTypeUsualTimesAction({ ...recommendedMedium, confidence: 'low' }, true)
+    ).toBe(false);
+    expect(
+      shouldShowDayTypeUsualTimesAction({ ...recommendedMedium, status: 'suppressed' }, true)
+    ).toBe(false);
+    expect(shouldShowDayTypeUsualTimesAction(recommendedMedium, false)).toBe(false);
+    expect(shouldShowDayTypeUsualTimesAction(null, true)).toBe(false);
+  });
+
+  it('applies day-type default times only when action is enabled', () => {
+    expect(
+      applyDayTypeUsualTimes('22:00:00', '06:00:00', { bed: '23:30:00', wake: '07:30:00' }, true)
+    ).toEqual({ bed: '23:30:00', wake: '07:30:00' });
+
+    expect(
+      applyDayTypeUsualTimes('22:00:00', '06:00:00', { bed: '23:30:00', wake: '07:30:00' }, false)
+    ).toEqual({ bed: '22:00:00', wake: '06:00:00' });
+  });
+});
+
+describe('trends prioritized explanation', () => {
+  it('prefers regularity recommendation over quality explanation recommendation', () => {
+    const regularity: ActionRecommendation = {
+      action_key: 'regularity_insight_priority',
+      status: 'recommended',
+      confidence: 'high',
+      rationale: 'Regularity is the strongest driver this week.',
+      suppression_reasons: []
+    };
+    const quality: ActionRecommendation = {
+      action_key: 'quality_aligned_factor_explanation',
+      status: 'recommended',
+      confidence: 'high',
+      rationale: 'Quality is influenced by bedtime consistency.',
+      suppression_reasons: []
+    };
+
+    expect(selectPrioritizedTrendsExplanation(regularity, quality, 'Total sleep time')).toBe(
+      'Regularity is the strongest driver this week.'
+    );
+  });
+
+  it('falls back to quality recommendation, then metric helper when unavailable/ineligible', () => {
+    const quality: ActionRecommendation = {
+      action_key: 'quality_aligned_factor_explanation',
+      status: 'recommended',
+      confidence: 'medium',
+      rationale: 'Quality recommendation rationale.',
+      suppression_reasons: []
+    };
+
+    expect(
+      selectPrioritizedTrendsExplanation(
+        {
+          action_key: 'regularity_insight_priority',
+          status: 'suppressed',
+          confidence: 'medium',
+          rationale: 'Suppressed regularity rationale.',
+          suppression_reasons: ['insufficient_signal']
+        },
+        quality,
+        'Total sleep time'
+      )
+    ).toBe('Quality recommendation rationale.');
+
+    expect(selectPrioritizedTrendsExplanation(null, null, 'Total sleep time')).toBe('Total sleep time');
   });
 });

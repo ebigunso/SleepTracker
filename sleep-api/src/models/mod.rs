@@ -10,12 +10,17 @@ See also: [`repository`] for persistence operations and [`time::compute_duration
 "#]
 
 pub mod exercise;
+pub mod friction;
 pub mod intensity;
 pub mod note;
 pub mod quality;
 pub mod sleep;
 
 pub use exercise::{DateIntensity, ExerciseInput};
+pub use friction::{
+    FrictionErrorKindAggregate, FrictionTelemetryEvent, FrictionTelemetryInput,
+    FrictionWindowAggregate,
+};
 #[allow(unused_imports)]
 pub use intensity::Intensity;
 pub use note::NoteInput;

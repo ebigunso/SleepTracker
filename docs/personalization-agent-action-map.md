@@ -9,6 +9,20 @@ It maps each high-priority metric to concrete autonomous actions, including trig
 - Run rules on a rolling window (for example: 28 days), then compare with the prior window.
 - Apply only when trigger + confidence + guardrails are all satisfied.
 
+## Backend endpoint mapping
+
+Backend endpoints used by this map:
+
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
+
+These endpoints are available as part of the API:
+
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
+
 ## Metric-to-action matrix
 
 | Metric | Primary analysis question | Agent action candidates | Trigger to act | Guardrail before applying |

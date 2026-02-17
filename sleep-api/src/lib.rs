@@ -11,6 +11,7 @@ Key modules:
 - [`repository`] — persistence operations.
 - [`time`] — time and duration helpers including DST‑aware computations.
 - [`trends`] — aggregation endpoints.
+	- Includes `sleep-bars`, `summary`, and `personalization` trend routes.
 
 Why: use this crate to embed the API server in your binary, or reuse its types and helpers like [`compute_duration_min`].
 

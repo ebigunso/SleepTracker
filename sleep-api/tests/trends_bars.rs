@@ -165,3 +165,125 @@ async fn test_trends_sleep_bars_basic() {
     assert!(first.get("bed_time").is_some(), "missing bed_time");
     assert!(first.get("wake_time").is_some(), "missing wake_time");
 }
+
+#[tokio::test]
+async fn test_personalization_response_shape_and_guardrails() {
+    unsafe {
+        std::env::set_var("DATABASE_URL", "sqlite::memory:");
+        std::env::set_var("COOKIE_SECURE", "0");
+    };
+    set_admin_env("admin@example.com", "password123");
+
+    let pool = db::connect().await.unwrap();
+    sqlx::migrate::Migrator::new(std::path::Path::new("../migrations"))
+        .await
+        .unwrap()
+        .run(&pool)
+        .await
+        .unwrap();
+
+    let app = app::router(pool.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.2:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let _server = tokio::spawn(async move {
+        axum::serve(listener, app).await.unwrap();
+    });
+
+    let client = Client::builder().cookie_store(true).build().unwrap();
+    wait_ready(&client, &addr.to_string()).await;
+    let (csrf, session) = login_and_get_auth(
+        &client,
+        &addr.to_string(),
+        "admin@example.com",
+        "password123",
+    )
+    .await;
+
+    let entries = [
+        SleepInput {
+            date: chrono::NaiveDate::from_ymd_opt(2025, 6, 23).unwrap(),
+            bed_time: chrono::NaiveTime::from_hms_opt(23, 55, 0).unwrap(),
+            wake_time: chrono::NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+            latency_min: 15,
+            awakenings: 0,
+            quality: Quality(4),
+        },
+        SleepInput {
+            date: chrono::NaiveDate::from_ymd_opt(2025, 6, 24).unwrap(),
+            bed_time: chrono::NaiveTime::from_hms_opt(0, 5, 0).unwrap(),
+            wake_time: chrono::NaiveTime::from_hms_opt(7, 10, 0).unwrap(),
+            latency_min: 12,
+            awakenings: 1,
+            quality: Quality(3),
+        },
+        SleepInput {
+            date: chrono::NaiveDate::from_ymd_opt(2025, 6, 25).unwrap(),
+            bed_time: chrono::NaiveTime::from_hms_opt(23, 50, 0).unwrap(),
+            wake_time: chrono::NaiveTime::from_hms_opt(6, 55, 0).unwrap(),
+            latency_min: 11,
+            awakenings: 0,
+            quality: Quality(5),
+        },
+        SleepInput {
+            date: chrono::NaiveDate::from_ymd_opt(2025, 6, 26).unwrap(),
+            bed_time: chrono::NaiveTime::from_hms_opt(0, 10, 0).unwrap(),
+            wake_time: chrono::NaiveTime::from_hms_opt(7, 5, 0).unwrap(),
+            latency_min: 13,
+            awakenings: 1,
+            quality: Quality(4),
+        },
+    ];
+
+    for entry in entries {
+        let res = client
+            .post(format!("http://{addr}/api/sleep"))
+            .header("Cookie", format!("session={session}; csrf={csrf}"))
+            .header("X-CSRF-Token", &csrf)
+            .json(&entry)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(res.status(), 201);
+    }
+
+    let url = format!("http://{addr}/api/trends/personalization?window_days=7&to=2025-06-28");
+    let res = client.get(url).send().await.unwrap();
+    assert_eq!(res.status(), 200);
+
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert!(body.get("as_of").is_some());
+    assert!(body.get("window_days").is_some());
+    assert!(body.get("current_window").is_some());
+    assert!(body.get("prior_window").is_some());
+    assert!(body.get("metrics").is_some());
+
+    let recommendations = body
+        .get("recommendations")
+        .and_then(|v| v.as_array())
+        .expect("recommendations should be an array");
+    assert_eq!(recommendations.len(), 5);
+
+    let duration_rec = recommendations
+        .iter()
+        .find(|rec| {
+            rec.get("action_key")
+                == Some(&serde_json::Value::String(
+                    "personal_duration_warning_tuning".to_string(),
+                ))
+        })
+        .expect("duration recommendation should exist");
+    assert_eq!(
+        duration_rec.get("status").and_then(|v| v.as_str()),
+        Some("suppressed")
+    );
+
+    let suppression_reasons = duration_rec
+        .get("suppression_reasons")
+        .and_then(|v| v.as_array())
+        .expect("suppression_reasons should be an array");
+    assert!(
+        suppression_reasons
+            .iter()
+            .any(|r| { r.as_str() == Some("needs at least 60 baseline sessions in prior window") })
+    );
+}

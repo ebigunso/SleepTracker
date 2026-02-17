@@ -150,6 +150,28 @@ This document inventories implemented capabilities by domain, with active user-v
 - `openapi.yaml` (`/api/note`)
 - `sleep-ui/src/lib/components/SleepForm.svelte`
 
+### 8) Personalization
+
+**Behavior**
+- Provides rolling-window personalization metrics and recommendation outputs.
+- Captures friction telemetry events and produces ranked friction backlog proposals.
+
+**Endpoints / dependencies**
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
+
+**Guardrail/confidence/rollback policy**
+- Actions are considered only when trigger conditions and guardrails are satisfied.
+- Auto-promotion requires at least `medium` confidence.
+- Backlog proposals include rollback conditions and are downgraded when persistence or confidence weakens.
+
+**Source evidence**
+- `sleep-api/src/app.rs` (personalization route wiring)
+- `sleep-api/src/trends.rs` (personalization metrics and recommendations)
+- `sleep-api/src/handlers.rs` (friction telemetry ingestion and backlog policy fields)
+- `docs/personalization-agent-action-map.md` (trigger/guardrail policy)
+
 ---
 
 ## Constraints, assumptions, and known gaps (for product analysis)

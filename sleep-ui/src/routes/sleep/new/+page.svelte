@@ -1,12 +1,14 @@
 <script lang="ts">
   import SleepForm from '$lib/components/SleepForm.svelte';
-  import { page } from '$app/stores';
   import { goto } from '$app/navigation';
-  import { get } from 'svelte/store';
+  import type { PersonalizationResponse } from '$lib/api';
 
-  // Prefill date from query (?date=YYYY-MM-DD) if present
-  const url = get(page).url;
-  const initialDate = url.searchParams.get('date');
+  export let data: {
+    initialDate: string | null;
+    personalization: PersonalizationResponse | null;
+  };
+
+  const initialDate = data.initialDate;
   function goHome() {
     goto('/');
   }
@@ -26,6 +28,13 @@
     <p class="text-muted text-sm">Log bedtime, wake time, and how you feel.</p>
   </div>
   <div class="surface-card rounded-xl p-4">
-    <SleepForm mode="create" {initialDate} showCancel on:saved={onSaved} on:cancel={onCancel} />
+    <SleepForm
+      mode="create"
+      {initialDate}
+      personalization={data.personalization}
+      showCancel
+      on:saved={onSaved}
+      on:cancel={onCancel}
+    />
   </div>
 </section>

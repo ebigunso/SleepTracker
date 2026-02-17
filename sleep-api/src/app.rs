@@ -18,7 +18,7 @@ use crate::{
     db::Db,
     error::ApiError,
     handlers,
-    models::{ExerciseInput, NoteInput, SleepInput},
+    models::{ExerciseInput, FrictionTelemetryInput, NoteInput, SleepInput},
     trends,
 };
 use axum::http::StatusCode;
@@ -48,8 +48,11 @@ Routes:
 - `DELETE /api/sleep/{id}`
 - `POST /api/exercise`
 - `POST /api/note`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
 - `GET /api/trends/sleep-bars`
 - `GET /api/trends/summary`
+- `GET /api/trends/personalization`
 
 # Example
 
@@ -139,9 +142,19 @@ pub fn router(db: Db) -> Router {
         .route("/api/exercise", post(create_exercise))
         .route("/api/exercise/intensity", get(get_exercise_intensity))
         .route("/api/note", post(create_note))
+        .route(
+            "/api/personalization/friction-telemetry",
+            post(post_friction_telemetry),
+        )
+        .route(
+            "/api/personalization/friction-backlog",
+            get(get_friction_backlog),
+        )
         .route("/api/trends/sleep-bars", get(trends::sleep_bars))
         .route("/api/trends/summary", get(trends::summary))
-        .with_state(state);
+        .route("/api/trends/personalization", get(trends::personalization));
+
+    let router = router.with_state(state);
 
     crate::security::headers::apply(router, enable_hsts)
 }
@@ -502,6 +515,68 @@ async fn create_note(
 ) -> Result<impl axum::response::IntoResponse, ApiError> {
     let id = handlers::create_note(&db, input).await?;
     Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+#[derive(serde::Deserialize)]
+struct FrictionBacklogParams {
+    window_days: Option<i64>,
+    to: Option<String>,
+}
+
+#[doc = r#"Ingest one friction telemetry event.
+
+Accepts: `POST /api/personalization/friction-telemetry` (`application/json`)
+- Body: [`FrictionTelemetryInput`]
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+- Requires CSRF ([`CsrfGuard`])
+
+Responses:
+- 201 Created — `{ "id": <number> }`
+- 400 Bad Request — invalid telemetry payload
+- 401 Unauthorized
+- 403 Forbidden — CSRF failure
+"#]
+async fn post_friction_telemetry(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    _csrf: CsrfGuard,
+    Json(input): Json<FrictionTelemetryInput>,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    let id = handlers::create_friction_telemetry(&db, input).await?;
+    Ok((StatusCode::CREATED, Json(json!({"id": id}))))
+}
+
+#[doc = r#"Return ranked friction backlog proposals with evidence.
+
+Accepts: `GET /api/personalization/friction-backlog?window_days=28&to=YYYY-MM-DD`
+- `window_days` optional rolling window (1..=365), default 28
+- `to` optional inclusive end date, defaults to server current UTC date
+
+Security:
+- Requires authenticated session ([`RequireSessionJson`])
+
+Responses:
+- 200 OK — ranked proposals with evidence, expected benefit, confidence and rollback condition
+- 400 Bad Request — invalid params
+- 401 Unauthorized
+"#]
+async fn get_friction_backlog(
+    State(db): State<Db>,
+    RequireSessionJson { _user_id: _ }: RequireSessionJson,
+    axum::extract::Query(params): axum::extract::Query<FrictionBacklogParams>,
+) -> Result<impl axum::response::IntoResponse, ApiError> {
+    let parsed_to = match params.to {
+        Some(value) => Some(
+            chrono::NaiveDate::parse_from_str(&value, "%Y-%m-%d")
+                .map_err(|_| ApiError::InvalidInput("invalid to date".into()))?,
+        ),
+        None => None,
+    };
+    let window_days = params.window_days.unwrap_or(28);
+    let response = handlers::friction_backlog(&db, window_days, parsed_to).await?;
+    Ok(Json(response))
 }
 
 #[derive(serde::Deserialize)]

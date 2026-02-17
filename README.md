@@ -139,15 +139,13 @@ OpenAPI specification is in openapi.yaml and includes:
 - /api/session endpoint for session probe (GET)
 - HEAD /api/health endpoint
 
-## Personalization rollout flags (safe defaults)
+## Personalization endpoints
 
-Personalization endpoints are rollout-gated and default to off, preserving legacy behavior.
+Personalization endpoints are part of the API surface:
 
-- `ENABLE_PERSONALIZATION_TRENDS=1` enables `GET /api/trends/personalization`
-- `ENABLE_PERSONALIZATION_FRICTION_TELEMETRY=1` enables `POST /api/personalization/friction-telemetry`
-- `ENABLE_PERSONALIZATION_FRICTION_BACKLOG=1` enables `GET /api/personalization/friction-backlog`
-
-When a flag is off, its endpoint is not registered and returns `404` (same behavior as pre-rollout builds).
+- `GET /api/trends/personalization`
+- `POST /api/personalization/friction-telemetry`
+- `GET /api/personalization/friction-backlog`
 
 Guardrail/confidence policy for personalization actions:
 - Apply actions only when trigger + guardrails are satisfied.
