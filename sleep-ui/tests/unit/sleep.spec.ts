@@ -5,7 +5,9 @@ import {
   formatDurationMin,
   formatIsoTime,
   formatMinutesAsTime,
-  formatTimeHHMM
+  formatTimeHHMM,
+  unwrapClockMinutes,
+  wrapClockMinutes
 } from '../../src/lib/utils/sleep';
 import {
   applyDayTypeUsualTimes,
@@ -63,6 +65,38 @@ describe('formatMinutesAsTime', () => {
     expect(formatMinutesAsTime(null)).toBe('—');
     expect(formatMinutesAsTime(undefined)).toBe('—');
     expect(formatMinutesAsTime(Number.NaN)).toBe('—');
+  });
+});
+
+describe('wrapClockMinutes', () => {
+  it('keeps post-anchor values unchanged and wraps pre-anchor values forward by 24h', () => {
+    expect(wrapClockMinutes(23 * 60, 12 * 60)).toBe(23 * 60);
+    expect(wrapClockMinutes(30, 12 * 60)).toBe(24 * 60 + 30);
+  });
+
+  it('normalizes negative and over-24h values before wrapping', () => {
+    expect(wrapClockMinutes(-30, 12 * 60)).toBe(23 * 60 + 30);
+    expect(wrapClockMinutes(24 * 60 + 15, 12 * 60)).toBe(24 * 60 + 15);
+  });
+
+  it('returns null for invalid input', () => {
+    expect(wrapClockMinutes(null)).toBeNull();
+    expect(wrapClockMinutes(undefined)).toBeNull();
+    expect(wrapClockMinutes(Number.NaN)).toBeNull();
+  });
+});
+
+describe('unwrapClockMinutes', () => {
+  it('maps wrapped values back into 0..1439 minute domain', () => {
+    expect(unwrapClockMinutes(24 * 60 + 30)).toBe(30);
+    expect(unwrapClockMinutes(23 * 60)).toBe(23 * 60);
+  });
+
+  it('normalizes negative values and returns null for invalid input', () => {
+    expect(unwrapClockMinutes(-30)).toBe(23 * 60 + 30);
+    expect(unwrapClockMinutes(null)).toBeNull();
+    expect(unwrapClockMinutes(undefined)).toBeNull();
+    expect(unwrapClockMinutes(Number.NaN)).toBeNull();
   });
 });
 
