@@ -251,12 +251,17 @@
 </script>
 
 {#if errorMsg}
-  <div class="state-card state-card--error mb-3" role="alert">
+  <div class="state-card state-card--error mb-3" role="alert" data-testid="sleep-form-error-state">
     {errorMsg}
   </div>
 {/if}
 
-<form on:submit={onSubmit} class="space-y-4" aria-busy={loading}>
+<form
+  on:submit={onSubmit}
+  class="space-y-4"
+  aria-busy={loading}
+  data-testid={`sleep-form-${mode}-state`}
+>
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
     <div>
       <label for="date" class="meta-text">Date</label>
@@ -276,7 +281,14 @@
     </div>
     {#if usualTimesActionEnabled}
       <div class="sm:col-span-2">
-        <Button type="button" variant="ghost" size="sm" disabled={loading} on:click={applyUsualTimes}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={loading}
+          on:click={applyUsualTimes}
+          data-testid="sleep-form-apply-usual-times-action"
+        >
           Use your usual {dayTypeDefault?.dayType === 'weekend' ? 'weekend' : 'weekday'} times
         </Button>
       </div>
@@ -311,11 +323,17 @@
 
   <div class="flex justify-end gap-2">
     {#if showCancel}
-      <Button type="button" variant="secondary" disabled={loading} on:click={onCancel}>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={loading}
+        on:click={onCancel}
+        data-testid="sleep-form-cancel-action"
+      >
         Cancel
       </Button>
     {/if}
-    <Button type="submit" variant="primary" disabled={loading}>
+    <Button type="submit" variant="primary" disabled={loading} data-testid="sleep-form-submit-action">
       {#if loading}{mode === 'create' ? 'Saving...' : 'Updating...'}{:else}{mode === 'create' ? 'Save' : 'Update'}{/if}
     </Button>
   </div>

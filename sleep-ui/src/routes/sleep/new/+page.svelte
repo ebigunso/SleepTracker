@@ -24,10 +24,10 @@
 
 <section class="space-y-4">
   <div>
-    <h2 class="page-title">New sleep entry</h2>
+    <h2 class="page-title" data-testid="sleep-new-heading">New sleep entry</h2>
     <p class="text-muted text-sm">Log bedtime, wake time, and how you feel.</p>
   </div>
-  <div class="surface-card rounded-xl p-4">
+  <div class="surface-card rounded-xl p-4" data-testid="sleep-new-form-anchor">
     <SleepForm
       mode="create"
       {initialDate}

@@ -85,16 +85,16 @@
       <slot />
     </main>
   {:else}
-    <header class="app-header backdrop-blur" aria-label="Site header">
+    <header class="app-header backdrop-blur" aria-label="Site header" data-testid="global-nav-header-state">
       <div class="app-container grid grid-cols-[auto,1fr,auto] items-center gap-4 py-4">
-        <a href="/" class="focus-ring inline-flex w-fit items-center gap-3 justify-self-start self-start rounded-xl px-3 py-2">
+        <a href="/" class="focus-ring inline-flex w-fit items-center gap-3 justify-self-start self-start rounded-xl px-3 py-2" data-testid="global-nav-brand-action">
           <span class="brand-badge flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold">ST</span>
           <div>
             <h1 class="text-lg font-semibold">SleepTracker</h1>
             <p class="brand-subtitle text-xs">Calm rhythms, better rest</p>
           </div>
         </a>
-        <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation">
+        <nav class="hidden items-center justify-center gap-2 text-sm md:flex" aria-label="Primary navigation" data-testid="global-nav-primary-state">
           {#if data.session}
             {#each navItems as item (item.href)}
               <a
@@ -102,6 +102,7 @@
                 class="nav-link focus-ring"
                 class:nav-link--active={item.match(pathname)}
                 aria-current={item.match(pathname) ? 'page' : undefined}
+                data-testid={`global-nav-link-${item.href === '/' ? 'home' : 'trends'}-action`}
               >
                 {item.label}
               </a>
@@ -115,6 +116,7 @@
             <a
               href="/login"
               class="btn-primary focus-ring touch-target rounded-full px-4 py-1.5 text-sm shadow-sm"
+              data-testid="global-nav-login-action"
             >
               Login
             </a>
@@ -128,7 +130,7 @@
     </main>
 
     {#if data.session}
-      <nav class="mobile-bottom-nav bottom-nav fixed inset-x-0 bottom-0 z-40 backdrop-blur md:hidden" aria-label="Bottom navigation">
+      <nav class="mobile-bottom-nav bottom-nav fixed inset-x-0 bottom-0 z-40 backdrop-blur md:hidden" aria-label="Bottom navigation" data-testid="global-nav-mobile-state">
         <div class="app-container">
           <div class="flex items-center gap-2 py-2">
             {#each navItems as item (item.href)}
@@ -137,6 +139,7 @@
                 class="bottom-nav-link focus-ring"
                 class:bottom-nav-link--active={item.match(pathname)}
                 aria-current={item.match(pathname) ? 'page' : undefined}
+                data-testid={`global-nav-mobile-link-${item.href === '/' ? 'home' : 'trends'}-action`}
               >
                 <span>{item.label}</span>
               </a>

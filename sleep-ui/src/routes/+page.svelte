@@ -110,10 +110,6 @@
     }
   }
 
-  function quickLog() {
-    goto('/sleep/new');
-  }
-
   function goPrev() {
     goto(`/?to=${prevTo}`);
   }
@@ -142,6 +138,7 @@
       <button
         class="btn-outline focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm"
         on:click={goPrev}
+        data-testid="home-range-prev-button"
       >
         Prev
       </button>
@@ -149,15 +146,17 @@
         class="btn-outline focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
         on:click={goNext}
         disabled={!canNext}
+        data-testid="home-range-next-button"
       >
         Next
       </button>
-      <button
+      <a
         class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm"
-        on:click={quickLog}
+        href="/sleep/new"
+        data-testid="home-log-sleep-button"
       >
         + Log sleep
-      </button>
+      </a>
     </div>
   </div>
 
@@ -177,10 +176,12 @@
       class="input-base text-sm"
       bind:value={jumpTo}
       max={data.today}
+      data-testid="home-jump-date-input"
     />
     <button
       class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-3.5 py-1.5 text-sm shadow-sm"
       on:click={jumpToDate}
+      data-testid="home-jump-date-go-button"
     >
       Go
     </button>
