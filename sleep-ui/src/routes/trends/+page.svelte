@@ -231,6 +231,7 @@
     yAxisTickStepSize?: number;
     pointOnly?: boolean;
     transformValue?: (value: number | null) => number | null;
+    inverseTransformValue?: (value: number | null) => number | null;
     yAxisTick: (value: string | number) => string;
   };
 
@@ -262,6 +263,7 @@
       yAxisMin: wrappedTimeAxisMin,
       yAxisMax: wrappedTimeAxisMax,
       transformValue: (value) => wrapClockMinutes(value, wrappedTimeAnchorMinutes),
+      inverseTransformValue: (value) => unwrapClockMinutes(value),
       yAxisTick: (value) => formatMinutesAsTime(unwrapClockMinutes(Number(value)))
     },
     waketime: {
@@ -271,6 +273,7 @@
       yAxisMin: wrappedTimeAxisMin,
       yAxisMax: wrappedTimeAxisMax,
       transformValue: (value) => wrapClockMinutes(value, wrappedTimeAnchorMinutes),
+      inverseTransformValue: (value) => unwrapClockMinutes(value),
       yAxisTick: (value) => formatMinutesAsTime(unwrapClockMinutes(Number(value)))
     }
   };
@@ -355,9 +358,9 @@
               },
               label(tooltipContext: any) {
                 if (!tooltipContext) return '';
-                const rawValue = tooltipContext.parsed?.y as number | null | undefined;
-                const value = metricConfig.transformValue
-                  ? unwrapClockMinutes(rawValue)
+                const rawValue = (tooltipContext.parsed?.y ?? null) as number | null;
+                const value = metricConfig.inverseTransformValue
+                  ? metricConfig.inverseTransformValue(rawValue)
                   : rawValue;
                 return `${ctx.meta.label}: ${formatMetricValue(ctx.selectedMetric, value)}`;
               },

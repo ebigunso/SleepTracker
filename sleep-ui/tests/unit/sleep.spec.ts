@@ -84,6 +84,11 @@ describe('wrapClockMinutes', () => {
     expect(wrapClockMinutes(undefined)).toBeNull();
     expect(wrapClockMinutes(Number.NaN)).toBeNull();
   });
+
+  it('falls back to default anchor when anchor is non-finite', () => {
+    expect(wrapClockMinutes(30, Number.NaN)).toBe(24 * 60 + 30);
+    expect(wrapClockMinutes(13 * 60, Number.POSITIVE_INFINITY)).toBe(13 * 60);
+  });
 });
 
 describe('unwrapClockMinutes', () => {

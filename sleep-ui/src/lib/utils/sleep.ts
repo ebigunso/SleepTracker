@@ -51,8 +51,9 @@ export function wrapClockMinutes(minutes: number | null | undefined, anchorMinut
   if (minutes == null || !Number.isFinite(minutes)) return null;
   const totalDayMinutes = 24 * 60;
   const normalized = ((Math.round(minutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
+  const safeAnchorMinutes = Number.isFinite(anchorMinutes) ? anchorMinutes : 12 * 60;
   const normalizedAnchor =
-    ((Math.round(anchorMinutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
+    ((Math.round(safeAnchorMinutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
   return normalized < normalizedAnchor ? normalized + totalDayMinutes : normalized;
 }
 
