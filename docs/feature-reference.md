@@ -76,6 +76,7 @@ This document inventories implemented capabilities by domain, with active user-v
 
 **Behavior**
 - Trends page renders chart and schedule views over selectable ranges (presets + custom dates).
+- Chart view uses metric-specific visuals: duration as line + points, quality as points on integer 1..5 scale, bedtime/wake time as wrapped-time line + points to keep near-midnight values visually adjacent.
 
 **Endpoints / dependencies**
 - `GET /api/trends/sleep-bars`

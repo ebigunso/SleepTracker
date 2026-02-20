@@ -14,7 +14,9 @@
     formatDurationHMM,
     formatMinutesAsTime,
     formatTimeHHMM,
-    toMinutes
+    toMinutes,
+    unwrapClockMinutes,
+    wrapClockMinutes
   } from '$lib/utils/sleep';
   let ChartJS: any = null;
 
@@ -206,56 +208,98 @@
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: Theme) {
-    if (!data.length) {
-      chart?.destroy();
-      chart = null;
-      return;
+  type MetricRenderContext = {
+    labels: string[];
+    data: SleepBarRecord[];
+    selectedMetric: MetricKey;
+    meta: (typeof metrics)[number];
+    colors: {
+      textColor: string;
+      mutedColor: string;
+      borderColor: string;
+      surfaceColor: string;
+      gridColor: string;
+    };
+  };
+
+  type MetricChartConfig = {
+    chartType: 'bar' | 'line';
+    yAxisTitle: string;
+    beginAtZero: boolean;
+    yAxisMin?: number;
+    yAxisMax?: number;
+    yAxisTickStepSize?: number;
+    pointOnly?: boolean;
+    transformValue?: (value: number | null) => number | null;
+    inverseTransformValue?: (value: number | null) => number | null;
+    yAxisTick: (value: string | number) => string;
+  };
+
+  const wrappedTimeAnchorMinutes = 12 * 60;
+  const wrappedTimeAxisMin = wrappedTimeAnchorMinutes;
+  const wrappedTimeAxisMax = wrappedTimeAnchorMinutes + 24 * 60;
+
+  const metricChartConfigs: Record<MetricKey, MetricChartConfig> = {
+    duration: {
+      chartType: 'line',
+      yAxisTitle: 'Duration (h:mm)',
+      beginAtZero: true,
+      yAxisTick: (value) => formatDurationHMM(Number(value))
+    },
+    quality: {
+      chartType: 'line',
+      yAxisTitle: 'Quality',
+      beginAtZero: false,
+      yAxisMin: 1,
+      yAxisMax: 5,
+      yAxisTickStepSize: 1,
+      pointOnly: true,
+      yAxisTick: (value) => `${value}`
+    },
+    bedtime: {
+      chartType: 'line',
+      yAxisTitle: 'Time (24h)',
+      beginAtZero: false,
+      yAxisMin: wrappedTimeAxisMin,
+      yAxisMax: wrappedTimeAxisMax,
+      transformValue: (value) => wrapClockMinutes(value, wrappedTimeAnchorMinutes),
+      inverseTransformValue: (value) => unwrapClockMinutes(value),
+      yAxisTick: (value) => formatMinutesAsTime(unwrapClockMinutes(Number(value)))
+    },
+    waketime: {
+      chartType: 'line',
+      yAxisTitle: 'Time (24h)',
+      beginAtZero: false,
+      yAxisMin: wrappedTimeAxisMin,
+      yAxisMax: wrappedTimeAxisMax,
+      transformValue: (value) => wrapClockMinutes(value, wrappedTimeAnchorMinutes),
+      inverseTransformValue: (value) => unwrapClockMinutes(value),
+      yAxisTick: (value) => formatMinutesAsTime(unwrapClockMinutes(Number(value)))
     }
-    if (!canvasEl) return;
+  };
 
-    const labels = data.map((b) => b.date);
-    const values = data.map((b) => metricValue(b, selectedMetric));
-    const meta = metrics.find((m) => m.key === selectedMetric) ?? metrics[0];
-    const textColor = cssVar('--color-text');
-    const mutedColor = cssVar('--color-text-muted');
-    const borderColor = cssVar('--color-border');
-    const surfaceColor = cssVar('--color-surface');
-    const gridColor = borderColor;
-
-    if (!ChartJS) {
-      // typed dynamic import for chart.js to satisfy TS under bundler mode
-      const mod = (await import('chart.js')) as typeof import('chart.js');
-      ChartJS = mod.Chart;
-      ChartJS.register(...mod.registerables);
-    }
-
-    const isTimeMetric = selectedMetric === 'bedtime' || selectedMetric === 'waketime';
-    const yAxisTitle = selectedMetric === 'duration'
-      ? 'Duration (h:mm)'
-      : selectedMetric === 'quality'
-        ? 'Quality'
-        : 'Time (24h)';
-    const yAxisMin = isTimeMetric ? 0 : undefined;
-    let yAxisMax: number | undefined;
-    if (isTimeMetric) {
-      yAxisMax = 24 * 60;
-    } else if (selectedMetric === 'quality') {
-      yAxisMax = 5;
-    }
-
-    chart?.destroy();
-    chart = new ChartJS(canvasEl, {
-      type: 'bar',
+  function buildChartConfig(ctx: MetricRenderContext) {
+    const metricConfig = metricChartConfigs[ctx.selectedMetric];
+    return {
+      type: metricConfig.chartType,
       data: {
-        labels,
+        labels: ctx.labels,
         datasets: [
           {
-            label: meta.label,
-            data: values,
+            label: ctx.meta.label,
+            data: ctx.data.map((b) => {
+              const value = metricValue(b, ctx.selectedMetric);
+              return metricConfig.transformValue ? metricConfig.transformValue(value) : value;
+            }),
+            spanGaps: false,
             borderWidth: 1,
-            backgroundColor: cssVar(meta.chartColorVar),
-            borderColor: cssVar(meta.borderVar)
+            backgroundColor: cssVar(ctx.meta.chartColorVar),
+            borderColor: cssVar(ctx.meta.borderVar),
+            fill: false,
+            tension: metricConfig.chartType === 'line' ? 0.2 : 0,
+            showLine: metricConfig.chartType === 'line' && !metricConfig.pointOnly,
+            pointRadius: metricConfig.chartType === 'line' ? 3 : 0,
+            pointHoverRadius: metricConfig.chartType === 'line' ? 5 : 0
           }
         ]
       },
@@ -267,63 +311,63 @@
           y: {
             title: {
               display: true,
-              text: yAxisTitle,
-              color: mutedColor
+              text: metricConfig.yAxisTitle,
+              color: ctx.colors.mutedColor
             },
-            beginAtZero: !isTimeMetric,
-            min: yAxisMin,
-            max: yAxisMax,
+            beginAtZero: metricConfig.beginAtZero,
+            min: metricConfig.yAxisMin,
+            max: metricConfig.yAxisMax,
             ticks: {
-              color: mutedColor,
-              callback: (value: string | number) => {
-                if (selectedMetric === 'duration') return formatDurationHMM(Number(value));
-                if (selectedMetric === 'quality') return `${value}`;
-                return formatMinutesAsTime(Number(value));
-              }
+              color: ctx.colors.mutedColor,
+              stepSize: metricConfig.yAxisTickStepSize,
+              callback: metricConfig.yAxisTick
             },
             grid: {
-              color: gridColor
+              color: ctx.colors.gridColor
             }
           },
           x: {
-            title: { display: true, text: 'Date', color: mutedColor },
+            title: { display: true, text: 'Date', color: ctx.colors.mutedColor },
             ticks: {
-              color: mutedColor,
+              color: ctx.colors.mutedColor,
               maxTicksLimit: 6,
               callback: (_value: string | number, index: number) => {
-                const label = labels[index] ?? '';
+                const label = ctx.labels[index] ?? '';
                 return label ? formatDateShort(label) : '';
               }
             },
             grid: {
-              color: gridColor
+              color: ctx.colors.gridColor
             }
           }
         },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: surfaceColor,
-            borderColor,
+            backgroundColor: ctx.colors.surfaceColor,
+            borderColor: ctx.colors.borderColor,
             borderWidth: 1,
-            titleColor: textColor,
-            bodyColor: mutedColor,
+            titleColor: ctx.colors.textColor,
+            bodyColor: ctx.colors.mutedColor,
             callbacks: {
-              title(ctx: any) {
-                if (!ctx?.length) return '';
-                const i = ctx[0].dataIndex;
-                const label = labels[i] ?? '';
+              title(tooltipContext: any) {
+                if (!tooltipContext?.length) return '';
+                const i = tooltipContext[0].dataIndex;
+                const label = ctx.labels[i] ?? '';
                 return label ? formatDateLong(label) : '';
               },
-              label(ctx: any) {
-                if (!ctx) return '';
-                const value = ctx.parsed?.y as number | null | undefined;
-                return `${meta.label}: ${formatMetricValue(selectedMetric, value)}`;
+              label(tooltipContext: any) {
+                if (!tooltipContext) return '';
+                const rawValue = (tooltipContext.parsed?.y ?? null) as number | null;
+                const value = metricConfig.inverseTransformValue
+                  ? metricConfig.inverseTransformValue(rawValue)
+                  : rawValue;
+                return `${ctx.meta.label}: ${formatMetricValue(ctx.selectedMetric, value)}`;
               },
-              afterBody(ctx: any) {
-                if (!ctx?.length) return '';
-                const i = ctx[0].dataIndex;
-                const entry = data[i];
+              afterBody(tooltipContext: any) {
+                if (!tooltipContext?.length) return '';
+                const i = tooltipContext[0].dataIndex;
+                const entry = ctx.data[i];
                 if (!entry) return '';
                 const duration = entry.duration_min ?? computeDurationMin(entry.bed_time, entry.wake_time);
                 const rows = [
@@ -338,7 +382,41 @@
           }
         }
       }
+    };
+  }
+
+  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: Theme) {
+    if (!data.length) {
+      chart?.destroy();
+      chart = null;
+      return;
+    }
+    if (!canvasEl) return;
+
+    const labels = data.map((b) => b.date);
+    const meta = metrics.find((m) => m.key === selectedMetric) ?? metrics[0];
+    const textColor = cssVar('--color-text');
+    const mutedColor = cssVar('--color-text-muted');
+    const borderColor = cssVar('--color-border');
+    const surfaceColor = cssVar('--color-surface');
+    const gridColor = borderColor;
+
+    if (!ChartJS) {
+      // typed dynamic import for chart.js to satisfy TS under bundler mode
+      const mod = (await import('chart.js')) as typeof import('chart.js');
+      ChartJS = mod.Chart;
+      ChartJS.register(...mod.registerables);
+    }
+
+    chart?.destroy();
+    const config = buildChartConfig({
+      labels,
+      data,
+      selectedMetric,
+      meta,
+      colors: { textColor, mutedColor, borderColor, surfaceColor, gridColor }
     });
+    chart = new ChartJS(canvasEl, config);
   }
 
   onMount(() => {

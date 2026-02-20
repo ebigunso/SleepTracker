@@ -47,6 +47,22 @@ export function formatMinutesAsTime(minutes: number | null | undefined): string 
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+export function wrapClockMinutes(minutes: number | null | undefined, anchorMinutes = 12 * 60): number | null {
+  if (minutes == null || !Number.isFinite(minutes)) return null;
+  const totalDayMinutes = 24 * 60;
+  const normalized = ((Math.round(minutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
+  const safeAnchorMinutes = Number.isFinite(anchorMinutes) ? anchorMinutes : 12 * 60;
+  const normalizedAnchor =
+    ((Math.round(safeAnchorMinutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
+  return normalized < normalizedAnchor ? normalized + totalDayMinutes : normalized;
+}
+
+export function unwrapClockMinutes(minutes: number | null | undefined): number | null {
+  if (minutes == null || !Number.isFinite(minutes)) return null;
+  const totalDayMinutes = 24 * 60;
+  return ((Math.round(minutes) % totalDayMinutes) + totalDayMinutes) % totalDayMinutes;
+}
+
 export function formatTimeHHMM(time: string | null | undefined): string {
   if (!time) return '—';
   return formatMinutesAsTime(toMinutes(time));
