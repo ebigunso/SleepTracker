@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(dirname, '../..');
 const AUTH_STATE_PATH = path.join(REPO_ROOT, '.playwright-cli/auth/storage-state.json');
+const E2E_RUNTIME_STATE_PATH = path.join(REPO_ROOT, '.playwright-cli/e2e-runtime/runtime-state.json');
 const DOTENV_PATH = path.resolve(dirname, '../.env');
 
 type Credentials = {
@@ -15,6 +16,36 @@ type Credentials = {
 };
 
 dotenv.config({ path: DOTENV_PATH });
+
+function isLocalHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname;
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      (host === 'localhost' || host === '127.0.0.1' || host === '::1')
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function assertSafeE2EContext(): Promise<void> {
+  const allowNonIsolated = process.env.ALLOW_NON_ISOLATED_E2E === '1';
+  const runtimeRaw = await fs.readFile(E2E_RUNTIME_STATE_PATH, 'utf8').catch(() => null);
+  const runtimeState = runtimeRaw ? JSON.parse(runtimeRaw) as { apiBaseUrl?: string; skipped?: boolean } : null;
+  const apiBaseUrl = runtimeState?.apiBaseUrl ?? process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:18080';
+
+  if (!allowNonIsolated && (!runtimeState || runtimeState.skipped)) {
+    throw new Error('Unsafe E2E context: isolated runtime state missing. Run through Playwright global setup (npm run test:e2e).');
+  }
+
+  if (!allowNonIsolated && !isLocalHttpUrl(apiBaseUrl)) {
+    throw new Error(
+      `Unsafe E2E API target: ${apiBaseUrl}. Only localhost targets are allowed unless ALLOW_NON_ISOLATED_E2E=1 is set.`
+    );
+  }
+}
 
 async function resolveCredentials(): Promise<Credentials> {
   const email = process.env.PLAYWRIGHT_EMAIL;
@@ -34,6 +65,7 @@ async function resolveCredentials(): Promise<Credentials> {
 }
 
 test('bootstrap authenticated storage state', async ({ page, context }) => {
+  await assertSafeE2EContext();
   const { email, password } = await resolveCredentials();
 
   await fs.mkdir(path.dirname(AUTH_STATE_PATH), { recursive: true });
