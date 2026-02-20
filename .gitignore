@@ -34,6 +34,3 @@ sleep-ui/test-results
 
 # Playwright artifacts
 .playwright-cli/
-
-# Coding Agent Documents
-docs/coding-agent/
