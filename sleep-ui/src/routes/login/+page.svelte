@@ -63,7 +63,7 @@
         {errorMsg}
       </div>
     {/if}
-    <form on:submit={submit} class="space-y-5" novalidate>
+    <form on:submit={submit} class="space-y-5" novalidate method="post" action="/api/login">
       <div class="space-y-2">
         <label for="email" class="auth-label block text-sm font-medium">Email</label>
         <input
