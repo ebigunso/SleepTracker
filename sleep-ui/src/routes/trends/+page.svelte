@@ -3,9 +3,13 @@
   import {
     apiGet,
     getPersonalization,
+    getPersonalDurationReferenceBand,
+    getTrendsSummary,
+    getScheduleVariabilityDeltaMin,
     selectPrioritizedTrendsExplanation,
     type ActionRecommendation,
-    type PersonalizationResponse
+    type PersonalizationResponse,
+    type TrendsSummaryResponse
   } from '$lib/api';
   import SleepBar from '$lib/components/SleepBar.svelte';
   import { theme, type Theme } from '$lib/stores/theme';
@@ -18,6 +22,15 @@
     unwrapClockMinutes,
     wrapClockMinutes
   } from '$lib/utils/sleep';
+  import {
+    addDays,
+    averageMetricValues,
+    dateToIsoLocal,
+    isoWeekBucket,
+    parseLocalDate,
+    priorRange,
+    rangeDays
+  } from '$lib/utils/trends';
   let ChartJS: any = null;
 
   type SleepBarRecord = {
@@ -30,6 +43,7 @@
 
   type MetricKey = 'duration' | 'quality' | 'bedtime' | 'waketime';
   type ViewMode = 'chart' | 'schedule';
+  type EvidenceFocusKey = 'schedule_shift' | 'variability';
 
   const presets = [
     { label: '7d', days: 7 },
@@ -85,26 +99,26 @@
   let from = '';
   let to = '';
   let bars: SleepBarRecord[] = [];
+  let priorBars: SleepBarRecord[] = [];
+  let weeklySummary: TrendsSummaryResponse | null = null;
   let personalization: PersonalizationResponse | null = null;
   let loading = false;
   let errorMsg: string | null = null;
   let metric: MetricKey = 'duration';
   let view: ViewMode = 'chart';
+  let showPriorComparator = false;
+  let showWeeklyLens = false;
+  let activeEvidenceFocusKey: EvidenceFocusKey | null = null;
 
   const scheduleShiftInsightKey = 'social_jetlag_schedule_shift_insight';
   const regularityInsightKey = 'regularity_insight_priority';
   const qualityExplanationKey = 'quality_aligned_factor_explanation';
-
-  function iso(d: Date) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  function parseLocalDate(date: string): Date {
-    return new Date(`${date}T00:00:00`);
-  }
+  const metricQuestions: Record<MetricKey, string> = {
+    duration: 'Is my sleep duration changing?',
+    quality: 'Is my sleep quality changing?',
+    bedtime: 'Is my bedtime shifting?',
+    waketime: 'Is my wake time shifting?'
+  };
 
   function formatDateShort(date: string): string {
     return parseLocalDate(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -114,20 +128,21 @@
     return parseLocalDate(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  function rangeDays(start: string, end: string): number | null {
-    if (!start || !end) return null;
-    const s = parseLocalDate(start);
-    const e = parseLocalDate(end);
-    const diff = Math.floor((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return diff > 0 ? diff : null;
+  function dayOfWeek(date: string): number {
+    return parseLocalDate(date).getDay();
+  }
+
+  function isWeekendDate(date: string): boolean {
+    const day = dayOfWeek(date);
+    return day === 0 || day === 6;
   }
 
   function setDefaultRange(days = 14) {
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - (days - 1));
-    from = iso(start);
-    to = iso(end);
+    from = dateToIsoLocal(start);
+    to = dateToIsoLocal(end);
   }
 
   function metricValue(bar: SleepBarRecord, key: MetricKey): number | null {
@@ -157,12 +172,29 @@
     return total / values.length;
   }
 
+  function averageMetric(barsInput: SleepBarRecord[], key: MetricKey): number | null {
+    const values = barsInput
+      .map((bar) => metricValue(bar, key))
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    return averageMetricValues(values, key, wrappedTimeAnchorMinutes);
+  }
+
   function recommendationByKey(actionKey: string): ActionRecommendation | null {
-    return personalization?.recommendations.find((item) => item.action_key === actionKey) ?? null;
+    const recommendations = personalization?.recommendations;
+    if (!recommendations || !Array.isArray(recommendations)) return null;
+    const match = recommendations.find((item) => {
+      const recommendation = item as ActionRecommendation & { actionKey?: string };
+      return recommendation.action_key === actionKey || recommendation.actionKey === actionKey;
+    });
+    return match ?? null;
   }
 
   function isRecommended(rec: ActionRecommendation | null): boolean {
-    return rec?.status === 'recommended';
+    if (!rec) return false;
+    const normalized = String((rec as ActionRecommendation & { status?: string }).status ?? '')
+      .trim()
+      .toLowerCase();
+    return normalized === 'recommended';
   }
 
   function formatSignedMinutes(value: number | null | undefined): string {
@@ -172,6 +204,32 @@
     return `${sign}${rounded} min`;
   }
 
+  function formatSignedQuality(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return '—';
+    const rounded = Math.round(value * 10) / 10;
+    const sign = rounded > 0 ? '+' : '';
+    return `${sign}${rounded}`;
+  }
+
+  function formatPercent(value: number | null | undefined): string {
+    if (value == null || !Number.isFinite(value)) return '—';
+    return `${Math.round(value)}%`;
+  }
+
+  function formatDeltaSummary(selectedMetric: MetricKey, delta: number | null): string {
+    if (delta == null || !Number.isFinite(delta)) return 'No prior-period comparison yet.';
+    if (selectedMetric === 'duration') {
+      return `${formatSignedMinutes(delta)} vs prior period`;
+    }
+    if (selectedMetric === 'quality') {
+      return `${formatSignedQuality(delta)} vs prior period`;
+    }
+    const rounded = Math.round(delta);
+    if (rounded === 0) return 'No timing shift vs prior period';
+    const direction = rounded > 0 ? 'later' : 'earlier';
+    return `${Math.abs(rounded)} min ${direction} vs prior period`;
+  }
+
   async function loadBars() {
     if (!from || !to) setDefaultRange();
     loading = true;
@@ -179,26 +237,50 @@
     try {
       const q = new URLSearchParams({ from, to }).toString();
       const days = rangeDays(from, to);
+      const prior = priorRange(from, to);
       const personalizationQuery = {
         to,
         ...(typeof days === 'number' ? { window_days: days } : {})
       };
-      const [data, personalizationData] = await Promise.all([
+      const priorPromise = prior
+        ? apiGet<SleepBarRecord[]>(
+            `/api/trends/sleep-bars?${new URLSearchParams({ from: prior.from, to: prior.to }).toString()}`
+          ).catch(() => [])
+        : Promise.resolve([] as SleepBarRecord[]);
+      const weeklySummaryPromise = showWeeklyLens
+        ? getTrendsSummary({ from, to, bucket: 'week' }).catch(() => null)
+        : Promise.resolve(null as TrendsSummaryResponse | null);
+      const [data, priorData, personalizationData, weeklySummaryData] = await Promise.all([
         apiGet<SleepBarRecord[]>(`/api/trends/sleep-bars?${q}`),
-        getPersonalization(personalizationQuery).catch(() => null)
+        priorPromise,
+        getPersonalization(personalizationQuery).catch(() => null),
+        weeklySummaryPromise
       ]);
       bars = data;
+      priorBars = priorData;
       personalization = personalizationData;
+      weeklySummary = weeklySummaryData;
     } catch (e) {
       console.error(e);
       errorMsg = 'Failed to load trends';
+      priorBars = [];
       personalization = null;
+      weeklySummary = null;
     } finally {
       loading = false;
       if (view === 'chart') {
         await tick();
         if (canvasEl) {
-          void renderChart(sortedBars, metric, $theme);
+          void renderChart(
+            sortedBars,
+            sortedPriorBars,
+            weeklySummary,
+            metric,
+            $theme,
+            showPriorComparator,
+            showWeeklyLens,
+            currentRangeDays
+          );
         }
       }
     }
@@ -211,6 +293,13 @@
   type MetricRenderContext = {
     labels: string[];
     data: SleepBarRecord[];
+    priorData: SleepBarRecord[];
+    priorValues: Array<number | null>;
+    priorDateLabels: Array<string | null>;
+    showPriorComparator: boolean;
+    showWeeklyLens: boolean;
+    weeklyValues: Array<number | null>;
+    weeklySupported: boolean;
     selectedMetric: MetricKey;
     meta: (typeof metrics)[number];
     colors: {
@@ -220,6 +309,12 @@
       surfaceColor: string;
       gridColor: string;
     };
+    evidenceFocus: {
+      key: EvidenceFocusKey;
+      title: string;
+      description: string;
+      dates: string[];
+    } | null;
   };
 
   type MetricChartConfig = {
@@ -238,6 +333,52 @@
   const wrappedTimeAnchorMinutes = 12 * 60;
   const wrappedTimeAxisMin = wrappedTimeAnchorMinutes;
   const wrappedTimeAxisMax = wrappedTimeAnchorMinutes + 24 * 60;
+
+  function buildPriorComparatorSeries(
+    currentData: SleepBarRecord[],
+    priorData: SleepBarRecord[],
+    selectedMetric: MetricKey,
+    periodDays: number | null
+  ): { values: Array<number | null>; dates: Array<string | null> } {
+    if (!periodDays || !priorData.length) {
+      return {
+        values: currentData.map(() => null),
+        dates: currentData.map(() => null)
+      };
+    }
+    const priorByDate = new Map(priorData.map((bar) => [bar.date, bar]));
+    return {
+      values: currentData.map((bar) => {
+        const priorDate = addDays(bar.date, -periodDays);
+        const priorEntry = priorByDate.get(priorDate);
+        if (!priorEntry) return null;
+        return metricValue(priorEntry, selectedMetric);
+      }),
+      dates: currentData.map((bar) => {
+        const priorDate = addDays(bar.date, -periodDays);
+        return priorByDate.has(priorDate) ? priorDate : null;
+      })
+    };
+  }
+
+  function buildWeeklyLensSeries(
+    currentData: SleepBarRecord[],
+    summary: TrendsSummaryResponse | null,
+    selectedMetric: MetricKey
+  ): Array<number | null> {
+    if (!summary) {
+      return currentData.map(() => null);
+    }
+    if (selectedMetric === 'duration') {
+      const durationByWeek = new Map(summary.duration_by_bucket.map((item) => [item.bucket, item.avg_min]));
+      return currentData.map((bar) => durationByWeek.get(isoWeekBucket(bar.date)) ?? null);
+    }
+    if (selectedMetric === 'quality') {
+      const qualityByWeek = new Map(summary.quality_by_bucket.map((item) => [item.bucket, item.avg]));
+      return currentData.map((bar) => qualityByWeek.get(isoWeekBucket(bar.date)) ?? null);
+    }
+    return currentData.map(() => null);
+  }
 
   const metricChartConfigs: Record<MetricKey, MetricChartConfig> = {
     duration: {
@@ -280,28 +421,106 @@
 
   function buildChartConfig(ctx: MetricRenderContext) {
     const metricConfig = metricChartConfigs[ctx.selectedMetric];
+    const hasPriorComparator =
+      ctx.showPriorComparator &&
+      ctx.priorValues.some((value) => value != null && Number.isFinite(value));
+    const hasWeeklyLens =
+      ctx.showWeeklyLens &&
+      ctx.weeklySupported &&
+      ctx.weeklyValues.some((value) => value != null && Number.isFinite(value));
+
+    const datasets: Array<Record<string, unknown>> = [
+      {
+        label: 'Current period',
+        tooltipSeriesKind: 'current',
+        data: ctx.data.map((b) => {
+          const value = metricValue(b, ctx.selectedMetric);
+          return metricConfig.transformValue ? metricConfig.transformValue(value) : value;
+        }),
+        spanGaps: false,
+        borderWidth: 1,
+        backgroundColor: cssVar(ctx.meta.chartColorVar),
+        borderColor: cssVar(ctx.meta.borderVar),
+        fill: false,
+        tension: metricConfig.chartType === 'line' ? 0.2 : 0,
+        showLine: metricConfig.chartType === 'line' && !metricConfig.pointOnly,
+        pointRadius: metricConfig.chartType === 'line' ? 3 : 0,
+        pointHoverRadius: metricConfig.chartType === 'line' ? 5 : 0
+      }
+    ];
+
+    if (hasPriorComparator) {
+      datasets.push({
+        label: 'Prior period',
+        tooltipSeriesKind: 'prior',
+        data: ctx.priorValues.map((value) =>
+          metricConfig.transformValue ? metricConfig.transformValue(value) : value
+        ),
+        spanGaps: false,
+        borderWidth: 1,
+        borderDash: [6, 4],
+        backgroundColor: ctx.colors.mutedColor,
+        borderColor: ctx.colors.mutedColor,
+        fill: false,
+        tension: metricConfig.chartType === 'line' ? 0.2 : 0,
+        showLine: metricConfig.chartType === 'line' && !metricConfig.pointOnly,
+        pointRadius: metricConfig.chartType === 'line' ? 2 : 0,
+        pointHoverRadius: metricConfig.chartType === 'line' ? 4 : 0
+      });
+    }
+
+    if (hasWeeklyLens) {
+      datasets.push({
+        label: 'Weekly lens',
+        tooltipSeriesKind: 'weekly',
+        data: ctx.weeklyValues.map((value) =>
+          metricConfig.transformValue ? metricConfig.transformValue(value) : value
+        ),
+        spanGaps: false,
+        borderWidth: 2,
+        borderDash: [3, 3],
+        backgroundColor: ctx.colors.textColor,
+        borderColor: ctx.colors.textColor,
+        fill: false,
+        tension: 0.2,
+        showLine: true,
+        pointRadius: 0,
+        pointHoverRadius: 3
+      });
+    }
+
+    const hasEvidenceFocus =
+      !!ctx.evidenceFocus &&
+      ctx.evidenceFocus.dates.length > 0 &&
+      ctx.evidenceFocus.dates.some((date) => ctx.data.some((entry) => entry.date === date));
+
+    if (hasEvidenceFocus && ctx.evidenceFocus) {
+      const evidenceDates = new Set(ctx.evidenceFocus.dates);
+      datasets.push({
+        label: ctx.evidenceFocus.title,
+        tooltipSeriesKind: 'evidence',
+        tooltipSeriesTitle: ctx.evidenceFocus.title,
+        data: ctx.data.map((bar) => {
+          if (!evidenceDates.has(bar.date)) return null;
+          const value = metricValue(bar, ctx.selectedMetric);
+          return metricConfig.transformValue ? metricConfig.transformValue(value) : value;
+        }),
+        spanGaps: false,
+        borderWidth: 0,
+        backgroundColor: cssVar(ctx.meta.borderVar),
+        borderColor: cssVar(ctx.meta.borderVar),
+        fill: false,
+        showLine: false,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      });
+    }
+
     return {
       type: metricConfig.chartType,
       data: {
         labels: ctx.labels,
-        datasets: [
-          {
-            label: ctx.meta.label,
-            data: ctx.data.map((b) => {
-              const value = metricValue(b, ctx.selectedMetric);
-              return metricConfig.transformValue ? metricConfig.transformValue(value) : value;
-            }),
-            spanGaps: false,
-            borderWidth: 1,
-            backgroundColor: cssVar(ctx.meta.chartColorVar),
-            borderColor: cssVar(ctx.meta.borderVar),
-            fill: false,
-            tension: metricConfig.chartType === 'line' ? 0.2 : 0,
-            showLine: metricConfig.chartType === 'line' && !metricConfig.pointOnly,
-            pointRadius: metricConfig.chartType === 'line' ? 3 : 0,
-            pointHoverRadius: metricConfig.chartType === 'line' ? 5 : 0
-          }
-        ]
+        datasets
       },
       options: {
         responsive: true,
@@ -362,20 +581,83 @@
                 const value = metricConfig.inverseTransformValue
                   ? metricConfig.inverseTransformValue(rawValue)
                   : rawValue;
-                return `${ctx.meta.label}: ${formatMetricValue(ctx.selectedMetric, value)}`;
+                const dataset = (tooltipContext.dataset ?? {}) as {
+                  tooltipSeriesKind?: 'current' | 'prior' | 'weekly' | 'evidence';
+                  tooltipSeriesTitle?: string;
+                };
+                const seriesKind = dataset.tooltipSeriesKind ?? 'current';
+                const priorDate = ctx.priorDateLabels[tooltipContext.dataIndex] ?? null;
+                const seriesLabel =
+                  seriesKind === 'prior'
+                    ? priorDate
+                      ? `Prior (${formatDateShort(priorDate)})`
+                      : 'Prior period'
+                    : seriesKind === 'weekly'
+                      ? 'Weekly lens'
+                      : seriesKind === 'evidence'
+                        ? dataset.tooltipSeriesTitle
+                          ? `Evidence highlight (${dataset.tooltipSeriesTitle})`
+                          : 'Evidence highlight'
+                        : 'Current period';
+                return `${seriesLabel}: ${formatMetricValue(ctx.selectedMetric, value)}`;
               },
               afterBody(tooltipContext: any) {
                 if (!tooltipContext?.length) return '';
                 const i = tooltipContext[0].dataIndex;
-                const entry = ctx.data[i];
-                if (!entry) return '';
-                const duration = entry.duration_min ?? computeDurationMin(entry.bed_time, entry.wake_time);
-                const rows = [
-                  `Bed: ${formatTimeHHMM(entry.bed_time)}`,
-                  `Wake: ${formatTimeHHMM(entry.wake_time)}`,
-                  `Duration: ${formatDurationHMM(duration)}`
-                ];
-                if (entry.quality != null) rows.push(`Quality: ${formatQuality(entry.quality)}`);
+                const rows: string[] = [];
+                const currentEntry = ctx.data[i];
+                const priorByDate = new Map(ctx.priorData.map((bar) => [bar.date, bar]));
+                const activeSeriesKinds = new Set(
+                  tooltipContext.map((item: any) => {
+                    const itemDataset = (item.dataset ?? {}) as {
+                      tooltipSeriesKind?: 'current' | 'prior' | 'weekly' | 'evidence';
+                    };
+                    return itemDataset.tooltipSeriesKind ?? 'current';
+                  })
+                );
+
+                if (activeSeriesKinds.has('current') && currentEntry) {
+                  const currentDuration =
+                    currentEntry.duration_min ?? computeDurationMin(currentEntry.bed_time, currentEntry.wake_time);
+                  rows.push(
+                    `Current bed/wake: ${formatTimeHHMM(currentEntry.bed_time)} → ${formatTimeHHMM(currentEntry.wake_time)}`
+                  );
+                  rows.push(`Current duration: ${formatDurationHMM(currentDuration)}`);
+                  if (currentEntry.quality != null) {
+                    rows.push(`Current quality: ${formatQuality(currentEntry.quality)}`);
+                  }
+                }
+
+                if (activeSeriesKinds.has('prior')) {
+                  const priorDate = ctx.priorDateLabels[i] ?? null;
+                  const priorEntry = priorDate ? priorByDate.get(priorDate) : undefined;
+                  if (priorEntry) {
+                    const priorDuration =
+                      priorEntry.duration_min ?? computeDurationMin(priorEntry.bed_time, priorEntry.wake_time);
+                    rows.push(
+                      `Prior bed/wake (${formatDateShort(priorEntry.date)}): ${formatTimeHHMM(priorEntry.bed_time)} → ${formatTimeHHMM(priorEntry.wake_time)}`
+                    );
+                    rows.push(`Prior duration: ${formatDurationHMM(priorDuration)}`);
+                    if (priorEntry.quality != null) {
+                      rows.push(`Prior quality: ${formatQuality(priorEntry.quality)}`);
+                    }
+                  } else if (priorDate) {
+                    rows.push(`Prior context (${formatDateShort(priorDate)}) unavailable.`);
+                  }
+                }
+
+                if (activeSeriesKinds.has('weekly')) {
+                  rows.push('Weekly lens uses weekly averages; single-session bed/wake context is not shown.');
+                }
+
+                if (activeSeriesKinds.has('evidence')) {
+                  rows.push('Evidence highlight marks recommendation-supporting points in the current period.');
+                  if (ctx.evidenceFocus?.description) {
+                    rows.push(ctx.evidenceFocus.description);
+                  }
+                }
+
+                if (!rows.length) return '';
                 return rows;
               }
             }
@@ -385,7 +667,16 @@
     };
   }
 
-  async function renderChart(data: SleepBarRecord[], selectedMetric: MetricKey, themeValue: Theme) {
+  async function renderChart(
+    data: SleepBarRecord[],
+    priorData: SleepBarRecord[],
+    summary: TrendsSummaryResponse | null,
+    selectedMetric: MetricKey,
+    themeValue: Theme,
+    showComparator: boolean,
+    showWeekly: boolean,
+    periodDays: number | null
+  ) {
     if (!data.length) {
       chart?.destroy();
       chart = null;
@@ -400,6 +691,9 @@
     const borderColor = cssVar('--color-border');
     const surfaceColor = cssVar('--color-surface');
     const gridColor = borderColor;
+    const priorSeries = buildPriorComparatorSeries(data, priorData, selectedMetric, periodDays);
+    const weeklySupported = selectedMetric === 'duration' || selectedMetric === 'quality';
+    const weeklyValues = buildWeeklyLensSeries(data, summary, selectedMetric);
 
     if (!ChartJS) {
       // typed dynamic import for chart.js to satisfy TS under bundler mode
@@ -412,9 +706,17 @@
     const config = buildChartConfig({
       labels,
       data,
+      priorData,
+      priorValues: priorSeries.values,
+      priorDateLabels: priorSeries.dates,
+      showPriorComparator: showComparator,
+      showWeeklyLens: showWeekly,
+      weeklyValues,
+      weeklySupported,
       selectedMetric,
       meta,
-      colors: { textColor, mutedColor, borderColor, surfaceColor, gridColor }
+      colors: { textColor, mutedColor, borderColor, surfaceColor, gridColor },
+      evidenceFocus: selectedMetric === activeEvidenceMetric ? activeEvidence : null
     });
     chart = new ChartJS(canvasEl, config);
   }
@@ -440,11 +742,14 @@
   $: currentRangeDays = rangeDays(from, to);
   $: rangeLabel = currentRangeDays ? `Last ${currentRangeDays} days` : 'Custom range';
   $: sortedBars = [...bars].sort((a, b) => a.date.localeCompare(b.date));
+  $: sortedPriorBars = [...priorBars].sort((a, b) => a.date.localeCompare(b.date));
   $: scheduleShiftInsight = recommendationByKey(scheduleShiftInsightKey);
   $: regularityInsight = recommendationByKey(regularityInsightKey);
   $: qualityExplanation = recommendationByKey(qualityExplanationKey);
-  $: showScheduleShiftInsight = isRecommended(scheduleShiftInsight);
-  $: showVariabilityInsight = isRecommended(regularityInsight);
+  $: hasScheduleShiftMetric = personalization?.metrics.social_jetlag.current_delta_min != null;
+  $: hasVariabilityMetric = personalization?.metrics.schedule_variability.current_variability_min != null;
+  $: showScheduleShiftInsight = isRecommended(scheduleShiftInsight) || hasScheduleShiftMetric;
+  $: showVariabilityInsight = isRecommended(regularityInsight) || hasVariabilityMetric;
   $: hasInsightCards = showScheduleShiftInsight || showVariabilityInsight;
   $: prioritizedExplanation = selectPrioritizedTrendsExplanation(
     regularityInsight,
@@ -455,8 +760,97 @@
   $: avgDuration = average(durations);
   $: avgQuality = average(sortedBars.map((b) => b.quality).filter((v): v is number => v != null));
   $: totalNights = sortedBars.length;
+  $: selectedMetricQuestion = metricQuestions[metric];
+  $: currentMetricAvg = averageMetric(sortedBars, metric);
+  $: priorMetricAvg = averageMetric(sortedPriorBars, metric);
+  $: metricDelta =
+    currentMetricAvg != null && priorMetricAvg != null ? currentMetricAvg - priorMetricAvg : null;
+  $: metricDeltaSummary = formatDeltaSummary(metric, metricDelta);
+  $: durationReferenceBand = getPersonalDurationReferenceBand(
+    personalization?.metrics.duration_baseline
+  );
+  $: durationOutOfRangePct =
+    personalization?.metrics.duration_baseline.recent_out_of_range_incidence_pct ?? null;
+  $: qualityMidpointDelta = avgQuality != null ? avgQuality - 3 : null;
+  $: scheduleVariabilityMetric = personalization?.metrics.schedule_variability;
+  $: scheduleVariabilityDeltaMin = getScheduleVariabilityDeltaMin(scheduleVariabilityMetric);
+  $: scheduleShiftEvidenceDates = sortedBars
+    .filter((bar) => isWeekendDate(bar.date))
+    .map((bar) => bar.date);
+  $: variabilityEvidenceDates = sortedBars.slice(Math.max(0, sortedBars.length - 7)).map((bar) => bar.date);
+  $: activeEvidence =
+    activeEvidenceFocusKey === 'schedule_shift'
+      ? {
+          key: 'schedule_shift' as const,
+          title: 'Weekend timing evidence',
+          description:
+            scheduleShiftEvidenceDates.length > 0
+              ? `${scheduleShiftEvidenceDates.length} weekend points highlighted in bedtime chart.`
+              : 'No weekend points in this range.',
+          dates: scheduleShiftEvidenceDates
+        }
+      : activeEvidenceFocusKey === 'variability'
+        ? {
+            key: 'variability' as const,
+            title: 'Recent timing variability evidence',
+            description:
+              variabilityEvidenceDates.length > 0
+                ? `Last ${variabilityEvidenceDates.length} points highlighted in waketime chart.`
+                : 'No recent points in this range.',
+            dates: variabilityEvidenceDates
+          }
+        : null;
+  $: activeEvidenceMetric =
+    activeEvidence?.key === 'schedule_shift'
+      ? ('bedtime' as const)
+      : activeEvidence?.key === 'variability'
+        ? ('waketime' as const)
+        : null;
+  $: weeklyLensSupportedForMetric = metric === 'duration' || metric === 'quality';
+  $: weeklyLensHint =
+    showWeeklyLens && !weeklyLensSupportedForMetric
+      ? 'Weekly lens is available for duration and quality. Daily data remains shown for this metric.'
+      : showWeeklyLens && weeklyLensSupportedForMetric && !weeklySummary
+        ? 'Weekly lens data is temporarily unavailable; showing daily data.'
+        : null;
+  $: scheduleShiftEvidenceAvailable = scheduleShiftEvidenceDates.length > 0;
+  $: variabilityEvidenceAvailable = variabilityEvidenceDates.length > 0;
+
+  function focusRecommendationEvidence(focusKey: EvidenceFocusKey) {
+    activeEvidenceFocusKey = focusKey;
+    view = 'chart';
+    showPriorComparator = true;
+    setMetric(focusKey === 'schedule_shift' ? 'bedtime' : 'waketime');
+  }
+
+  function clearEvidenceFocus() {
+    activeEvidenceFocusKey = null;
+  }
+
+  function setMetric(nextMetric: MetricKey) {
+    const focusMetric =
+      activeEvidenceFocusKey === 'schedule_shift'
+        ? 'bedtime'
+        : activeEvidenceFocusKey === 'variability'
+          ? 'waketime'
+          : null;
+    if (focusMetric && focusMetric !== nextMetric) {
+      activeEvidenceFocusKey = null;
+    }
+    metric = nextMetric;
+  }
+
   $: if (view === 'chart') {
-    void renderChart(sortedBars, metric, $theme);
+    void renderChart(
+      sortedBars,
+      sortedPriorBars,
+      weeklySummary,
+      metric,
+      $theme,
+      showPriorComparator,
+      showWeeklyLens,
+      currentRangeDays
+    );
   } else {
     chart?.destroy();
     chart = null;
@@ -561,6 +955,21 @@
             Weekend midpoint shift {formatSignedMinutes(personalization?.metrics.social_jetlag.current_delta_min)}
           </div>
           <p class="text-muted mt-1 text-xs">{scheduleShiftInsight?.rationale}</p>
+          <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span class="text-muted">
+              Evidence: {scheduleShiftEvidenceAvailable
+                ? `${scheduleShiftEvidenceDates.length} weekend chart points`
+                : 'No weekend points in this range'}
+            </span>
+            <button
+              type="button"
+              class="btn-outline focus-ring rounded-full px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              on:click={() => focusRecommendationEvidence('schedule_shift')}
+              disabled={!scheduleShiftEvidenceAvailable}
+            >
+              {activeEvidenceFocusKey === 'schedule_shift' ? 'Evidence shown' : 'Show in chart'}
+            </button>
+          </div>
         </div>
       {/if}
       {#if showVariabilityInsight}
@@ -570,6 +979,21 @@
             Current timing variability {formatDurationHMM(personalization?.metrics.schedule_variability.current_variability_min)}
           </div>
           <p class="text-muted mt-1 text-xs">{regularityInsight?.rationale}</p>
+          <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span class="text-muted">
+              Evidence: {variabilityEvidenceAvailable
+                ? `Last ${variabilityEvidenceDates.length} chart points`
+                : 'No recent points in this range'}
+            </span>
+            <button
+              type="button"
+              class="btn-outline focus-ring rounded-full px-3 py-1 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              on:click={() => focusRecommendationEvidence('variability')}
+              disabled={!variabilityEvidenceAvailable}
+            >
+              {activeEvidenceFocusKey === 'variability' ? 'Evidence shown' : 'Show in chart'}
+            </button>
+          </div>
         </div>
       {/if}
     </div>
@@ -585,13 +1009,98 @@
               class={`toggle-pill rounded-full px-3 py-1 text-xs font-semibold transition ${
                 metric === option.key ? 'toggle-pill--active' : ''
               }`}
-              on:click={() => (metric = option.key)}
+              on:click={() => setMetric(option.key)}
             >
               {option.label}
             </button>
           {/each}
         </div>
-        <div class="text-muted text-xs">{prioritizedExplanation}</div>
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="text-muted flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              class="input-base h-4 w-4 rounded"
+              bind:checked={showPriorComparator}
+            />
+            Compare to prior period
+          </label>
+          <label class="text-muted flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              class="input-base h-4 w-4 rounded"
+              bind:checked={showWeeklyLens}
+              on:change={() => {
+                if (showWeeklyLens) {
+                  loadBars();
+                }
+              }}
+            />
+            Weekly smoothing lens
+          </label>
+          <div class="text-muted text-xs">{prioritizedExplanation}</div>
+        </div>
+      </div>
+      {#if weeklyLensHint}
+        <div class="surface-muted rounded-xl px-3 py-2 text-xs">
+          <div class="text-muted">{weeklyLensHint}</div>
+        </div>
+      {/if}
+      <div class="surface-muted flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs">
+        <div class="text-default font-medium">{selectedMetricQuestion}</div>
+        <div class="text-muted">{metricDeltaSummary}</div>
+      </div>
+      {#if activeEvidence}
+        <div class="surface-muted flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs">
+          <div>
+            <div class="text-default font-medium">{activeEvidence.title}</div>
+            <div class="text-muted mt-1">{activeEvidence.description}</div>
+          </div>
+          <button
+            type="button"
+            class="btn-outline focus-ring rounded-full px-3 py-1 text-xs font-semibold"
+            on:click={clearEvidenceFocus}
+          >
+            Clear focus
+          </button>
+        </div>
+      {/if}
+      <div class="surface-muted rounded-xl px-3 py-2 text-xs">
+        {#if metric === 'duration'}
+          {#if durationReferenceBand}
+            <div class="text-default font-medium">
+              Personal reference band: {formatDurationHMM(durationReferenceBand.min)}–{formatDurationHMM(durationReferenceBand.max)}
+            </div>
+            <div class="text-muted mt-1">
+              Outside-band nights recently: {formatPercent(durationOutOfRangePct)}
+            </div>
+          {:else}
+            <div class="text-muted">Personal reference band will appear after enough duration history is available.</div>
+          {/if}
+        {:else if metric === 'quality'}
+          <div class="text-default font-medium">Quality midpoint context: 3 is the middle of the 1–5 scale.</div>
+          <div class="text-muted mt-1">
+            {#if avgQuality != null}
+              Average quality is {formatQuality(avgQuality)} ({formatSignedQuality(qualityMidpointDelta)} vs midpoint).
+            {:else}
+              Add quality scores to compare your average against midpoint.
+            {/if}
+          </div>
+        {:else}
+          {#if scheduleVariabilityMetric?.eligible && scheduleVariabilityMetric.current_variability_min != null}
+            <div class="text-default font-medium">
+              Timing variability: {formatDurationHMM(scheduleVariabilityMetric.current_variability_min)}
+            </div>
+            <div class="text-muted mt-1">
+              {#if scheduleVariabilityDeltaMin != null}
+                {Math.abs(Math.round(scheduleVariabilityDeltaMin))} min {scheduleVariabilityDeltaMin > 0 ? 'more variable' : scheduleVariabilityDeltaMin < 0 ? 'more consistent' : 'unchanged'} vs prior period.
+              {:else}
+                Prior-period variability comparison is not available yet.
+              {/if}
+            </div>
+          {:else}
+            <div class="text-muted">Variability cue appears once enough bedtime/wake-time history is available.</div>
+          {/if}
+        {/if}
       </div>
       <div class="h-72">
         {#if loading}

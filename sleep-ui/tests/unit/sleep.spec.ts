@@ -11,6 +11,8 @@ import {
 } from '../../src/lib/utils/sleep';
 import {
   applyDayTypeUsualTimes,
+  getScheduleVariabilityDeltaMin,
+  getPersonalDurationReferenceBand,
   getDurationWarningBoundsFromMetric,
   getDurationWarningMessage,
   selectPrioritizedTrendsExplanation,
@@ -291,5 +293,77 @@ describe('trends prioritized explanation', () => {
     ).toBe('Quality recommendation rationale.');
 
     expect(selectPrioritizedTrendsExplanation(null, null, 'Total sleep time')).toBe('Total sleep time');
+  });
+});
+
+describe('trends API helper utilities', () => {
+  it('returns personal duration reference band only when eligible and bounds exist', () => {
+    expect(
+      getPersonalDurationReferenceBand({
+        eligible: true,
+        sample_days: 28,
+        p10_min: 410,
+        p50_min: 460,
+        p90_min: 505,
+        iqr_min: 45,
+        recent_out_of_range_incidence_pct: 12
+      })
+    ).toEqual({ min: 410, max: 505 });
+
+    expect(
+      getPersonalDurationReferenceBand({
+        eligible: false,
+        sample_days: 28,
+        p10_min: 410,
+        p50_min: 460,
+        p90_min: 505,
+        iqr_min: 45,
+        recent_out_of_range_incidence_pct: 12
+      })
+    ).toBeNull();
+
+    expect(
+      getPersonalDurationReferenceBand({
+        eligible: true,
+        sample_days: 28,
+        p10_min: null,
+        p50_min: 460,
+        p90_min: 505,
+        iqr_min: 45,
+        recent_out_of_range_incidence_pct: 12
+      })
+    ).toBeNull();
+  });
+
+  it('returns schedule variability delta only when eligible and both periods are present', () => {
+    expect(
+      getScheduleVariabilityDeltaMin({
+        eligible: true,
+        current_variability_min: 90,
+        prior_variability_min: 65,
+        sustained_two_windows: true,
+        high_data_gap: false
+      })
+    ).toBe(25);
+
+    expect(
+      getScheduleVariabilityDeltaMin({
+        eligible: false,
+        current_variability_min: 90,
+        prior_variability_min: 65,
+        sustained_two_windows: true,
+        high_data_gap: false
+      })
+    ).toBeNull();
+
+    expect(
+      getScheduleVariabilityDeltaMin({
+        eligible: true,
+        current_variability_min: 90,
+        prior_variability_min: null,
+        sustained_two_windows: true,
+        high_data_gap: false
+      })
+    ).toBeNull();
   });
 });

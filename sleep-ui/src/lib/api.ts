@@ -331,6 +331,37 @@ export interface PersonalizationResponse {
   recommendations: ActionRecommendation[];
 }
 
+export type TrendsSummaryBucket = 'day' | 'week';
+
+export interface TrendsDurationBucket {
+  bucket: string;
+  avg_min: number;
+  min_min: number;
+  max_min: number;
+}
+
+export interface TrendsQualityBucket {
+  bucket: string;
+  avg: number;
+}
+
+export interface TrendsLatencyBucket {
+  bucket: string;
+  median: number;
+}
+
+export interface TrendsSummaryResponse {
+  duration_by_bucket: TrendsDurationBucket[];
+  quality_by_bucket: TrendsQualityBucket[];
+  latency_by_bucket: TrendsLatencyBucket[];
+}
+
+export interface TrendsSummaryQuery {
+  from: IsoDate;
+  to: IsoDate;
+  bucket?: TrendsSummaryBucket;
+}
+
 export interface DurationWarningBounds {
   min: number;
   max: number;
@@ -398,6 +429,27 @@ export function selectPrioritizedTrendsExplanation(
   if (isRecommended(regularityInsight)) return regularityInsight?.rationale;
   if (isRecommended(qualityExplanation)) return qualityExplanation?.rationale;
   return fallback;
+}
+
+export interface PersonalDurationReferenceBand {
+  min: number;
+  max: number;
+}
+
+export function getPersonalDurationReferenceBand(
+  metric: DurationBaselineMetric | null | undefined
+): PersonalDurationReferenceBand | null {
+  if (!metric?.eligible) return null;
+  if (metric.p10_min == null || metric.p90_min == null) return null;
+  return { min: metric.p10_min, max: metric.p90_min };
+}
+
+export function getScheduleVariabilityDeltaMin(
+  metric: ScheduleVariabilityMetric | null | undefined
+): number | null {
+  if (!metric?.eligible) return null;
+  if (metric.current_variability_min == null || metric.prior_variability_min == null) return null;
+  return metric.current_variability_min - metric.prior_variability_min;
 }
 
 // ------------------------------
@@ -479,4 +531,12 @@ export async function getPersonalization(query: PersonalizationQuery = {}): Prom
   if (query.to) search.set('to', query.to);
   const qs = search.toString();
   return apiGet<PersonalizationResponse>(`/api/trends/personalization${qs ? `?${qs}` : ''}`);
+}
+
+export async function getTrendsSummary(query: TrendsSummaryQuery): Promise<TrendsSummaryResponse> {
+  const search = new URLSearchParams();
+  search.set('from', query.from);
+  search.set('to', query.to);
+  if (query.bucket) search.set('bucket', query.bucket);
+  return apiGet<TrendsSummaryResponse>(`/api/trends/summary?${search.toString()}`);
 }

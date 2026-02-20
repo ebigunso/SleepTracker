@@ -91,6 +91,54 @@ This document inventories implemented capabilities by domain, with active user-v
 - `openapi.yaml` (`/api/trends/sleep-bars`)
 - `sleep-ui/src/routes/trends/+page.svelte`
 
+#### Trends metric purpose + comparison/interpretation spec (Task_1)
+
+This spec defines purpose-first interpretation rules for existing Trends chart metrics without changing current payload contracts or controls.
+
+**Metric purpose matrix (compatible with current metric keys: `duration`, `quality`, `bedtime`, `waketime`)**
+
+| Metric key | Primary user question | Primary action intent | Source field(s) | Existing UI control(s) relied on |
+|---|---|---|---|---|
+| `duration` | “Am I sleeping longer/shorter than my recent pattern?” | Adjust target bedtime/waketime and protect total sleep opportunity. | `duration_min` (fallback to computed bed/wake delta when absent in UI) | Metric toggle, range presets (`7d/14d/30d`), custom date range, chart/schedule toggle |
+| `quality` | “Is my subjective sleep quality improving or slipping?” | Reinforce routines associated with higher quality; review low-quality clusters. | `quality` (`1..5`, nullable) | Metric toggle + same range/view controls |
+| `bedtime` | “Is my sleep start time consistent or drifting?” | Stabilize lights-out timing and reduce day-to-day drift. | `bed_time` (clock time, wrapped for chart continuity) | Metric toggle + same range/view controls |
+| `waketime` | “Is my wake time stable and aligned with goals?” | Stabilize wake anchor and reduce irregular wake swings. | `wake_time` (clock time, wrapped for chart continuity) | Metric toggle + same range/view controls |
+
+**Period comparison policy (for current and prior periods)**
+
+- **Alignment rule:** compare an inclusive current range (`from..to`) against an immediately preceding range of identical day count.
+	- Prior range formula: if current spans `N` days, prior is `[from - N days, from - 1 day]`.
+	- Alignment basis is wake-date semantics (same as `/api/trends/sleep-bars` payload and trends UI ordering).
+- **Metric aggregation for comparison:**
+	- `duration`: arithmetic mean of daily duration values.
+	- `quality`: arithmetic mean of non-null daily quality values.
+	- `bedtime` / `waketime`: circular-safe mean using existing wrapped-time convention (noon anchor) so near-midnight values remain adjacent.
+- **Missing-data handling:**
+	- Compare only days with a usable value for the selected metric.
+	- If either period has fewer than 3 usable points, show an “insufficient data” state instead of directional judgment.
+	- Never backfill missing days with zeros or synthetic values.
+- **Default behavior:**
+	- Comparator is **off by default** in UI to keep baseline cognitive load low.
+	- When enabled, comparator must preserve existing range presets/custom date inputs and chart/schedule mode behavior.
+
+**Low-clutter interpretation cues (one primary cue per selected metric)**
+
+- **Global clutter limits:**
+	- One primary cue per selected metric view.
+	- Use concise text + existing chart affordances (line/points/axis/tooltip); no additional panels/modals required.
+	- Prefer neutral wording (“higher/lower”, “earlier/later”, “more/less variable”) over causal claims.
+- **Metric-specific cues:**
+	- `duration`: cue on direction and practical magnitude (for example, ± minutes vs prior period).
+	- `quality`: cue on direction on 1..5 scale with emphasis on sustained movement, not single-night noise.
+	- `bedtime`: cue on earlier/later shift plus consistency (dispersion) signal.
+	- `waketime`: cue on earlier/later shift plus consistency (dispersion) signal.
+
+**Compatibility notes**
+
+- Uses only fields already present in `/api/trends/sleep-bars`: `date`, `bed_time`, `wake_time`, `quality`, `duration_min`.
+- Preserves existing UI controls and defaults currently implemented in `/trends`: metric toggle, chart/schedule toggle, preset/custom ranges.
+- Maintains wrapped-time rendering behavior for `bedtime`/`waketime` interpretation.
+
 ### 5) Settings / theme / timezone
 
 **Behavior**
