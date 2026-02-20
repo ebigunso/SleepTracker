@@ -34,6 +34,31 @@ These endpoints are available as part of the API:
 | Quality-aligned factor ranking | Which factors most align with higher quality nights? | 1) Rank top 2-3 actionable factors in dashboard insight text. 2) Shift default trend explanation toward quality-linked factors. | >= 40 sessions with quality and >= 3 distinct quality values; factor effect is stable across adjacent windows | Use directional language only (“associated with”), never causal language |
 | Friction cost metrics (form time/errors/retries/immediate edits/partial follow-up failures) | Which workflow pain points waste the most time? | 1) Maintain auto-ranked UX backlog by estimated minutes saved/week. 2) Promote top item to implementation proposal when persistent. | >= 30 captured submit flows and at least one friction pattern persists for 2 windows | Require explicit evidence summary before proposing implementation changes |
 
+## Trends metric purpose matrix (UI-compatible)
+
+Purpose-first mapping for the existing Trends page metric toggle.
+
+| Trends metric key | Primary user question | Action intent (what user should do next) | Interpretation cue style |
+|---|---|---|---|
+| `duration` | “Am I getting enough sleep time recently?” | Shift bedtime/waketime plan to recover or protect total sleep window. | Direction + magnitude (minutes/h:mm delta vs prior period) |
+| `quality` | “Is perceived sleep quality moving in the right direction?” | Repeat routines linked to better nights; review low-score clusters. | Direction on 1..5 scale with stability emphasis |
+| `bedtime` | “Is my sleep onset timing drifting?” | Tighten bedtime consistency around intended anchor. | Earlier/later shift + variability cue |
+| `waketime` | “Is wake timing stable?” | Protect consistent wake anchor and reduce swings. | Earlier/later shift + variability cue |
+
+### Period comparison and interpretation policy for Trends-linked recommendations
+
+- **Alignment:** use same-length prior period directly before current `from..to` range, aligned by wake date.
+- **Minimum data gate:** require at least 3 usable points in both periods for the selected metric before issuing directional interpretation.
+- **Missing-data rule:** ignore missing metric values; do not impute zeros/synthetic values.
+- **Default behavior:** keep prior-period comparison opt-in/off by default to avoid clutter in default chart state.
+- **Tone constraints:** keep recommendation wording non-causal and concise; one primary interpretation cue per selected metric.
+
+### Compatibility guardrails
+
+- Restrict purpose/comparison logic to currently shipped trend metrics (`duration`, `quality`, `bedtime`, `waketime`).
+- Use existing `/api/trends/sleep-bars` fields only; do not assume additional backend payload keys.
+- Respect existing controls already on Trends page: presets (`7d/14d/30d`), custom date range, and chart/schedule view toggle.
+
 ## Backlog proposal policy (for autonomous suggestions)
 
 When generating a feature/change proposal, include:
