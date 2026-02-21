@@ -16,8 +16,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.45.0",
-    "@sveltejs/adapter-auto": "^6.1.0",
-    "@sveltejs/kit": "^2.5.0",
+    "@sveltejs/adapter-auto": "^7.0.1",
+    "@sveltejs/kit": "^2.53.0",
     "@sveltejs/vite-plugin-svelte": "^6.1.2",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/vite": "^4.1.12",
@@ -30,9 +30,12 @@
     "tslib": "^2.6.3",
     "typescript": "^5.5.4",
     "vite": "^7.1.2",
-    "vitest": "^1.6.0"
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "chart.js": "^4.4.3"
+  },
+  "overrides": {
+    "cookie": "^0.7.2"
   }
 }
