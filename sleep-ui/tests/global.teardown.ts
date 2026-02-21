@@ -71,14 +71,21 @@ async function terminateProcess(pid: number): Promise<void> {
 
 async function removeDbWithRetry(dbFilePath: string): Promise<void> {
   if (!dbFilePath) return;
+  let lastError: unknown = null;
   for (let attempt = 0; attempt < 10; attempt += 1) {
     try {
       await fs.rm(dbFilePath, { force: true });
       return;
-    } catch {
-      await sleep(100 * (attempt + 1));
+    } catch (error) {
+      lastError = error;
+      await sleep(100 * (2 ** attempt));
     }
   }
+
+  console.warn(
+    `[e2e-safety] Failed to remove DB artifact after retries: ${dbFilePath}`,
+    lastError
+  );
 }
 
 export default async function globalTeardown(): Promise<void> {

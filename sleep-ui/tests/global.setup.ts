@@ -58,6 +58,13 @@ export default async function globalSetup(): Promise<void> {
   const allowNonIsolated = process.env.ALLOW_NON_ISOLATED_E2E === '1';
   const retainArtifacts = process.env.PLAYWRIGHT_E2E_RETAIN === '1';
   const apiBaseUrl = process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:18080';
+  const apiUrl = new URL(apiBaseUrl);
+
+  if (!apiUrl.port) {
+    throw new Error(
+      `E2E_API_BASE_URL must include an explicit port (current: ${apiBaseUrl}). Example: http://127.0.0.1:18080`
+    );
+  }
 
   if (!allowNonIsolated && !isLocalHttpUrl(apiBaseUrl)) {
     throw new Error(
@@ -90,7 +97,6 @@ export default async function globalSetup(): Promise<void> {
 
   await fs.writeFile(dbFilePath, '', 'utf8');
 
-  const apiUrl = new URL(apiBaseUrl);
   const bindHost = apiUrl.hostname === 'localhost' ? '127.0.0.1' : apiUrl.hostname;
   const bindPort = apiUrl.port || '18080';
   const apiBindAddr = `${bindHost}:${bindPort}`;
