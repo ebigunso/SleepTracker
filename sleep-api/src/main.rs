@@ -21,7 +21,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = connect().await?;
     sqlx::migrate!("../migrations").run(&pool).await?;
     let app = app::router(pool);
-    let listener = TcpListener::bind("0.0.0.0:8080").await?;
+    let bind_addr = config::api_bind_addr();
+    let listener = TcpListener::bind(&bind_addr).await?;
+    tracing::info!(%bind_addr, "API listening");
     axum::serve(listener, app).await?;
     Ok(())
 }

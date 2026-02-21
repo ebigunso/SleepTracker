@@ -161,3 +161,8 @@ pub fn session_ttl() -> Option<time::Duration> {
         Err(_) => Some(time::Duration::hours(12)),
     }
 }
+
+/// API bind address. Defaults to `0.0.0.0:8080`.
+pub fn api_bind_addr() -> String {
+    std::env::var("API_BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string())
+}

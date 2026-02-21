@@ -7,56 +7,60 @@ Update it whenever local dev steps change.
 
 ## Prerequisites
 
-- Runtime(s):
-- Package manager(s):
-- OS assumptions:
-- Required env vars:
+- Runtime(s): Rust (for `sleep-api`), Node.js 20+ (for `sleep-ui`)
+- Package manager(s): npm, cargo
+- OS assumptions: Windows/macOS/Linux (commands below are shell-compatible)
+- Required env vars: `PLAYWRIGHT_EMAIL`, `PLAYWRIGHT_PASSWORD` for authenticated Playwright flows
 
 ---
 
 ## Install
 
-Add the canonical install commands here.
+From repository root:
 
-Example:
+  cd sleep-ui
+  npm ci
 
-    npm ci
+Backend dependencies are handled by Cargo during build/run.
 
 ---
 
 ## Run (dev)
 
-Describe how to start the app/service locally.
-
-- Command:
-- Default host/port:
-- How to override port:
+- API:
+  - Command: `cargo run -p sleep-api`
+  - Default host/port: `0.0.0.0:8080`
+  - Override bind: set `API_BIND_ADDR`, e.g. `API_BIND_ADDR=127.0.0.1:18080`
+- UI:
+  - Command: `cd sleep-ui && npm run dev`
+  - Default host/port: `127.0.0.1:5173`
+  - API proxy target: `PROXY_TARGET` (defaults to `http://localhost:8080`)
 
 ---
 
 ## Readiness checks
 
-Define how to determine the app is “ready” for UI/E2E validation.
-
-- Readiness URL:
+- API readiness URL: `http://127.0.0.1:8080/api/health` (or your configured bind)
+- UI readiness URL: `http://127.0.0.1:5173/`
 - Expected signal:
-  - HTTP 200, or
-  - page contains specific text, or
-  - health endpoint returns OK
+  - API `HEAD /api/health` returns success
+  - UI loads login/dashboard route successfully
 
 ---
 
 ## Common workflows
 
-List common, user-visible workflows that are often used in validation.
-
-- Workflow 1:
-- Workflow 2:
-- Workflow 3:
+- Safe authenticated E2E:
+  - `cd sleep-ui && npm run test:e2e`
+  - Starts isolated API + disposable DB harness, then runs Playwright authenticated suite.
+- Auth bootstrap only:
+  - `cd sleep-ui && npm run e2e:auth:bootstrap`
+- Auth smoke only:
+  - `cd sleep-ui && npm run test:e2e:auth`
 
 ---
 
 ## Shutdown / cleanup
 
-- How to stop dev server:
-- Cleanup steps (if any):
+- Stop API/UI dev servers with `Ctrl+C` in each terminal.
+- Playwright isolated E2E DB/runtime artifacts are cleaned by global teardown unless `PLAYWRIGHT_E2E_RETAIN=1` is set.

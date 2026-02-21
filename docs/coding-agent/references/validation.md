@@ -8,23 +8,18 @@ The goal is to remove ambiguity so agents do not treat validation as optional.
 
 ## Canonical local commands
 
-Fill in the canonical commands used in this repo.
-
-- Unit tests:
-- Lint:
-- Typecheck:
-- Build:
-- Formatting:
-- E2E (if any):
+- Unit tests: `cd sleep-ui && npm run test:unit`
+- Lint: (no dedicated frontend lint script currently)
+- Typecheck: `cd sleep-ui && npm run check`
+- Build: `cd sleep-ui && npm run build`
+- Formatting: `cargo fmt --all`
+- E2E (safe default): `cd sleep-ui && npm run test:e2e`
 
 ---
 
 ## CI workflow pointers
 
-List the CI workflow files that matter for validation.
-
-- `.github/workflows/<name>.yml` — purpose:
-- `.github/workflows/<name>.yml` — purpose:
+- `.github/workflows/ci-frontend.yml` — frontend check/unit/build validation for UI changes
 
 If the repo uses path filters in CI, document the mapping here.
 
@@ -36,9 +31,10 @@ Fill in a table like this. Keep it simple and actionable.
 
 | Changed paths (glob) | Required validations (commands/manual) | Notes |
 |---|---|---|
-| `src/**` | `<unit command>`, `<lint command>`, `<typecheck>` | |
-| `docs/**` | reviewer check for broken links / clarity | |
-| `ui/**` | reviewer E2E via `playwright-cli` + screenshots | |
+| `sleep-ui/src/**` | `cd sleep-ui && npm run check`, `cd sleep-ui && npm run test:unit` | Required for UI code changes |
+| `sleep-ui/tests/**` | `cd sleep-ui && npm run test:e2e` (or targeted equivalent + rationale) | Must use isolated E2E harness defaults |
+| `sleep-api/src/**` (E2E harness/runtime touched) | `cargo test -p sleep-api` | Required when API startup/config is changed |
+| `docs/**` | Reviewer clarity check + command consistency | Ensure docs match runnable commands |
 
 ---
 
@@ -52,3 +48,7 @@ Fill in a table like this. Keep it simple and actionable.
 - If UI flows are impacted:
   - collect E2E/visual evidence under `.playwright-cli/`
   - reference artifacts in the review output
+
+- If E2E harness/config is impacted:
+  - verify non-local target guardrails fail fast by default
+  - verify isolated DB path is used for default `npm run test:e2e`

@@ -115,20 +115,27 @@ Local HTTP note:
 
 Use these commands from `sleep-ui/` when E2E requires an authenticated session:
 
+- `npm run test:e2e` (safe default)
+  - Starts a harness-managed local API for E2E with an isolated disposable SQLite DB under `.playwright-cli/e2e-db/`.
+  - Forces UI proxy to that local API target.
+  - Fails fast if target is non-local unless `ALLOW_NON_ISOLATED_E2E=1` is explicitly set.
+  - Requires port `5173` to be free because Playwright starts its own UI dev server in strict-port mode.
 - `npm run e2e:auth:bootstrap`
   - Logs in through the real `/login` UI flow.
   - Reads `PLAYWRIGHT_EMAIL` and `PLAYWRIGHT_PASSWORD` from `sleep-ui/.env` (or process env).
   - Writes browser storage state to `.playwright-cli/auth/storage-state.json`.
 - `npm run test:e2e:auth`
   - Runs the authenticated bootstrap smoke check using the generated storage state.
-- `npm run test:e2e`
-  - Runs the full authenticated Playwright suite using the generated storage state.
+- `ALLOW_NON_ISOLATED_E2E=1 npm run test:e2e`
+  - Explicitly bypasses safety isolation checks.
+  - Use only when intentionally validating against a non-isolated target.
 
 Secret handling rules:
 
 - Do not print, paste, or commit secret values (`PLAYWRIGHT_EMAIL`, `PLAYWRIGHT_PASSWORD`).
 - Do not commit `.playwright-cli/` artifacts or auth state.
 - Keep credentials in local-only env files (for this repo: `sleep-ui/.env`, already ignored by git).
+- Never run unsafe E2E against production/live data.
 
 ## OpenAPI
 

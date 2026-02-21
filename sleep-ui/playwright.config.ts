@@ -4,10 +4,35 @@ import { fileURLToPath } from 'node:url';
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const authStatePath = path.resolve(dirname, '../.playwright-cli/auth/storage-state.json');
+const e2eApiBaseUrl = process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:18080';
+const e2eRunId = process.env.PLAYWRIGHT_E2E_RUN_ID ?? `${Date.now()}-${process.pid}`;
+process.env.PLAYWRIGHT_E2E_RUN_ID = e2eRunId;
+
+function isLocalHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname;
+    return (
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      (host === 'localhost' || host === '127.0.0.1' || host === '::1')
+    );
+  } catch {
+    return false;
+  }
+}
+
+const allowNonIsolated = process.env.ALLOW_NON_ISOLATED_E2E === '1';
+if (!allowNonIsolated && !isLocalHttpUrl(e2eApiBaseUrl)) {
+  throw new Error(
+    `Unsafe E2E API target: ${e2eApiBaseUrl}. Set E2E_API_BASE_URL to localhost/127.0.0.1 or explicitly opt in with ALLOW_NON_ISOLATED_E2E=1.`
+  );
+}
 
 export default defineConfig({
   testDir: './tests',
   testIgnore: ['**/unit/**'],
+  globalSetup: './tests/global.setup.ts',
+  globalTeardown: './tests/global.teardown.ts',
   timeout: 30_000,
   expect: {
     timeout: 5_000
@@ -41,9 +66,16 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
     port: 5173,
-    reuseExistingServer: true,
-    timeout: 120_000
+    reuseExistingServer: false,
+    timeout: 120_000,
+    env: {
+      PROXY_TARGET: e2eApiBaseUrl,
+      PLAYWRIGHT_E2E_ISOLATED: allowNonIsolated ? '0' : '1',
+      E2E_API_BASE_URL: e2eApiBaseUrl,
+      ALLOW_NON_ISOLATED_E2E: process.env.ALLOW_NON_ISOLATED_E2E ?? '0',
+      PLAYWRIGHT_E2E_RUN_ID: e2eRunId
+    }
   }
 });
