@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 
 type RuntimeState = {
   pid: number;
@@ -14,9 +15,64 @@ type RuntimeState = {
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '../..');
 const runtimeRoot = path.resolve(repoRoot, '.playwright-cli/e2e-runtime');
-const runtimeStatePath = path.join(runtimeRoot, 'runtime-state.json');
+
+function currentRunId(): string {
+  return process.env.PLAYWRIGHT_E2E_RUN_ID ?? 'default';
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function processAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function terminateProcess(pid: number): Promise<void> {
+  if (pid <= 0) return;
+
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
+    return;
+  }
+
+  try {
+    process.kill(pid, 'SIGTERM');
+  } catch {
+    return;
+  }
+
+  for (let index = 0; index < 20; index += 1) {
+    if (!processAlive(pid)) return;
+    await sleep(100);
+  }
+
+  try {
+    process.kill(pid, 'SIGKILL');
+  } catch {
+    // ignore
+  }
+}
+
+async function removeDbWithRetry(dbFilePath: string): Promise<void> {
+  if (!dbFilePath) return;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      await fs.rm(dbFilePath, { force: true });
+      return;
+    } catch {
+      await sleep(100 * (attempt + 1));
+    }
+  }
+}
 
 export default async function globalTeardown(): Promise<void> {
+  const runtimeStatePath = path.join(runtimeRoot, `run-${currentRunId()}`, 'runtime-state.json');
   let raw: string;
   try {
     raw = await fs.readFile(runtimeStatePath, 'utf8');
@@ -32,19 +88,11 @@ export default async function globalTeardown(): Promise<void> {
   }
 
   if (!state.skipped && state.pid > 0) {
-    try {
-      process.kill(state.pid, 'SIGTERM');
-    } catch {
-      // ignore process-already-exited
-    }
+    await terminateProcess(state.pid);
   }
 
   if (!state.retainArtifacts && !state.skipped) {
-    try {
-      if (state.dbFilePath) await fs.rm(state.dbFilePath, { force: true });
-    } catch {
-      // ignore cleanup errors
-    }
+    await removeDbWithRetry(state.dbFilePath);
   }
 
   try {
