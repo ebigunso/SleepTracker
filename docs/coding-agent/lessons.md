@@ -84,3 +84,31 @@ Evidence:
 ## Entries
 
 <!-- Append new lessons below this line. Keep entries atomic. -->
+
+## 2026-02-22 — Complete plan lifecycle before task close  [tags: planning, review]
+
+Context:
+- Plan: docs/coding-agent/plans/completed/pr53-unresolved-comments-and-main-conflict-resolution-plan.md
+- Task/Wave: post-merge housekeeping
+- Roles involved: Orchestrator
+
+Deviation:
+- Completed execution work but did not immediately set plan status to completed and move plan files from active to completed.
+
+Root cause:
+- Turn closure focused on code/PR outcomes and skipped final plan-lifecycle checkpoint.
+
+Fix applied:
+- Updated relevant plan files to `status: completed`.
+- Moved completed plans from `docs/coding-agent/plans/active/` to `docs/coding-agent/plans/completed/`.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Before final response on non-trivial tasks, run a mandatory “plan lifecycle closeout” check (status + archive move).
+- Optional guardrail:
+  - Add a turn-closing checklist item: “Are all executed active plans marked completed and archived?”
+
+Evidence:
+- User explicitly flagged missed plan completion/archival after task execution.

@@ -1,6 +1,6 @@
 # Sleep UI Stable Selector Coverage Plan
 
-- status: in_progress
+- status: completed
 - owner: orchestrator
 - work_type: code
 - created: 2026-02-21
