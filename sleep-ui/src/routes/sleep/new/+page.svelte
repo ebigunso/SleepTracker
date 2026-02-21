@@ -1,5 +1,6 @@
 <script lang="ts">
   import SleepForm from '$lib/components/SleepForm.svelte';
+  import SleepEntryShell from '$lib/components/SleepEntryShell.svelte';
   import { goto } from '$app/navigation';
   import type { PersonalizationResponse } from '$lib/api';
 
@@ -22,12 +23,12 @@
   }
 </script>
 
-<section class="space-y-4">
-  <div>
-    <h2 class="page-title" data-testid="sleep-new-heading">New sleep entry</h2>
-    <p class="text-muted text-sm">Log bedtime, wake time, and how you feel.</p>
-  </div>
-  <div class="surface-card rounded-xl p-4" data-testid="sleep-new-form-anchor">
+<SleepEntryShell
+  title="New sleep entry"
+  description="Log bedtime, wake time, and how you feel."
+  headingTestId="sleep-new-heading"
+  formAnchorTestId="sleep-new-form-anchor"
+>
     <SleepForm
       mode="create"
       {initialDate}
@@ -36,5 +37,4 @@
       on:saved={onSaved}
       on:cancel={onCancel}
     />
-  </div>
-</section>
+</SleepEntryShell>
