@@ -30,6 +30,7 @@ If something important is not documented here (or linked from here), assume agen
 - `references/how-to-run.md` — local dev, ports, startup, readiness checks
 - `references/validation.md` — path → required validations mapping (repo-specific)
 - `references/ui-e2e.md` — UI/E2E evidence using `playwright-cli` and artifact rules
+- `references/improvement-loop.md` — deviation handling checklist (pause → lesson → prevention)
 
 ### 5) Quality & troubleshooting
 - `quality/QUALITY_SCORE.md` — quality rubric (for self-review and gating)
