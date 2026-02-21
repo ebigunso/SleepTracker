@@ -9,6 +9,10 @@ function formatDate(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function pathnameOf(url: string): string {
+  return new URL(url).pathname;
+}
+
 function toHHmm(totalMinutes: number): string {
   const normalized = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
   const hh = String(Math.floor(normalized / 60)).padStart(2, '0');
@@ -69,7 +73,7 @@ async function expectNewFormReady(page: import('@playwright/test').Page) {
 }
 
 test('dashboard quick log -> edit -> delete, with duration warning', async ({ page }) => {
-  const quickLogDate = formatDate(new Date(Date.now() - (10 + Math.floor(Math.random() * 120)) * 24 * 60 * 60 * 1000));
+  const quickLogDate = formatDate(new Date(Date.now() - 10 * 24 * 60 * 60 * 1000));
 
   await page.goto('/');
   await expect(page.getByTestId('dashboard-heading')).toBeVisible();
@@ -110,7 +114,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
     page.getByTestId('confirm-dialog-confirm-action').or(page.getByRole('button', { name: /proceed/i })).first().click()
   ]);
   expect(createResponse.status()).toBeLessThan(400);
-  if (!/\/($|\?)/.test(page.url())) {
+  if (pathnameOf(page.url()) !== '/') {
     await page.goto('/');
   }
 
@@ -133,7 +137,7 @@ test('dashboard quick log -> edit -> delete, with duration warning', async ({ pa
     sleepFormSubmitButton(page, 'update').click(),
   ]);
   expect(updateResponse.status()).toBeLessThan(400);
-  if (!/\/($|\?)/.test(page.url())) {
+  if (pathnameOf(page.url()) !== '/') {
     await page.goto('/');
   }
 
@@ -226,16 +230,16 @@ test('multiple sessions per day display and edit', async ({ page }) => {
       sleepFormSubmitButton(page, 'save').click(),
     ]);
     expect(createResponse.status()).toBeLessThan(400);
-    if (!/\/($|\?)/.test(page.url())) {
+    if (pathnameOf(page.url()) !== '/') {
       await page.goto('/');
     }
     await expect(page.getByTestId('dashboard-heading')).toBeVisible();
 
   };
 
-  const runNonce = Date.now() % 997;
-  const firstOffset = runNonce % 180;
-  const secondOffset = (runNonce * 7) % 180;
+  const targetSeed = Number(targetDate.replace(/-/g, ''));
+  const firstOffset = targetSeed % 180;
+  const secondOffset = (targetSeed * 7) % 180;
   const firstBed = toHHmm(30 + firstOffset);
   const firstWake = toHHmm(240 + firstOffset);
   const secondBed = toHHmm(720 + secondOffset);

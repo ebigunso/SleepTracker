@@ -119,6 +119,7 @@ Use these commands from `sleep-ui/` when E2E requires an authenticated session:
   - Starts a harness-managed local API for E2E with an isolated disposable SQLite DB under `.playwright-cli/e2e-db/`.
   - Forces UI proxy to that local API target.
   - Fails fast if target is non-local unless `ALLOW_NON_ISOLATED_E2E=1` is explicitly set.
+  - Requires port `5173` to be free because Playwright starts its own UI dev server in strict-port mode.
 - `npm run e2e:auth:bootstrap`
   - Logs in through the real `/login` UI flow.
   - Reads `PLAYWRIGHT_EMAIL` and `PLAYWRIGHT_PASSWORD` from `sleep-ui/.env` (or process env).

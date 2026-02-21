@@ -9,7 +9,6 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test:e2e": "playwright test --project=e2e-auth",
-    "test:e2e:safe": "playwright test --project=e2e-auth",
     "e2e:auth:bootstrap": "playwright test --project=auth-setup",
     "test:e2e:auth": "playwright test --project=e2e-auth tests/auth.spec.ts",
     "test:unit": "vitest run",

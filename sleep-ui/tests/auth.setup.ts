@@ -7,8 +7,11 @@ import dotenv from 'dotenv';
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(dirname, '../..');
 const AUTH_STATE_PATH = path.join(REPO_ROOT, '.playwright-cli/auth/storage-state.json');
-const E2E_RUNTIME_STATE_PATH = path.join(REPO_ROOT, '.playwright-cli/e2e-runtime/runtime-state.json');
 const DOTENV_PATH = path.resolve(dirname, '../.env');
+
+function currentRunId(): string {
+  return process.env.PLAYWRIGHT_E2E_RUN_ID ?? 'default';
+}
 
 type Credentials = {
   email: string;
@@ -32,7 +35,8 @@ function isLocalHttpUrl(value: string): boolean {
 
 async function assertSafeE2EContext(): Promise<void> {
   const allowNonIsolated = process.env.ALLOW_NON_ISOLATED_E2E === '1';
-  const runtimeRaw = await fs.readFile(E2E_RUNTIME_STATE_PATH, 'utf8').catch(() => null);
+  const runtimeStatePath = path.join(REPO_ROOT, '.playwright-cli/e2e-runtime', `run-${currentRunId()}`, 'runtime-state.json');
+  const runtimeRaw = await fs.readFile(runtimeStatePath, 'utf8').catch(() => null);
   const runtimeState = runtimeRaw ? JSON.parse(runtimeRaw) as { apiBaseUrl?: string; skipped?: boolean } : null;
   const apiBaseUrl = runtimeState?.apiBaseUrl ?? process.env.E2E_API_BASE_URL ?? 'http://127.0.0.1:18080';
 
@@ -78,13 +82,23 @@ test('bootstrap authenticated storage state', async ({ page, context }) => {
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password', { exact: true }).fill(password);
 
-  const [loginResponse] = await Promise.all([
+  const [_, loginResponse] = await Promise.all([
+    page.waitForRequest(
+      (request) =>
+        request.url().includes('/api/login') && request.method() === 'POST'
+    ),
     page.waitForResponse(
       (response) =>
         response.url().includes('/api/login') && response.request().method() === 'POST'
     ),
     page.getByRole('button', { name: 'Sign in' }).click()
   ]);
+
+  if (page.url().includes('/login?')) {
+    throw new Error(
+      'Login form submitted via URL query parameters. This indicates pre-hydration/native submit fallback path and is unsafe for auth bootstrap.'
+    );
+  }
 
   if (loginResponse.status() >= 400) {
     throw new Error(

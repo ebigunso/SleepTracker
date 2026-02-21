@@ -20,6 +20,7 @@ Safety defaults:
 - Runs fail fast when the API target is non-local or isolation preconditions are unsafe.
 - Bypass is explicit only via `ALLOW_NON_ISOLATED_E2E=1 npm run test:e2e`.
 - Do not use unsafe mode against live/shared data.
+- E2E starts its own UI dev server on port `5173` with strict port binding; stop any existing process already using `5173` before running Playwright.
 
 ## Notes
 

@@ -17,7 +17,10 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(dirname, '../..');
 const runtimeRoot = path.resolve(repoRoot, '.playwright-cli/e2e-runtime');
 const dbRoot = path.resolve(repoRoot, '.playwright-cli/e2e-db');
-const runtimeStatePath = path.join(runtimeRoot, 'runtime-state.json');
+
+function currentRunId(): string {
+  return process.env.PLAYWRIGHT_E2E_RUN_ID ?? 'default';
+}
 
 function isLocalHttpUrl(value: string): boolean {
   try {
@@ -65,7 +68,8 @@ export default async function globalSetup(): Promise<void> {
   await fs.mkdir(runtimeRoot, { recursive: true });
   await fs.mkdir(dbRoot, { recursive: true });
 
-  const runtimeDir = path.join(runtimeRoot, `run-${Date.now()}`);
+  const runtimeDir = path.join(runtimeRoot, `run-${currentRunId()}`);
+  const runtimeStatePath = path.join(runtimeDir, 'runtime-state.json');
   const dbFilePath = path.join(dbRoot, `e2e-${Date.now()}.db`);
 
   if (allowNonIsolated) {
