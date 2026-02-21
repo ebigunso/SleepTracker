@@ -31,14 +31,24 @@ They are intentionally stable and high-level.
   - required review gate passed
   - required UI/E2E evidence captured when UI correctness matters
 
-## 5) Taste matters (but must be explainable)
+## 5) Generalize rules; avoid special-cases
 
-- Prefer changes that reduce future cognitive load.
-- If a change increases complexity, justify it and consider alternatives.
+- Prefer rules that apply across tasks and repos.
+- If something looks like a one-off rule, rewrite it as:
+  - a general principle, plus
+  - a few examples / heuristics.
+- Complexity-driven behavior beats situation-driven behavior:
+  - plan-first decisions are based on complexity, not “PR vs not PR”.
 
 ## 6) Improve the harness when the harness fails
 
-- When a miss occurs (validation skipped, wrong assumption, unclear run steps):
-  - capture a lesson (repo-local)
-  - add a rule/doc to prevent recurrence
-  - stage a migration candidate if it is cross-repo
+- Deviations are harness update events:
+  - pause execution
+  - capture **atomic** lessons (one per failure category)
+  - apply the smallest prevention update (rules/docs/troubleshooting)
+- A deviation includes:
+  - user course correction,
+  - blocked/failed subagent outcomes,
+  - reviewer needs revision,
+  - validation skips/waivers,
+  - environment/tooling recoveries.

@@ -37,6 +37,7 @@ Keep it updated with the docs that should be read before specific kinds of work.
 | `docs/coding-agent/references/how-to-run.md` | before running local dev / UI checks | ports, readiness, startup |
 | `docs/coding-agent/references/validation.md` | before marking tasks done | path→required validations mapping |
 | `docs/coding-agent/references/ui-e2e.md` | before UI/E2E evidence collection | artifact rules + evidence checklist |
+| `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates | mandatory pause→lesson→prevention loop |
 | `docs/coding-agent/quality/QUALITY_SCORE.md` | during review gates | consistent quality rubric |
 
 ---
