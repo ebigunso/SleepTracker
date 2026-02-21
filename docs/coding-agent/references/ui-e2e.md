@@ -33,8 +33,7 @@ Collect E2E/visual evidence when any of these are true:
 
 For each required flow:
 1) screenshot(s) at key states (before/after actions)
-2) console scan:
-   - at least error level
+2) console scan (at least error level)
 3) network scan:
    - record failed requests
    - record unexpected redirects (if applicable)
@@ -46,26 +45,13 @@ For each required flow:
 ## Recommended `playwright-cli` workflow (bounded)
 
 Typical sequence:
-
-1) Start app (if needed) using repo-documented commands (see `how-to-run.md`)
-2) Open browser and navigate:
-   - `playwright-cli open`
-   - `playwright-cli goto http://localhost:<port>/...`
-3) Snapshot to find stable refs:
-   - `playwright-cli snapshot`
-4) Perform actions using snapshot refs:
-   - `playwright-cli click e<id>`
-   - `playwright-cli fill e<id> "<value>"`
-5) Resize for viewports:
-   - `playwright-cli resize 390 844`
-   - `playwright-cli screenshot --filename=.playwright-cli/<name>.png`
-   - `playwright-cli resize 1440 900`
-   - `playwright-cli screenshot --filename=.playwright-cli/<name>.png`
-6) Collect diagnostics:
-   - `playwright-cli console` (or error-only if supported)
-   - `playwright-cli network`
-7) Close:
-   - `playwright-cli close`
+- start app (if needed) using repo-documented commands (see `how-to-run.md`)
+- open browser and navigate
+- snapshot to find stable refs
+- perform actions using snapshot refs
+- resize for viewports and capture screenshots under `.playwright-cli/`
+- collect console/network signals
+- close and stop
 
 Keep runs minimal: collect required evidence, then stop.
 
@@ -80,3 +66,18 @@ When reporting results (review output or task report), include:
 - screenshots captured (paths under `.playwright-cli/`)
 - console errors/warnings (if any)
 - failed network requests/unexpected redirects (if any)
+
+---
+
+## When E2E goes sideways (treat as a deviation)
+
+E2E failures are one example of a broader class of “deviations”:
+unexpected outcomes that require course correction.
+
+Rules:
+- handle it via the improvement loop (pause → lessons → prevention)
+- capture the recovery steps if they are repeatable:
+  - lessons entry: `docs/coding-agent/lessons.md`
+  - troubleshooting entry (if durable): `docs/coding-agent/troubleshooting/`
+
+See: `docs/coding-agent/references/improvement-loop.md`
