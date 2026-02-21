@@ -39,6 +39,9 @@ For each required flow:
    - record unexpected redirects (if applicable)
 4) viewports:
    - at least 2 representative breakpoints (e.g., mobile + desktop)
+5) artifact presence check:
+  - verify each required screenshot path exists under `.playwright-cli/`
+  - if any required artifact is missing, mark review as `NEEDS_REVISION`
 
 ---
 
@@ -64,6 +67,7 @@ When reporting results (review output or task report), include:
 - flows executed and whether each passed
 - viewports tested
 - screenshots captured (paths under `.playwright-cli/`)
+- explicit confirmation that all required artifact paths exist
 - console errors/warnings (if any)
 - failed network requests/unexpected redirects (if any)
 

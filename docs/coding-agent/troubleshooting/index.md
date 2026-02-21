@@ -34,4 +34,4 @@ If a troubleshooting pattern is cross-repo and durable, stage it for global migr
 
 Add links here as you create new docs under this directory.
 
-- (none yet)
+- `persistent-terminal-cwd.md` — validation command failures caused by persistent shell working-directory drift

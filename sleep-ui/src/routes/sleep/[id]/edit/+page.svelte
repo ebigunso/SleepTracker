@@ -3,6 +3,7 @@
   import { get } from 'svelte/store';
   import { browser } from '$app/environment';
   import SleepForm from '$lib/components/SleepForm.svelte';
+  import SleepEntryShell from '$lib/components/SleepEntryShell.svelte';
   import { goto } from '$app/navigation';
   import { deleteSleep, getExerciseIntensity } from '$lib/api';
   import type { SleepSession } from '$lib/api';
@@ -78,22 +79,22 @@
   }
 </script>
 
-<section class="space-y-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <h2 class="text-2xl font-semibold text-slate-900" data-testid="sleep-edit-heading">Edit sleep entry</h2>
-      <p class="text-sm text-slate-500">Update details or remove this session.</p>
-    </div>
+<SleepEntryShell
+  title="Edit sleep entry"
+  description="Update details or remove this session."
+  headingTestId="sleep-edit-heading"
+  formAnchorTestId="sleep-edit-form-anchor"
+>
+  <svelte:fragment slot="actions">
     <button
-      class="focus-ring touch-target inline-flex items-center rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700"
+      class="btn-danger focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm"
       on:click={onDelete}
       data-testid="sleep-edit-delete-button"
     >
       Delete
     </button>
-  </div>
+  </svelte:fragment>
 
-  <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70" data-testid="sleep-edit-form-anchor">
     <SleepForm
       mode="edit"
       {id}
@@ -106,5 +107,4 @@
       {initialIntensity}
       on:saved={onSaved}
     />
-  </div>
-</section>
+</SleepEntryShell>

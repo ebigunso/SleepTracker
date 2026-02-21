@@ -112,3 +112,60 @@ Prevention:
 
 Evidence:
 - User explicitly flagged missed plan completion/archival after task execution.
+
+## 2026-02-22 — Reviewer gate must include required UI evidence artifacts  [tags: validation, review]
+
+Context:
+- Plan: docs/coding-agent/plans/active/sleep-edit-theme-shell-unification-plan.md
+- Task/Wave: Task_2 / Wave 2
+- Roles involved: Orchestrator, Reviewer
+
+Deviation:
+- Reviewer returned NEEDS_REVISION because required dark-mode screenshots under `.playwright-cli/` were missing.
+- Initial review evidence did not conclusively satisfy the planned create/edit/delete smoke-flow proof.
+
+Root cause:
+- Reviewer dispatch prompt did not enforce artifact path verification as a hard completion condition before returning status.
+- Validation gate was interpreted as best-effort test execution instead of strict evidence checklist completion.
+
+Fix applied:
+- Paused execution and re-routed through improvement loop before continuing.
+- Added a plan decision-log delta to re-run reviewer gate with explicit artifact capture and evidence checklist checks.
+
+Prevention:
+- Primary promotion target: references/ui-e2e.md
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Reviewer prompts for UI-impact tasks must include explicit required artifact filenames/locations and fail-fast if missing.
+- Optional guardrail:
+  - Before accepting Reviewer APPROVED, verify each required artifact path exists.
+
+Evidence:
+- Reviewer report status NEEDS_REVISION with missing `.playwright-cli` screenshot artifacts.
+
+## 2026-02-22 — Normalize cwd in persistent terminal validation runs  [tags: environment, validation]
+
+Context:
+- Plan: docs/coding-agent/plans/active/sleep-edit-theme-shell-unification-plan.md
+- Task/Wave: Task_1 / Wave 1
+- Roles involved: Worker
+
+Deviation:
+- Required command `cd sleep-ui && npm run test:unit` failed on first attempt because the persistent shell was already in `sleep-ui`.
+
+Root cause:
+- Validation commands assumed repository-root cwd for each invocation despite persistent terminal state.
+
+Fix applied:
+- Worker recovered by checking cwd and running `npm run test:unit` from the correct directory.
+
+Prevention:
+- Primary promotion target: troubleshooting/index.md
+- Candidate prevention rule (optional):
+  - audience: worker
+  - proposed rule: In persistent terminal sessions, verify cwd (`pwd`) before repeated `cd <dir> && ...` sequences.
+- Optional guardrail:
+  - Prefer absolute-path command forms for required validation scripts when run serially.
+
+Evidence:
+- Worker report captured initial cwd-related failure followed by successful recovered run.
