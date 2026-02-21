@@ -39,13 +39,14 @@
 
 <svelte:window on:click={onWindowClick} on:keydown={onWindowKeydown} />
 
-<div class="relative" bind:this={menuEl}>
+<div class="relative" bind:this={menuEl} data-testid="profile-menu-container-state">
   <button
     type="button"
     class="menu-trigger flex items-center gap-2 rounded-full px-2 py-1.5 text-sm font-semibold shadow-sm"
     aria-haspopup="menu"
     aria-expanded={open}
     on:click={toggle}
+    data-testid="profile-menu-trigger-action"
   >
     <span class="brand-badge flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold uppercase">
       {initials}
@@ -63,12 +64,14 @@
     <div
       class="menu-dropdown absolute right-0 mt-2 w-52 rounded-xl p-0"
       role="menu"
+      data-testid="profile-menu-dropdown-state"
     >
       <button
         type="button"
         class="menu-item flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold"
         role="menuitem"
         on:click={handleToggleTheme}
+        data-testid="profile-menu-theme-toggle-action"
       >
         <img
           class="menu-item-icon"
@@ -84,6 +87,7 @@
         class="menu-item menu-item--danger flex w-full items-center gap-2 px-3 py-2 text-sm font-semibold"
         role="menuitem"
         on:click={handleLogout}
+        data-testid="profile-menu-logout-action"
       >
         <span class="menu-item-icon menu-item-icon--danger" aria-hidden="true"></span>
         <span class="menu-item-label">Logout</span>

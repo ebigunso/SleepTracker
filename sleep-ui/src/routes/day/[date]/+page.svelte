@@ -23,10 +23,6 @@
     goto(`/sleep/${id}/edit?date=${encodeURIComponent(date)}`);
   }
 
-  function add() {
-    goto(`/sleep/new?date=${encodeURIComponent(data.date)}`);
-  }
-
   function fmtMin(n: number | null | undefined): string {
     if (n == null) return '—';
     const h = Math.floor(n / 60);
@@ -57,15 +53,16 @@
 <section class="space-y-6">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h2 class="text-2xl font-semibold text-default">Day view</h2>
+      <h2 class="text-2xl font-semibold text-default" data-testid="day-view-heading">Day view</h2>
       <p class="text-sm text-muted">{data.date}</p>
     </div>
-    <button
+    <a
       class="focus-ring touch-target inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-      on:click={add}
+      href={`/sleep/new?date=${encodeURIComponent(data.date)}`}
+      data-testid="day-add-session-button"
     >
       Add session
-    </button>
+    </a>
   </div>
 
   {#if sessionCount > 0}
@@ -102,7 +99,7 @@
       </div>
     </div>
   {:else}
-    <div class="state-card state-card--empty">
+    <div class="state-card state-card--empty" data-testid="day-empty-state">
       No sleep entry for this date.
     </div>
   {/if}

@@ -50,9 +50,10 @@
   $: timeRange = `${formatIsoTime(item.bed_time)}–${formatIsoTime(item.wake_time)}`;
   $: durationLabel = formatDurationMin(durationFor(item));
   $: qualityLabel = item.quality ?? '—';
+  $: sessionKey = `${sessionDateFor(item).replace(/[^a-zA-Z0-9_-]/g, '-')}-${item.id}`;
 </script>
 
-<div class="card px-4 py-3">
+<div class="card px-4 py-3" data-testid={`session-row-${sessionKey}-state`}>
   <div class="flex items-start justify-between gap-4">
     <div class="min-w-0">
       <p class="text-sm font-semibold text-default">{timeRange}</p>
@@ -65,19 +66,25 @@
       <summary
         class="inline-flex h-8 w-8 list-none items-center justify-center rounded-full border border-[color:var(--color-border)] text-muted hover:bg-[color:var(--color-surface-muted)]"
         aria-label="Session actions"
+        data-testid={`session-row-${sessionKey}-menu-action`}
       >
         &#8942;
       </summary>
-      <div class="surface-card absolute right-0 z-10 mt-2 w-28 rounded-lg p-1 text-sm">
+      <div
+        class="surface-card absolute right-0 z-10 mt-2 w-28 rounded-lg p-1 text-sm"
+        data-testid={`session-row-${sessionKey}-menu-state`}
+      >
         <button
           class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-default hover:bg-[color:var(--color-surface-muted)]"
           on:click={onEdit}
+          data-testid={`session-row-${sessionKey}-edit-action`}
         >
           Edit
         </button>
         <button
           class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-rose-600 hover:bg-rose-50"
           on:click={onDelete}
+          data-testid={`session-row-${sessionKey}-delete-action`}
         >
           Delete
         </button>

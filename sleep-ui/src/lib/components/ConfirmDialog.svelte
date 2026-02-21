@@ -53,15 +53,16 @@
     aria-describedby={message ? messageId : undefined}
     role="dialog"
     tabindex="-1"
+    data-testid="confirm-dialog-state"
   >
-    <Card className="w-full sm:max-w-sm rounded-t-lg sm:rounded-xl" padding="lg">
+    <Card className="w-full sm:max-w-sm rounded-t-lg sm:rounded-xl" padding="lg" data-testid="confirm-dialog-card-state">
       <h3 class="section-title mb-2">{title}</h3>
       {#if message}
         <p class="text-sm text-slate-600 mb-4">{message}</p>
       {/if}
       <div class="mt-2 flex gap-2 justify-end">
-        <Button variant="outline" size="sm" on:click={onCancel}>{cancelText}</Button>
-        <Button variant="primary" size="sm" on:click={onConfirm}>{confirmText}</Button>
+        <Button variant="outline" size="sm" on:click={onCancel} data-testid="confirm-dialog-cancel-action">{cancelText}</Button>
+        <Button variant="primary" size="sm" on:click={onConfirm} data-testid="confirm-dialog-confirm-action">{confirmText}</Button>
       </div>
     </Card>
   </div>

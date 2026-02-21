@@ -857,8 +857,8 @@
   }
 </script>
 
-<section class="space-y-6">
-  <div class="surface-card rounded-2xl px-5 py-4">
+<section class="space-y-6" data-testid="trends-page">
+  <div class="surface-card rounded-2xl px-5 py-4" data-testid="trends-controls">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h2 class="text-default text-2xl font-semibold">Trends</h2>
@@ -868,6 +868,7 @@
         {#each views as option}
           <button
             type="button"
+            data-testid={`trends-view-${option.key}`}
             class={`focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
               option.key !== view ? 'btn-outline' : 'btn-primary'
             }`}
@@ -883,6 +884,7 @@
         {#each presets as preset}
           <button
             type="button"
+            data-testid={`trends-preset-${preset.days}`}
             class={`toggle-pill rounded-full px-3 py-1 text-xs font-semibold transition ${
               currentRangeDays === preset.days ? 'toggle-pill--active' : ''
             }`}
@@ -892,7 +894,7 @@
           </button>
         {/each}
       </div>
-      <form class="flex flex-wrap items-end gap-2" on:submit={refresh}>
+      <form class="flex flex-wrap items-end gap-2" on:submit={refresh} data-testid="trends-range-form">
         <div>
           <label for="from-date" class="text-muted block text-xs">From</label>
           <input
@@ -913,6 +915,7 @@
         </div>
         <button
           type="submit"
+          data-testid="trends-apply-range"
           class="btn-primary focus-ring touch-target inline-flex items-center rounded-full px-4 py-2 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
           disabled={loading}
         >
@@ -923,11 +926,11 @@
   </div>
 
   {#if errorMsg}
-    <div class="state-card state-card--error" role="alert">
+    <div class="state-card state-card--error" role="alert" data-testid="trends-state-error">
       {errorMsg}
     </div>
   {/if}
-  <div class="surface-card grid gap-3 rounded-2xl px-5 py-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+  <div class="surface-card grid gap-3 rounded-2xl px-5 py-4 text-sm sm:grid-cols-2 lg:grid-cols-4" data-testid="trends-summary-metrics">
     <div>
       <div class="text-muted text-xs font-semibold uppercase tracking-wide">Nights</div>
       <div class="text-default mt-1 text-lg font-semibold">{totalNights}</div>
@@ -1000,12 +1003,13 @@
   {/if}
 
   {#if view === 'chart'}
-    <div class="surface-card space-y-4 rounded-2xl p-4">
+    <div class="surface-card space-y-4 rounded-2xl p-4" data-testid="trends-chart-view">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="toggle-group flex flex-wrap items-center gap-2 rounded-full p-1">
+        <div class="toggle-group flex flex-wrap items-center gap-2 rounded-full p-1" data-testid="trends-metric-toggle-group">
           {#each metrics as option}
             <button
               type="button"
+              data-testid={`trends-metric-${option.key}`}
               class={`toggle-pill rounded-full px-3 py-1 text-xs font-semibold transition ${
                 metric === option.key ? 'toggle-pill--active' : ''
               }`}
@@ -1019,6 +1023,7 @@
           <label class="text-muted flex items-center gap-2 text-xs font-medium">
             <input
               type="checkbox"
+              data-testid="trends-toggle-prior-comparator"
               class="input-base h-4 w-4 rounded"
               bind:checked={showPriorComparator}
             />
@@ -1027,6 +1032,7 @@
           <label class="text-muted flex items-center gap-2 text-xs font-medium">
             <input
               type="checkbox"
+              data-testid="trends-toggle-weekly-lens"
               class="input-base h-4 w-4 rounded"
               bind:checked={showWeeklyLens}
               on:change={() => {
@@ -1102,28 +1108,28 @@
           {/if}
         {/if}
       </div>
-      <div class="h-72">
+      <div class="h-72" data-testid="trends-chart-panel">
         {#if loading}
-          <div class="text-muted flex h-full items-center justify-center text-sm">Loading chart…</div>
+          <div class="text-muted flex h-full items-center justify-center text-sm" data-testid="trends-state-loading-chart">Loading chart…</div>
         {:else if sortedBars.length === 0}
-          <div class="text-muted flex h-full items-center justify-center text-sm">No data in range.</div>
+          <div class="text-muted flex h-full items-center justify-center text-sm" data-testid="trends-state-empty-chart">No data in range.</div>
         {:else}
-          <canvas bind:this={canvasEl}></canvas>
+          <canvas bind:this={canvasEl} data-testid="trends-chart-canvas"></canvas>
         {/if}
       </div>
     </div>
   {:else}
-    <div class="surface-card space-y-4 rounded-2xl p-4">
+    <div class="surface-card space-y-4 rounded-2xl p-4" data-testid="trends-schedule-view">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h3 class="text-default text-sm font-semibold">Schedule view</h3>
         <span class="text-muted text-xs">24h timeline</span>
       </div>
       {#if loading}
-        <div class="text-muted text-sm">Loading schedule…</div>
+        <div class="text-muted text-sm" data-testid="trends-state-loading-schedule">Loading schedule…</div>
       {:else if sortedBars.length === 0}
-        <div class="text-muted text-sm">No data in range.</div>
+        <div class="text-muted text-sm" data-testid="trends-state-empty-schedule">No data in range.</div>
       {:else}
-        <div class="space-y-3">
+        <div class="space-y-3" data-testid="trends-schedule-list">
           {#each sortedBars as bar (bar.date)}
             <div class="surface-muted grid gap-3 rounded-xl px-3 py-3 sm:grid-cols-[160px,1fr]">
               <div>

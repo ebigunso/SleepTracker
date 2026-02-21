@@ -45,7 +45,7 @@ async function waitForApiReady(apiBaseUrl: string, timeoutMs: number): Promise<v
   while (Date.now() - start < timeoutMs) {
     try {
       const response = await fetch(`${apiBaseUrl}/api/session`);
-      if (response.status < 500) return;
+      if (response.status === 200 || response.status === 401) return;
     } catch {
       // retry
     }
@@ -72,6 +72,8 @@ export default async function globalSetup(): Promise<void> {
   const runtimeStatePath = path.join(runtimeDir, 'runtime-state.json');
   const dbFilePath = path.join(dbRoot, `e2e-${Date.now()}.db`);
 
+  await fs.mkdir(runtimeDir, { recursive: true });
+
   if (allowNonIsolated) {
     const skippedState: RuntimeState = {
       pid: -1,
@@ -86,7 +88,6 @@ export default async function globalSetup(): Promise<void> {
     return;
   }
 
-  await fs.mkdir(runtimeDir, { recursive: true });
   await fs.writeFile(dbFilePath, '', 'utf8');
 
   const apiUrl = new URL(apiBaseUrl);

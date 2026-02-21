@@ -43,14 +43,21 @@
   function handleDelete(e: CustomEvent<{ id: number; date: string }>) {
     dispatch('delete', e.detail);
   }
+
+  function dayTestIdKey(value: string): string {
+    return value.replace(/[^a-zA-Z0-9_-]/g, '-');
+  }
+
+  $: dayKey = dayTestIdKey(date);
 </script>
 
-<article class="surface-card w-full rounded-2xl p-4">
+<article class="surface-card w-full rounded-2xl p-4" data-testid={`day-card-${dayKey}-state`}>
   <header class="flex flex-wrap items-start justify-between gap-4">
     <div>
       <a
         class="text-lg font-semibold text-[color:var(--color-text)] hover:text-[color:var(--color-primary)]"
         href={`/day/${date}`}
+        data-testid={`day-card-${dayKey}-date-action`}
       >{date}</a>
       <p class="text-sm text-muted">Total {formatDurationMin(totalDuration)}</p>
     </div>
@@ -60,11 +67,15 @@
       {#if intensity}
         <Chip variant={intensityVariant}>Exercise {intensity}</Chip>
       {/if}
-      <a class="text-xs font-semibold text-[color:var(--color-primary)] hover:text-[color:var(--color-primary-hover)]" href={`/day/${date}`}>View day</a>
+      <a
+        class="text-xs font-semibold text-[color:var(--color-primary)] hover:text-[color:var(--color-primary-hover)]"
+        href={`/day/${date}`}
+        data-testid={`day-card-${dayKey}-view-day-action`}
+      >View day</a>
     </div>
   </header>
 
-  <div class="mt-4 space-y-3">
+  <div class="mt-4 space-y-3" data-testid={`day-card-${dayKey}-sessions-state`}>
     {#if sessionCount > 0}
       {#each sortedItems as item (item.id)}
         <SessionRow item={item} on:delete={handleDelete} />

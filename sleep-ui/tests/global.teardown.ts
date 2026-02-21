@@ -41,10 +41,16 @@ async function terminateProcess(pid: number): Promise<void> {
     return;
   }
 
+  const processGroupId = -Math.abs(pid);
+
   try {
-    process.kill(pid, 'SIGTERM');
+    process.kill(processGroupId, 'SIGTERM');
   } catch {
-    return;
+    try {
+      process.kill(pid, 'SIGTERM');
+    } catch {
+      return;
+    }
   }
 
   for (let index = 0; index < 20; index += 1) {
@@ -53,9 +59,13 @@ async function terminateProcess(pid: number): Promise<void> {
   }
 
   try {
-    process.kill(pid, 'SIGKILL');
+    process.kill(processGroupId, 'SIGKILL');
   } catch {
-    // ignore
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      // ignore
+    }
   }
 }
 
