@@ -7,6 +7,8 @@ This is intentionally lightweight. Use it to identify weak points and decide whe
 - tighten plan tasks
 - improve docs/harness
 
+Quality baseline entrypoint: `docs/coding-agent/quality/index.md`.
+
 ---
 
 ## Scoring
@@ -55,3 +57,10 @@ Score each dimension as 0–2:
 ## Notes
 
 Use `docs/coding-agent/plans/tech-debt-tracker.md` to capture known debt items discovered during review.
+
+For baseline-guided scoring:
+- Principles context (broad intent): `docs/coding-agent/quality/backend-principles.md`, `docs/coding-agent/quality/frontend-principles.md`
+- Verification gates (specific checks): `docs/coding-agent/quality/gates-architecture.md`, `docs/coding-agent/quality/gates-rust.md`, `docs/coding-agent/quality/gates-svelte-typescript.md`
+- Required command/evidence mapping: `docs/coding-agent/references/validation.md`
+
+Scoring is a quality summary, not a substitute for required validations.
