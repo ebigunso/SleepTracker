@@ -33,6 +33,7 @@ If something important is not documented here (or linked from here), assume agen
 - `references/improvement-loop.md` — deviation handling checklist (pause → lesson → prevention)
 
 ### 5) Quality & troubleshooting
+- `quality/index.md` — quality baseline entrypoint (principles + gates + rubric layering)
 - `quality/QUALITY_SCORE.md` — quality rubric (for self-review and gating)
 - `troubleshooting/index.md` — repo-specific troubleshooting notes
 

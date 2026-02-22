@@ -1,6 +1,6 @@
 # Rules (Common)
 
-- last_updated: 2026-02-20
+- last_updated: 2026-02-22
 
 These are repo-specific common rules that apply across roles (Orchestrator / Worker / Researcher / Reviewer).
 Keep them short and concrete. Put deeper guidance in `docs/coding-agent/` references.
@@ -38,6 +38,7 @@ Keep it updated with the docs that should be read before specific kinds of work.
 | `docs/coding-agent/references/validation.md` | before marking tasks done | path→required validations mapping |
 | `docs/coding-agent/references/ui-e2e.md` | before UI/E2E evidence collection | artifact rules + evidence checklist |
 | `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates | mandatory pause→lesson→prevention loop |
+| `docs/coding-agent/quality/index.md` | before refactor/review quality checks | baseline layering (principles vs gates vs rubric) |
 | `docs/coding-agent/quality/QUALITY_SCORE.md` | during review gates | consistent quality rubric |
 
 ---
