@@ -169,3 +169,92 @@ Prevention:
 
 Evidence:
 - Worker report captured initial cwd-related failure followed by successful recovered run.
+
+## 2026-02-22 — Split mixed-abstraction doc planning and enforce harmonization pass  [tags: planning, scope, docs]
+
+Context:
+- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
+- Task/Wave: planning phase before execution
+- Roles involved: Orchestrator
+
+Deviation:
+- Initial plan grouped high-level principles and lower-level architecture/language gates too coarsely, creating risk of worker context overload.
+- Cross-document optimization/consistency safeguards were not explicit enough in the first decomposition.
+
+Root cause:
+- Plan decomposition prioritized deliverable grouping over abstraction-level separation.
+- Missing default planning guardrail to force a final harmonization pass when documents are intentionally split by abstraction.
+
+Fix applied:
+- Replanned into finer tasks separating high-level principles from architecture and language-specific gates.
+- Added explicit whole-spectrum harmonization task before reviewer gate.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: When documentation spans multiple abstraction levels, decompose tasks by abstraction boundary and require a pre-review harmonization pass for consistency.
+- Optional guardrail:
+  - During plan drafting, run a quick check: “Are high-level principles, architecture gates, and language gates authored in separate tasks, and is there a final consistency sweep?”
+
+Evidence:
+- User explicitly requested finer task breakdown by abstraction level and explicit final consistency/optimization pass.
+
+## 2026-02-22 — Enforce task owns/objective alignment in plan quality  [tags: planning, scope]
+
+Context:
+- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
+- Task/Wave: plan refinement before Worker dispatch
+- Roles involved: Orchestrator
+
+Deviation:
+- `Task_1` objective required backend and frontend high-level principles, but `owns` did not include the frontend principles file.
+- This mismatch risked preventing Workers from fully satisfying acceptance criteria within allowed edit scope.
+
+Root cause:
+- Plan edit introduced scope/objective drift without a final integrity check for each task block (`owns`, `acceptance`, `depends_on`, `validation`).
+
+Fix applied:
+- Updated `Task_1` `owns` to include both backend and frontend principles files.
+- Repaired the full plan structure to restore consistent task definitions and dependency links.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Before requesting approval or dispatching Workers, validate each Task_X for one-to-one alignment between objective language and declared `owns` paths.
+- Optional guardrail:
+  - Add a pre-dispatch checklist item: “Can every acceptance bullet be delivered by files listed in `owns`?”
+
+Evidence:
+- User flagged direct inconsistency between `Task_1` narrative and `owns` scope.
+
+## 2026-02-22 — Resolve validation precedence conflicts during doc harmonization  [tags: validation, docs, review]
+
+Context:
+- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
+- Task/Wave: Task_6 reviewer gate after Task_5 harmonization
+- Roles involved: Worker, Reviewer, Orchestrator
+
+Deviation:
+- Reviewer returned NEEDS_REVISION because new quality gate docs contained required-validation semantics that conflicted with existing validation mapping references.
+- Conflicts included Rust command/requirement mismatches and frontend E2E scope mismatch for `sleep-ui/src/**` vs `sleep-ui/tests/**` path mapping.
+
+Root cause:
+- Harmonization pass linked docs but did not enforce command/path parity against the canonical validation mapping as a hard checklist step.
+- No explicit precedence rule was documented for conflict resolution between quality gate docs and validation mapping table.
+
+Fix applied:
+- Paused execution before plan close and captured reviewer findings as a deviation event.
+- Initiated plan-delta path to add a targeted reconciliation task before rerunning reviewer gate.
+
+Prevention:
+- Primary promotion target: rules/common
+- Candidate prevention rule (optional):
+  - audience: common
+  - proposed rule: When multiple docs define validation expectations, `docs/coding-agent/references/validation.md` is canonical for required checks unless explicitly superseded in the same change set with synchronized updates.
+- Optional guardrail:
+  - Harmonization checklist must include command/path parity verification across quality gates, validation mapping, and role rules.
+
+Evidence:
+- Reviewer Task_6 result NEEDS_REVISION with concrete conflict findings and file references.
