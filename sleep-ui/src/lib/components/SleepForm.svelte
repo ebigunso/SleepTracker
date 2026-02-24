@@ -23,6 +23,7 @@
   import { upsertRecent, setIntensity } from '$lib/stores/sleep';
   import { pushToast } from '$lib/stores/toast';
   import { computeDurationMin, formatDurationMin } from '$lib/utils/sleep';
+  import { syncIntensityState } from '$lib/utils/intensity';
 
   /**
    * Props
@@ -55,6 +56,7 @@
   let notes = initialNotes;
 
   let intensityDirty = false;
+  let previousInitialIntensity: 'none' | 'light' | 'hard' = initialIntensity;
 
   let loading = false;
   let errorMsg: string | null = null;
@@ -74,8 +76,16 @@
   );
   $: warningMessage = getDurationWarningMessage(durationBounds, formatDurationMin);
 
-  $: if (!intensityDirty && intensity !== initialIntensity) {
-    intensity = initialIntensity;
+  $: {
+    const next = syncIntensityState({
+      intensity,
+      initialIntensity,
+      previousInitialIntensity,
+      dirty: intensityDirty
+    });
+    intensity = next.intensity;
+    previousInitialIntensity = next.previousInitialIntensity;
+    intensityDirty = next.dirty;
   }
 
   function today(): string {
@@ -308,7 +318,6 @@
         as="select"
         className={inputClass}
         bind:value={intensity}
-        on:change={() => (intensityDirty = true)}
       >
         <option value="none">none</option>
         <option value="light">light</option>

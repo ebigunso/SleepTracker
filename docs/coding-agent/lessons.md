@@ -258,3 +258,58 @@ Prevention:
 
 Evidence:
 - Reviewer Task_6 result NEEDS_REVISION with concrete conflict findings and file references.
+
+## 2026-02-25 — Auto-run research tasks unless implementation is required  [tags: workflow, scope, communication]
+
+Context:
+- Plan: docs/coding-agent/plans/active/exercise-intensity-dropdown-investigation-plan.md
+- Task/Wave: pre-Task_1 execution
+- Roles involved: Orchestrator
+
+Symptom:
+- Orchestrator paused for explicit approval after plan creation even though the next step was research-only.
+- User clarified that implementation tasks should be surfaced, but research-only tasks may proceed without explicit approval.
+
+Root cause:
+- Approval gating default was applied too broadly and did not distinguish research-only execution from implementation execution.
+
+Fix applied:
+- Adopted a split approval policy for this repository conversation: proceed automatically for research-only tasks; explicitly notify user before implementation tasks.
+
+Prevention:
+- Repo rule candidate:
+  - audience: orchestrator
+  - proposed rule: After plan creation, do not block on explicit approval for research-only next steps unless the user requested a hard approval gate; always announce before implementation dispatch.
+- Dispatch/plan guardrail (optional):
+  - During pre-dispatch check, label each upcoming task as research-only or implementation and apply approval requirements accordingly.
+
+Evidence:
+- User instruction on 2026-02-25 explicitly defining approval expectations for research vs implementation tasks.
+
+## 2026-02-25 — Prefer non-E2E tests unless E2E adds unique value  [tags: validation, testing, scope]
+
+Context:
+- Plan: docs/coding-agent/plans/completed/exercise-intensity-dropdown-investigation-plan.md
+- Task/Wave: Task_4 / validation strategy
+- Roles involved: Orchestrator
+
+Symptom:
+- Test recommendations included E2E as a routine option for a regression that could be covered by non-E2E tests.
+- User clarified that E2E should be reserved for cases where it is uniquely necessary or clearly superior.
+
+Root cause:
+- Default validation suggestion pattern over-emphasized broad flow coverage and did not prioritize the lowest-effective test layer first.
+
+Fix applied:
+- Switched this task to non-E2E-first validation (`npm run check`, `npm run test:unit`) and added focused unit regression coverage for intensity state sync behavior.
+
+Prevention:
+- Repo rule candidate:
+  - audience: orchestrator
+  - proposed rule: Propose E2E only after stating why unit/integration-level validation is insufficient for the specific risk being covered.
+- Dispatch/plan guardrail (optional):
+  - For validation planning, document test-layer choice as: unit/integration first, E2E only for residual cross-layer risk.
+
+Evidence:
+- User correction on 2026-02-25 explicitly setting E2E usage expectations.
+- This implementation passed with non-E2E validations and targeted unit regression coverage.
