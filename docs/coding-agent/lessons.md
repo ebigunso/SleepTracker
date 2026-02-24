@@ -259,57 +259,113 @@ Prevention:
 Evidence:
 - Reviewer Task_6 result NEEDS_REVISION with concrete conflict findings and file references.
 
-## 2026-02-25 — Auto-run research tasks unless implementation is required  [tags: workflow, scope, communication]
+## 2026-02-22 — Expand skill plans with explicit language/tech depth on request  [tags: planning, skills, scope]
 
 Context:
-- Plan: docs/coding-agent/plans/active/exercise-intensity-dropdown-investigation-plan.md
-- Task/Wave: pre-Task_1 execution
+- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-skill-plan.md
+- Task/Wave: planning phase before execution
 - Roles involved: Orchestrator
 
-Symptom:
-- Orchestrator paused for explicit approval after plan creation even though the next step was research-only.
-- User clarified that implementation tasks should be surfaced, but research-only tasks may proceed without explicit approval.
+Deviation:
+- Initial skill plan included only one generalized language reference, which under-served the requested depth for language/tech-specific best-practice guidance.
 
 Root cause:
-- Approval gating default was applied too broadly and did not distinguish research-only execution from implementation execution.
+- Plan optimized for compact taxonomy first, without enough dedicated per-language/per-tech artifact granularity.
 
 Fix applied:
-- Adopted a split approval policy for this repository conversation: proceed automatically for research-only tasks; explicitly notify user before implementation tasks.
+- Replanned to add dedicated language and tech reference tasks (Rust, TS/JS, Python, Go, and web frameworks).
+- Updated task waves and dependencies so additional references are completed before candidate staging and review gate.
 
 Prevention:
-- Repo rule candidate:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
   - audience: orchestrator
-  - proposed rule: After plan creation, do not block on explicit approval for research-only next steps unless the user requested a hard approval gate; always announce before implementation dispatch.
-- Dispatch/plan guardrail (optional):
-  - During pre-dispatch check, label each upcoming task as research-only or implementation and apply approval requirements accordingly.
+  - proposed rule: For skill-design requests that ask for language/tech-specific guidance, plan must include explicit per-language/per-tech artifacts rather than a single aggregate reference.
+- Optional guardrail:
+  - Add planning check: “Does the requested depth imply dedicated category files?” before finalizing plan draft.
 
 Evidence:
-- User instruction on 2026-02-25 explicitly defining approval expectations for research vs implementation tasks.
+- User explicitly requested more language/tech-specific reference documents.
 
-## 2026-02-25 — Prefer non-E2E tests unless E2E adds unique value  [tags: validation, testing, scope]
+## 2026-02-24 — Skill triggerability requires frontmatter-first precision  [tags: skills, planning, quality]
 
 Context:
-- Plan: docs/coding-agent/plans/completed/exercise-intensity-dropdown-investigation-plan.md
-- Task/Wave: Task_4 / validation strategy
+- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-review-remediation-plan.md
+- Task/Wave: pre-execution review remediation planning
 - Roles involved: Orchestrator
 
-Symptom:
-- Test recommendations included E2E as a routine option for a regression that could be covered by non-E2E tests.
-- User clarified that E2E should be reserved for cases where it is uniquely necessary or clearly superior.
+Deviation:
+- Skill trigger criteria were written mainly in body sections ("When to Use") instead of being concentrated in the frontmatter `description`, reducing trigger quality.
+- Root skill guidance remained partially descriptive instead of fully operational (quick-start procedure, stop condition, and structured output template).
 
 Root cause:
-- Default validation suggestion pattern over-emphasized broad flow coverage and did not prioritize the lowest-effective test layer first.
+- Initial skill drafting prioritized conceptual clarity over trigger mechanics and operational execution ergonomics.
 
 Fix applied:
-- Switched this task to non-E2E-first validation (`npm run check`, `npm run test:unit`) and added focused unit regression coverage for intensity state sync behavior.
+- Added remediation tasks to rewrite SKILL frontmatter/body for triggerability and operational workflow.
+- Added consistency tasks for progressive-disclosure enforcement, template conformance, and policy precedence harmonization.
 
 Prevention:
-- Repo rule candidate:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
   - audience: orchestrator
-  - proposed rule: Propose E2E only after stating why unit/integration-level validation is insufficient for the specific risk being covered.
-- Dispatch/plan guardrail (optional):
-  - For validation planning, document test-layer choice as: unit/integration first, E2E only for residual cross-layer risk.
+  - proposed rule: When authoring skills, encode trigger criteria in frontmatter `description` first and keep body optimized for execution flow (quick start, routing, stop conditions, output template).
+- Optional guardrail:
+  - Pre-dispatch checklist: "Can trigger logic be inferred from frontmatter alone?"
 
 Evidence:
-- User correction on 2026-02-25 explicitly setting E2E usage expectations.
-- This implementation passed with non-E2E validations and targeted unit regression coverage.
+- User provided explicit review comments requiring trigger criteria relocation and operational SKILL.md restructuring.
+
+## 2026-02-25 — Ambiguity reduction requires taxonomy and evidence-field alignment  [tags: skills, quality, consistency]
+
+Context:
+- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-ambiguity-remediation-plan.md
+- Task/Wave: pre-execution assessment and planning
+- Roles involved: Orchestrator
+
+Deviation:
+- Follow-up review identified ambiguity from mixed terminology (routing levels vs validation levels), underspecified evidence fields, and broad routing lists that can cause unnecessary doc loading.
+
+Root cause:
+- Initial remediation improved structure but left small cross-doc terminology and output-template mismatches that reduce operational precision.
+
+Fix applied:
+- Planned targeted updates to tighten trigger description, add load-cues, align taxonomy terms, strengthen required-check evidence fields, clarify stop conditions, and add missing-mapping fallback guidance.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: For skill reviews, run a final ambiguity pass focused on trigger precision, taxonomy alignment, and evidence-template enforceability before declaring done.
+- Optional guardrail:
+  - Include a checklist item: "Can this template be completed without hand-waving required validation outcomes?"
+
+Evidence:
+- User provided explicit recommendation set targeting triggerability, routing efficiency, evidence rigor, and taxonomy consistency.
+
+## 2026-02-25 — Favor high-signal lesson capture over routine iteration logging  [tags: process, quality, lessons]
+
+Context:
+- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-ambiguity-remediation-plan.md
+- Task/Wave: execution kickoff with user correction
+- Roles involved: Orchestrator
+
+Deviation:
+- Lessons were being captured too aggressively during normal back-and-forth planning/review iteration, creating noise.
+
+Root cause:
+- Deviation policy was applied too broadly without enough thresholding for durability/impact.
+
+Fix applied:
+- Adopted stricter capture criteria: log lessons only when a conversation thread surfaces a durable, high-impact concept that should change future defaults.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Do not log lessons for routine plan/review iteration; log only when the pattern is likely to improve future runs across tasks.
+- Optional guardrail:
+  - Before adding a lesson, check: "Would missing this note likely cause repeated errors in future unrelated tasks?"
+
+Evidence:
+- User explicitly requested reducing lesson noise and prioritizing high-quality, durable lessons.
