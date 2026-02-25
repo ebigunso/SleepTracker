@@ -1,6 +1,6 @@
 # Rules (Common)
 
-- last_updated: 2026-02-22
+- last_updated: 2026-02-25
 
 These are repo-specific common rules that apply across roles (Orchestrator / Worker / Researcher / Reviewer).
 Keep them short and concrete. Put deeper guidance in `docs/coding-agent/` references.
@@ -60,6 +60,7 @@ Plans:
 - Required validations are defined by:
   - the plan’s validation items, and
   - `docs/coding-agent/references/validation.md` mapping.
+- Local override (canonical precedence): if quality-gate guidance conflicts with validation guidance, `docs/coding-agent/references/validation.md` is canonical for required checks in this repository.
 
 Rules:
 - If a validation item is required and owned by a system role (worker/reviewer/orchestrator), it must be executed and evidenced before claiming done.
@@ -92,4 +93,5 @@ Add cross-repo / cross-task rules discovered at runtime here.
 These will be migrated into global agent/skills definitions later.
 -->
 
-- (none yet)
+- Finalized (promoted globally, retained as local mapping): required-evidence completeness must block completion state when any required evidence is missing.
+- Finalized (local override retained): path-specific validation-command/canonical-source requirements remain documented in `docs/coding-agent/references/validation.md`.

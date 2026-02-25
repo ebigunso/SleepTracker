@@ -57,7 +57,8 @@ Pick one primary category per lesson entry:
 - other (be specific)
 
 2) Capture atomic lesson entry(ies)
-- Update `docs/coding-agent/lessons.md`
+- Hard-gate deviations: update `docs/coding-agent/lessons.md` in the same turn
+- Non-gate deviations: prefer capture when the lesson is high-signal and reusable across tasks
 - One lesson per failure category
 - Each lesson names exactly one primary promotion target
 

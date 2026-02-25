@@ -1,6 +1,6 @@
 # Rules (Orchestrator)
 
-- last_updated: 2026-02-21
+- last_updated: 2026-02-25
 
 Repo-specific orchestration conventions that layer on top of global Orchestrator instructions.
 
@@ -56,8 +56,9 @@ Write **one lesson per distinct failure category** (planning vs delegation vs va
 If a single narrative contains more than one independent root cause, split it.
 
 ### Immediate capture requirement (required)
-Any deviation that required a course correction should produce lesson capture in the same turn:
-- write atomic lesson entry(ies) to `docs/coding-agent/lessons.md`
+Hard-gate deviations must produce lesson capture in the same turn; for non-gate deviations, prefer capture when the lesson is high-signal and reusable:
+- write atomic lesson entry(ies) to `docs/coding-agent/lessons.md` for hard-gate misses
+- for non-gate deviations, capture when it will prevent recurrence across future tasks
 - apply the smallest prevention update you can immediately:
   - update repo rules/docs, OR
   - add a troubleshooting entry, OR
@@ -108,5 +109,6 @@ Add cross-repo / cross-task rules discovered at runtime here.
 These will be migrated into global agent/skills definitions later.
 -->
 
-- Candidate for global Orchestrator guidance: “Deviation-driven improvement loop (deviations → lessons → prevention)”
-- Candidate for global Orchestrator guidance: “Plan-first + subagent-first is complexity-driven (not situation-driven)”
+- Finalized (promoted globally): “Deviation-driven improvement loop (deviations → lessons → prevention)”
+- Finalized (promoted globally): “Plan-first + subagent-first is complexity-driven (not situation-driven)”
+- Finalized (promoted globally): “Required-evidence completeness check is fail-fast and blocks done state until evidence exists or is explicitly waived.”

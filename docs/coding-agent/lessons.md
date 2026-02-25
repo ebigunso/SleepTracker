@@ -84,208 +84,18 @@ Evidence:
 ## Entries
 
 <!-- Append new lessons below this line. Keep entries atomic. -->
+### Promotion Traceability (Task_7: 2026-02-25)
 
-## 2026-02-22 — Complete plan lifecycle before task close  [tags: planning, review]
+The following lessons were promoted into durable docs/skills and removed from active lesson entries:
 
-Context:
-- Plan: docs/coding-agent/plans/completed/pr53-unresolved-comments-and-main-conflict-resolution-plan.md
-- Task/Wave: post-merge housekeeping
-- Roles involved: Orchestrator
-
-Deviation:
-- Completed execution work but did not immediately set plan status to completed and move plan files from active to completed.
-
-Root cause:
-- Turn closure focused on code/PR outcomes and skipped final plan-lifecycle checkpoint.
-
-Fix applied:
-- Updated relevant plan files to `status: completed`.
-- Moved completed plans from `docs/coding-agent/plans/active/` to `docs/coding-agent/plans/completed/`.
-
-Prevention:
-- Primary promotion target: rules/orchestrator
-- Candidate prevention rule (optional):
-  - audience: orchestrator
-  - proposed rule: Before final response on non-trivial tasks, run a mandatory “plan lifecycle closeout” check (status + archive move).
-- Optional guardrail:
-  - Add a turn-closing checklist item: “Are all executed active plans marked completed and archived?”
-
-Evidence:
-- User explicitly flagged missed plan completion/archival after task execution.
-
-## 2026-02-22 — Reviewer gate must include required UI evidence artifacts  [tags: validation, review]
-
-Context:
-- Plan: docs/coding-agent/plans/active/sleep-edit-theme-shell-unification-plan.md
-- Task/Wave: Task_2 / Wave 2
-- Roles involved: Orchestrator, Reviewer
-
-Deviation:
-- Reviewer returned NEEDS_REVISION because required dark-mode screenshots under `.playwright-cli/` were missing.
-- Initial review evidence did not conclusively satisfy the planned create/edit/delete smoke-flow proof.
-
-Root cause:
-- Reviewer dispatch prompt did not enforce artifact path verification as a hard completion condition before returning status.
-- Validation gate was interpreted as best-effort test execution instead of strict evidence checklist completion.
-
-Fix applied:
-- Paused execution and re-routed through improvement loop before continuing.
-- Added a plan decision-log delta to re-run reviewer gate with explicit artifact capture and evidence checklist checks.
-
-Prevention:
-- Primary promotion target: references/ui-e2e.md
-- Candidate prevention rule (optional):
-  - audience: orchestrator
-  - proposed rule: Reviewer prompts for UI-impact tasks must include explicit required artifact filenames/locations and fail-fast if missing.
-- Optional guardrail:
-  - Before accepting Reviewer APPROVED, verify each required artifact path exists.
-
-Evidence:
-- Reviewer report status NEEDS_REVISION with missing `.playwright-cli` screenshot artifacts.
-
-## 2026-02-22 — Normalize cwd in persistent terminal validation runs  [tags: environment, validation]
-
-Context:
-- Plan: docs/coding-agent/plans/active/sleep-edit-theme-shell-unification-plan.md
-- Task/Wave: Task_1 / Wave 1
-- Roles involved: Worker
-
-Deviation:
-- Required command `cd sleep-ui && npm run test:unit` failed on first attempt because the persistent shell was already in `sleep-ui`.
-
-Root cause:
-- Validation commands assumed repository-root cwd for each invocation despite persistent terminal state.
-
-Fix applied:
-- Worker recovered by checking cwd and running `npm run test:unit` from the correct directory.
-
-Prevention:
-- Primary promotion target: troubleshooting/index.md
-- Candidate prevention rule (optional):
-  - audience: worker
-  - proposed rule: In persistent terminal sessions, verify cwd (`pwd`) before repeated `cd <dir> && ...` sequences.
-- Optional guardrail:
-  - Prefer absolute-path command forms for required validation scripts when run serially.
-
-Evidence:
-- Worker report captured initial cwd-related failure followed by successful recovered run.
-
-## 2026-02-22 — Split mixed-abstraction doc planning and enforce harmonization pass  [tags: planning, scope, docs]
-
-Context:
-- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
-- Task/Wave: planning phase before execution
-- Roles involved: Orchestrator
-
-Deviation:
-- Initial plan grouped high-level principles and lower-level architecture/language gates too coarsely, creating risk of worker context overload.
-- Cross-document optimization/consistency safeguards were not explicit enough in the first decomposition.
-
-Root cause:
-- Plan decomposition prioritized deliverable grouping over abstraction-level separation.
-- Missing default planning guardrail to force a final harmonization pass when documents are intentionally split by abstraction.
-
-Fix applied:
-- Replanned into finer tasks separating high-level principles from architecture and language-specific gates.
-- Added explicit whole-spectrum harmonization task before reviewer gate.
-
-Prevention:
-- Primary promotion target: rules/orchestrator
-- Candidate prevention rule (optional):
-  - audience: orchestrator
-  - proposed rule: When documentation spans multiple abstraction levels, decompose tasks by abstraction boundary and require a pre-review harmonization pass for consistency.
-- Optional guardrail:
-  - During plan drafting, run a quick check: “Are high-level principles, architecture gates, and language gates authored in separate tasks, and is there a final consistency sweep?”
-
-Evidence:
-- User explicitly requested finer task breakdown by abstraction level and explicit final consistency/optimization pass.
-
-## 2026-02-22 — Enforce task owns/objective alignment in plan quality  [tags: planning, scope]
-
-Context:
-- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
-- Task/Wave: plan refinement before Worker dispatch
-- Roles involved: Orchestrator
-
-Deviation:
-- `Task_1` objective required backend and frontend high-level principles, but `owns` did not include the frontend principles file.
-- This mismatch risked preventing Workers from fully satisfying acceptance criteria within allowed edit scope.
-
-Root cause:
-- Plan edit introduced scope/objective drift without a final integrity check for each task block (`owns`, `acceptance`, `depends_on`, `validation`).
-
-Fix applied:
-- Updated `Task_1` `owns` to include both backend and frontend principles files.
-- Repaired the full plan structure to restore consistent task definitions and dependency links.
-
-Prevention:
-- Primary promotion target: rules/orchestrator
-- Candidate prevention rule (optional):
-  - audience: orchestrator
-  - proposed rule: Before requesting approval or dispatching Workers, validate each Task_X for one-to-one alignment between objective language and declared `owns` paths.
-- Optional guardrail:
-  - Add a pre-dispatch checklist item: “Can every acceptance bullet be delivered by files listed in `owns`?”
-
-Evidence:
-- User flagged direct inconsistency between `Task_1` narrative and `owns` scope.
-
-## 2026-02-22 — Resolve validation precedence conflicts during doc harmonization  [tags: validation, docs, review]
-
-Context:
-- Plan: docs/coding-agent/plans/active/refactor-quality-baselines-plan.md
-- Task/Wave: Task_6 reviewer gate after Task_5 harmonization
-- Roles involved: Worker, Reviewer, Orchestrator
-
-Deviation:
-- Reviewer returned NEEDS_REVISION because new quality gate docs contained required-validation semantics that conflicted with existing validation mapping references.
-- Conflicts included Rust command/requirement mismatches and frontend E2E scope mismatch for `sleep-ui/src/**` vs `sleep-ui/tests/**` path mapping.
-
-Root cause:
-- Harmonization pass linked docs but did not enforce command/path parity against the canonical validation mapping as a hard checklist step.
-- No explicit precedence rule was documented for conflict resolution between quality gate docs and validation mapping table.
-
-Fix applied:
-- Paused execution before plan close and captured reviewer findings as a deviation event.
-- Initiated plan-delta path to add a targeted reconciliation task before rerunning reviewer gate.
-
-Prevention:
-- Primary promotion target: rules/common
-- Candidate prevention rule (optional):
-  - audience: common
-  - proposed rule: When multiple docs define validation expectations, `docs/coding-agent/references/validation.md` is canonical for required checks unless explicitly superseded in the same change set with synchronized updates.
-- Optional guardrail:
-  - Harmonization checklist must include command/path parity verification across quality gates, validation mapping, and role rules.
-
-Evidence:
-- Reviewer Task_6 result NEEDS_REVISION with concrete conflict findings and file references.
-
-## 2026-02-22 — Expand skill plans with explicit language/tech depth on request  [tags: planning, skills, scope]
-
-Context:
-- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-skill-plan.md
-- Task/Wave: planning phase before execution
-- Roles involved: Orchestrator
-
-Deviation:
-- Initial skill plan included only one generalized language reference, which under-served the requested depth for language/tech-specific best-practice guidance.
-
-Root cause:
-- Plan optimized for compact taxonomy first, without enough dedicated per-language/per-tech artifact granularity.
-
-Fix applied:
-- Replanned to add dedicated language and tech reference tasks (Rust, TS/JS, Python, Go, and web frameworks).
-- Updated task waves and dependencies so additional references are completed before candidate staging and review gate.
-
-Prevention:
-- Primary promotion target: rules/orchestrator
-- Candidate prevention rule (optional):
-  - audience: orchestrator
-  - proposed rule: For skill-design requests that ask for language/tech-specific guidance, plan must include explicit per-language/per-tech artifacts rather than a single aggregate reference.
-- Optional guardrail:
-  - Add planning check: “Does the requested depth imply dedicated category files?” before finalizing plan draft.
-
-Evidence:
-- User explicitly requested more language/tech-specific reference documents.
+- 2026-02-22 — Complete plan lifecycle before task close → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md` (plan lifecycle closeout gate)
+- 2026-02-22 — Reviewer gate must include required UI evidence artifacts → `%USERPROFILE%/.agents/skills/playwright-e2e-evidence/SKILL.md`, `docs/coding-agent/references/ui-e2e.md`
+- 2026-02-22 — Normalize cwd in persistent terminal validation runs → `%USERPROFILE%/.agents/skills/workspace-troubleshooting/SKILL.md`
+- 2026-02-22 — Split mixed-abstraction doc planning and enforce harmonization pass → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/plan-format/SKILL.md`
+- 2026-02-22 — Enforce task owns/objective alignment in plan quality → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/plan-format/SKILL.md`
+- 2026-02-22 — Resolve validation precedence conflicts during doc harmonization → `docs/coding-agent/rules/common.md`, `docs/coding-agent/references/validation.md`
+- 2026-02-22 — Expand skill plans with explicit language/tech depth on request → `%USERPROFILE%/.agents/skills/plan-format/SKILL.md`
+- 2026-02-25 — Favor high-signal lesson capture over routine iteration logging → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/improvement-loop/SKILL.md`, `docs/coding-agent/references/improvement-loop.md`
 
 ## 2026-02-24 — Skill triggerability requires frontmatter-first precision  [tags: skills, planning, quality]
 
@@ -343,29 +153,58 @@ Prevention:
 Evidence:
 - User provided explicit recommendation set targeting triggerability, routing efficiency, evidence rigor, and taxonomy consistency.
 
-## 2026-02-25 — Favor high-signal lesson capture over routine iteration logging  [tags: process, quality, lessons]
+## 2026-02-25 — Treat third-party skills as read-only unless explicitly approved  [tags: scope, skills, governance]
 
 Context:
-- Plan: docs/coding-agent/plans/active/engineering-quality-baselines-ambiguity-remediation-plan.md
-- Task/Wave: execution kickoff with user correction
+- Plan: docs/coding-agent/plans/active/global-promotion-of-lessons-plan.md
+- Task/Wave: planning delta before execution approval
 - Roles involved: Orchestrator
 
 Deviation:
-- Lessons were being captured too aggressively during normal back-and-forth planning/review iteration, creating noise.
+- Planned updates included `skill-creator`, but user clarified it is sourced from credible third parties and should not be freely modified.
 
 Root cause:
-- Deviation policy was applied too broadly without enough thresholding for durability/impact.
+- Promotion planning optimized for consistency across skill files and did not apply a provenance-based editability check before scoping targets.
 
 Fix applied:
-- Adopted stricter capture criteria: log lessons only when a conversation thread surfaces a durable, high-impact concept that should change future defaults.
+- Removed `skill-creator` from planned `owns` and acceptance criteria in the active plan.
+- Marked `skill-creator` as read-only reference input for this effort.
 
 Prevention:
 - Primary promotion target: rules/orchestrator
 - Candidate prevention rule (optional):
   - audience: orchestrator
-  - proposed rule: Do not log lessons for routine plan/review iteration; log only when the pattern is likely to improve future runs across tasks.
+  - proposed rule: Before planning edits to global skills, verify provenance/editability constraints and exclude third-party-managed assets unless explicitly approved.
 - Optional guardrail:
-  - Before adding a lesson, check: "Would missing this note likely cause repeated errors in future unrelated tasks?"
+  - Add a pre-approval checklist item: "Are all targeted files editable under current governance constraints?"
 
 Evidence:
-- User explicitly requested reducing lesson noise and prioritizing high-quality, durable lessons.
+- User explicitly directed: skip planned modifications to `skill-creator` because it is third-party sourced.
+
+## 2026-02-25 — Keep SKILL.md as routing, move procedural runbooks to references  [tags: skills, structure, quality]
+
+Context:
+- Plan: follow-up refinement after global-promotion-of-lessons execution
+- Task/Wave: post-implementation correction handling
+- Roles involved: Orchestrator
+
+Deviation:
+- Shell troubleshooting procedures were written directly in `workspace-troubleshooting/SKILL.md` instead of being placed in a reference file with SKILL-level routing cues.
+
+Root cause:
+- Previous update optimized for content completeness and missed progressive-disclosure placement discipline from skill-authoring guidance.
+
+Fix applied:
+- Refactored `workspace-troubleshooting/SKILL.md` to keep high-level routing guidance only.
+- Added `workspace-troubleshooting/references/persistent-shell-cwd-normalization.md` for detailed shell/cwd runbook steps.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: For skill updates, place command-level troubleshooting procedures in `references/*` and keep SKILL.md focused on trigger/routing guidance.
+- Optional guardrail:
+  - Before finalizing skill edits, check: "Does SKILL.md contain only core rules + when-to-read pointers, with detailed runbooks moved to references?"
+
+Evidence:
+- User explicitly requested relocating shell troubleshooting steps from SKILL.md into reference docs and using skill-creator best practices.
