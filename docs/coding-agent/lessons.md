@@ -208,3 +208,57 @@ Prevention:
 
 Evidence:
 - User explicitly requested relocating shell troubleshooting steps from SKILL.md into reference docs and using skill-creator best practices.
+
+## 2026-02-25 — Default commit strategy should enforce logical chunking  [tags: process, git, workflow]
+
+Context:
+- Plan: follow-up preference capture after documentation updates
+- Task/Wave: post-commit user correction
+- Roles involved: Orchestrator
+
+Deviation:
+- Commit chunking was performed in this run, but it was not yet established as an explicit default workflow behavior.
+
+Root cause:
+- Commit execution behavior relied on local task judgment instead of a persisted default preference.
+
+Fix applied:
+- Adopted chunked, logically scoped commits as the default behavior for subsequent tasks.
+
+Prevention:
+- Primary promotion target: rules/orchestrator
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Create commits in cohesive, reviewable chunks that align to logical units of work unless the user requests otherwise.
+- Optional guardrail:
+  - Before committing, check: "Does this commit represent one coherent intent and avoid unrelated changes?"
+
+Evidence:
+- User explicitly requested making reasonable-chunk commits the default going forward.
+
+## 2026-02-25 — Persist new workflow defaults in lessons during the same turn  [tags: process, lessons, workflow]
+
+Context:
+- Plan: follow-up preference capture after documentation updates
+- Task/Wave: post-commit user correction
+- Roles involved: Orchestrator
+
+Deviation:
+- A new default workflow preference was applied, but lesson capture for promotion readiness was not recorded in the same turn.
+
+Root cause:
+- Preference adoption and lesson persistence were handled as separate steps instead of one atomic correction flow.
+
+Fix applied:
+- Added explicit lesson capture for the new default workflow preference.
+
+Prevention:
+- Primary promotion target: references/improvement-loop
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: When a user sets a persistent default, append a lesson entry in the same turn so promotion tracking is never deferred.
+- Optional guardrail:
+  - Before ending a turn with default-behavior changes, check: "Is the new default persisted in lessons with a promotion target?"
+
+Evidence:
+- User explicitly requested that default preferences be captured in lessons for later promotion.
