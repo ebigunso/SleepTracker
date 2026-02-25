@@ -262,3 +262,32 @@ Prevention:
 
 Evidence:
 - User explicitly requested that default preferences be captured in lessons for later promotion.
+
+## 2026-02-25 — Commit work on a branch, not directly on main  [tags: git, workflow, safety]
+
+Context:
+- Plan: follow-up correction after commit execution
+- Task/Wave: post-commit remediation
+- Roles involved: Orchestrator
+
+Deviation:
+- Commits were created directly on `main`, which the user flagged as non-ideal workflow.
+
+Root cause:
+- Commit execution followed logical chunking preference but missed branch-target safety preference.
+
+Fix applied:
+- Created branch `chore/move-doc-commits-off-main`.
+- Preserved and re-applied the recent commits on that branch.
+- Reset `main` back to `origin/main` so direct commits were removed from `main`.
+
+Prevention:
+- Primary promotion target: rules/common
+- Candidate prevention rule (optional):
+  - audience: common
+  - proposed rule: Before creating commits, verify the current branch is not `main` unless the user explicitly requests committing on `main`.
+- Optional guardrail:
+  - Add a pre-commit checklist item: "Current branch checked and non-main confirmed?"
+
+Evidence:
+- User explicitly requested removing direct `main` commits and re-applying them in a new branch.
