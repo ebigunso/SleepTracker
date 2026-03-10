@@ -37,7 +37,7 @@ Keep it updated with the docs that should be read before specific kinds of work.
 | `docs/coding-agent/references/how-to-run.md` | before running local dev / UI checks | ports, readiness, startup |
 | `docs/coding-agent/references/validation.md` | before marking tasks done | path→required validations mapping |
 | `docs/coding-agent/references/ui-e2e.md` | before UI/E2E evidence collection | artifact rules + evidence checklist |
-| `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates, but only for repo-specific overrides after consulting the first-party `improvement-loop` skill | SleepTracker-specific supplements to the global deviation-handling flow |
+| `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates | SleepTracker-specific supplements to the global deviation-handling flow; only for repo-specific overrides after consulting the first-party `improvement-loop` skill |
 | `docs/coding-agent/quality/index.md` | before refactor/review quality checks | baseline layering (principles vs gates vs rubric) |
 | `docs/coding-agent/quality/QUALITY_SCORE.md` | during review gates | consistent quality rubric |
 

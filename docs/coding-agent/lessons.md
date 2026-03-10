@@ -94,8 +94,8 @@ The following lessons were promoted into durable docs/skills and removed from ac
 - 2026-02-22 — Enforce task owns/objective alignment in plan quality → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/plan-format/SKILL.md`
 - 2026-02-22 — Resolve validation precedence conflicts during doc harmonization → `docs/coding-agent/rules/common.md`, `docs/coding-agent/references/validation.md`
 - 2026-02-22 — Expand skill plans with explicit language/tech depth on request → `%USERPROFILE%/.agents/skills/plan-format/SKILL.md`
-- 2026-02-25 — Favor high-signal lesson capture over routine iteration logging → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/improvement-loop/SKILL.md`, `docs/coding-agent/references/improvement-loop.md`
 - 2026-02-24 — Skill triggerability requires frontmatter-first precision → `%USERPROFILE%/.agents/skills/skills-maintenance/SKILL.md`
+- 2026-02-25 — Favor high-signal lesson capture over routine iteration logging → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/improvement-loop/SKILL.md`, `docs/coding-agent/references/improvement-loop.md`
 - 2026-02-25 — Ambiguity reduction requires taxonomy and evidence-field alignment → `%USERPROFILE%/.agents/skills/skills-maintenance/SKILL.md`
 - 2026-02-25 — Treat third-party skills as read-only unless explicitly approved → `%APPDATA%/Code/User/prompts/Orchestrator.agent.md`, `%USERPROFILE%/.agents/skills/skills-maintenance/SKILL.md`
 - 2026-02-25 — Keep SKILL.md as routing, move procedural runbooks to references → `%USERPROFILE%/.agents/skills/skills-maintenance/SKILL.md`
