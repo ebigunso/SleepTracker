@@ -37,7 +37,7 @@ Keep it updated with the docs that should be read before specific kinds of work.
 | `docs/coding-agent/references/how-to-run.md` | before running local dev / UI checks | ports, readiness, startup |
 | `docs/coding-agent/references/validation.md` | before marking tasks done | path→required validations mapping |
 | `docs/coding-agent/references/ui-e2e.md` | before UI/E2E evidence collection | artifact rules + evidence checklist |
-| `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates | mandatory pause→lesson→prevention loop |
+| `docs/coding-agent/references/improvement-loop.md` | after deviations, corrections, or missed gates, but only for repo-specific overrides after consulting the first-party `improvement-loop` skill | SleepTracker-specific supplements to the global deviation-handling flow |
 | `docs/coding-agent/quality/index.md` | before refactor/review quality checks | baseline layering (principles vs gates vs rubric) |
 | `docs/coding-agent/quality/QUALITY_SCORE.md` | during review gates | consistent quality rubric |
 
@@ -45,9 +45,8 @@ Keep it updated with the docs that should be read before specific kinds of work.
 
 ## 3. Workflow (repo conventions)
 
-- Preferred flow: Plan → Branch → PR (or equivalent) for non-trivial work.
+- Keep repo-local workflow policy declarative here; use `git-workflow` for branch-safety gates, commit chunking, and safe Git procedure.
 - Keep work in small waves that preserve a runnable state.
-- If you are on `main` at task start, create a new branch before edits.
 
 Plans:
 - Create plans under: `docs/coding-agent/plans/active/`
@@ -77,6 +76,7 @@ UI evidence:
 - Avoid breaking changes unless explicitly approved.
 - Avoid touching unrelated modules outside the task scope.
 - Prefer conservative edits when repository constraints are unclear; document assumptions.
+- Route deviation handling and durable correction capture to `improvement-loop`; keep only repo-specific overrides in local docs.
 
 ---
 

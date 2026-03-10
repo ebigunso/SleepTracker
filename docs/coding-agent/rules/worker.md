@@ -1,12 +1,13 @@
 # Repository Rules (Worker)
 
-- last_updated: 2026-02-03
+- last_updated: 2026-03-10
 
 ## Repo-Specific Worker Notes
 - Common pitfalls in this repo: local HTTP needs COOKIE_SECURE=0 or __Host- cookies will not be set; mutating API calls require CSRF double-submit (cookie + X-CSRF-Token); sleep `date` uses wake-date semantics and overlapping sessions are rejected.
 - Preferred patterns / libraries: Rust Axum + SQLx in sleep-api; SvelteKit + Tailwind in sleep-ui; use sleep-ui/src/lib/api.ts for API calls; use existing models in sleep-api/src/models.
 - Style rules that are not auto-enforced: keep SvelteKit route structure (+page/+layout) intact; keep API request/response shapes aligned with openapi.yaml.
 - Any directories that require extra caution: migrations/ (do not edit existing migrations), sleep-api/src/security/, sleep-api/src/auth.rs, sleep-api/src/middleware/.
+- Use `git-workflow` and `improvement-loop` for cross-repo procedure; keep this file limited to repo-specific implementation pitfalls and validation mapping.
 
 ## Repo CI / Checks Mapping
 - If you touch sleep-api/**, Cargo.toml, Cargo.lock, migrations/**, run cargo fmt -- --check; cargo clippy -- -D warnings; cargo test / expect CI Backend.
