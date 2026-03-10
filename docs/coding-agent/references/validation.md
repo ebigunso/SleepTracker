@@ -4,6 +4,8 @@ This doc maps *what changed* → *what validations are required*.
 
 The goal is to remove ambiguity so agents do not treat validation as optional.
 
+Local override (canonical precedence): for this repository, this document is the canonical source for required validation checks when other quality/gate docs differ.
+
 ---
 
 ## Canonical local commands
@@ -41,7 +43,7 @@ Fill in a table like this. Keep it simple and actionable.
 ## Validation evidence expectations
 
 - If a validation is required and cannot be run:
-  - do not mark done
+  - do not mark done (fail-fast)
   - record why and what remains
   - request explicit waiver if needed
 

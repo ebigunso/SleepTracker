@@ -41,7 +41,7 @@ For each required flow:
    - at least 2 representative breakpoints (e.g., mobile + desktop)
 5) artifact presence check:
   - verify each required screenshot path exists under `.playwright-cli/`
-  - if any required artifact is missing, mark review as `NEEDS_REVISION`
+  - if any required artifact is missing, mark review as non-passing (`FAIL` or `NEEDS_REVISION`)
 
 ---
 
