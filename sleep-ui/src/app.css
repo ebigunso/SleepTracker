@@ -317,7 +317,7 @@
   }
 
   .auth-show-toggle[aria-pressed='true'] {
-    color: var(--color-primary);
+    color: var(--color-text-muted);
     background: transparent;
     border-color: transparent;
   }
