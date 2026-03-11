@@ -322,7 +322,7 @@
     border-color: transparent;
   }
 
-  .auth-show-toggle:not([aria-pressed='true']):hover {
+  .auth-show-toggle:hover {
     color: var(--color-primary);
     background: var(--color-primary-soft);
     border-color: var(--color-primary-border);
