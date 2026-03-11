@@ -105,3 +105,81 @@ The following lessons were promoted into durable docs/skills and removed from ac
 
 ### Lesson Entries
 <!-- Append new lessons below this line. Keep entries atomic. -->
+
+## 2026-03-11 — Do not infer plan approval from follow-up requirements  [tags: workflow, approval-gate, assumptions]
+
+Context:
+- Plan: `docs/coding-agent/plans/completed/login-password-visibility-icons-plan.md`
+- Task/Wave: Pre-Wave 1 / Task_1 dispatch
+- Roles involved: Orchestrator, User, Worker
+
+Deviation:
+- I treated a follow-up requirement clarification (theme-correct icon coloring) as implicit approval to execute a non-trivial plan.
+- I dispatched Task_1 before the user gave an explicit approval signal.
+
+Root cause:
+- I collapsed “scope clarification” and “approval” into the same signal instead of treating approval as a separate gate.
+- I did not require an explicit yes/approve-style acknowledgment before moving from planning to execution.
+
+Fix applied:
+- Paused further execution after the correction instead of continuing into reviewer work.
+- Recorded the deviation and updated the active plan to reflect the pause and the need for explicit approval to continue beyond already-dispatched work.
+
+Prevention:
+- Primary promotion target: global-skill
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Treat follow-up requirements, clarifications, and refinements as non-approval unless the user explicitly approves the plan or directly instructs execution.
+- Optional guardrail:
+  - Before dispatching any non-trivial Worker task after a plan, confirm the latest user message contains an explicit approval or direct execution instruction; otherwise stop and ask.
+
+Evidence:
+- User correction on 2026-03-11: "you should have not assumed I gave approval when that is not the obvious intention of the message."
+
+## 2026-03-12 — Verify worktree with diff before claiming branch is clean  [tags: workflow, verification, git]
+
+Context:
+- Plan: Follow-up polish on `chore/login-password-toggle-icons`
+- Task/Wave: Post-commit / PR creation handoff
+- Roles involved: Orchestrator, User
+
+Deviation:
+- I reported that the latest visual polish had already been committed and that the branch was clean.
+- A subsequent user check revealed the most recent `app.css` change was still uncommitted.
+
+Root cause:
+- I relied on one git cleanliness check and did not cross-check the worktree with an explicit file diff before declaring the branch clean.
+- I proceeded to PR creation after a stale assumption about commit coverage instead of re-verifying the exact latest requested file change.
+
+Fix applied:
+- Verified the pending `sleep-ui/src/app.css` diff directly, then committed and pushed the missing change.
+- Recorded the verification miss in the lessons log before closing the correction loop.
+
+Prevention:
+- Primary promotion target: global-skill
+- Candidate prevention rule (optional):
+  - audience: orchestrator
+  - proposed rule: Before claiming a branch is clean or opening a PR after follow-up edits, verify both `git status` and a targeted `git diff` for the last-touched files.
+- Optional guardrail:
+  - When the user asks to commit recent edits, confirm the intended file diff is empty after the commit and push sequence before reporting completion.
+
+Evidence:
+- User correction on 2026-03-12: "The latest change is still uncomitted!"
+- `git diff -- sleep-ui/src/app.css` showed the pending color change from `var(--color-primary)` to `var(--color-text-muted)`.
+
+## 2026-03-12 — Never commit user-identifying local paths into repo artifacts  [tags: privacy, docs, git, validation]
+
+Context:
+
+Deviation:
+
+Root cause:
+
+Fix applied:
+
+Prevention:
+  - audience: orchestrator
+  - proposed rule: Before committing plans, lessons, or validation notes, replace machine-specific absolute paths and user-profile references with repo-relative or environment-agnostic forms.
+  - Run a targeted search for `C:/Users`, `/c/Users`, `%USERPROFILE%`, `%APPDATA%`, `AppData`, and similar local-path markers before pushing documentation-heavy changes.
+
+Evidence:

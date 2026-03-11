@@ -290,6 +290,10 @@
     box-shadow: 0 0 0 3px var(--color-danger-border);
   }
 
+  .auth-input--with-toggle {
+    padding-right: 3.5rem;
+  }
+
   .auth-error-box {
     background: var(--color-danger-surface);
     border-color: var(--color-danger-border);
@@ -301,11 +305,21 @@
   }
 
   .auth-show-toggle {
-    background: var(--color-surface-muted);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-    min-width: 3.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0;
+    color: var(--color-text-muted);
+    border: 1px solid transparent;
+    background: transparent;
     transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .auth-show-toggle[aria-pressed='true'] {
+    color: var(--color-text-muted);
+    background: transparent;
+    border-color: transparent;
   }
 
   .auth-show-toggle:hover {
@@ -316,6 +330,28 @@
 
   .auth-show-toggle:focus-visible {
     box-shadow: 0 0 0 3px var(--color-ring);
+  }
+
+  .auth-show-toggle__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: currentColor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+  }
+
+  .auth-show-toggle__icon--hidden {
+    mask-image: url('/icons/eye.svg');
+    -webkit-mask-image: url('/icons/eye.svg');
+  }
+
+  .auth-show-toggle__icon--visible {
+    mask-image: url('/icons/eye-slashed.svg');
+    -webkit-mask-image: url('/icons/eye-slashed.svg');
   }
 
   .auth-primary-button {
