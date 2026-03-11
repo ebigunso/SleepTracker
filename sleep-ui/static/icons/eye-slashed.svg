@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <defs>
+        <clipPath id="cut-above-slash">
+        <!-- only the half-plane above the slash -->
+        <polygon points="0 0 24 0 0 24"/>
+        </clipPath>
+
+        <mask id="eye-off-mask">
+            <rect width="24" height="24" fill="white"/>
+            <!-- cutout exists only above the slash, not below/right of it -->
+            <g clip-path="url(#cut-above-slash)">
+                <path d="M4 20L20 4" stroke="black" stroke-width="5" stroke-linecap="round"/>
+            </g>
+        </mask>
+    </defs>
+
+    <g mask="url(#eye-off-mask)">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/>
+        <circle cx="12" cy="12" r="3"/>
+    </g>
+
+    <path d="M4 20L20 4"/>
+</svg>

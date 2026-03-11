@@ -97,7 +97,7 @@
         <div class="relative">
           <input
             id="password"
-            class={`auth-input pr-14 ${passwordError ? 'auth-input--error' : ''}`}
+            class={`auth-input auth-input--with-toggle ${passwordError ? 'auth-input--error' : ''}`}
             type={showPassword ? 'text' : 'password'}
             name="password"
             bind:value={password}
@@ -112,13 +112,16 @@
           />
           <button
             type="button"
-            class="auth-show-toggle absolute inset-y-0 right-2 my-auto rounded-full px-3 text-xs font-semibold"
+            class="auth-show-toggle absolute inset-y-0 right-1.5 my-auto inline-flex items-center justify-center"
             aria-pressed={showPassword}
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             on:click={() => (showPassword = !showPassword)}
             data-testid="login-password-visibility-toggle-action"
           >
-            {showPassword ? 'Hide' : 'Show'}
+            <span
+              aria-hidden="true"
+              class={`auth-show-toggle__icon ${showPassword ? 'auth-show-toggle__icon--visible' : 'auth-show-toggle__icon--hidden'}`}
+            ></span>
           </button>
         </div>
         {#if passwordError}
