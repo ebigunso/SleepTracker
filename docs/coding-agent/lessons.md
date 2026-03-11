@@ -109,7 +109,7 @@ The following lessons were promoted into durable docs/skills and removed from ac
 ## 2026-03-11 — Do not infer plan approval from follow-up requirements  [tags: workflow, approval-gate, assumptions]
 
 Context:
-- Plan: `docs/coding-agent/plans/active/login-password-visibility-icons-plan.md`
+- Plan: `docs/coding-agent/plans/completed/login-password-visibility-icons-plan.md`
 - Task/Wave: Pre-Wave 1 / Task_1 dispatch
 - Roles involved: Orchestrator, User, Worker
 
@@ -166,3 +166,20 @@ Prevention:
 Evidence:
 - User correction on 2026-03-12: "The latest change is still uncomitted!"
 - `git diff -- sleep-ui/src/app.css` showed the pending color change from `var(--color-primary)` to `var(--color-text-muted)`.
+
+## 2026-03-12 — Never commit user-identifying local paths into repo artifacts  [tags: privacy, docs, git, validation]
+
+Context:
+
+Deviation:
+
+Root cause:
+
+Fix applied:
+
+Prevention:
+  - audience: orchestrator
+  - proposed rule: Before committing plans, lessons, or validation notes, replace machine-specific absolute paths and user-profile references with repo-relative or environment-agnostic forms.
+  - Run a targeted search for `C:/Users`, `/c/Users`, `%USERPROFILE%`, `%APPDATA%`, `AppData`, and similar local-path markers before pushing documentation-heavy changes.
+
+Evidence:

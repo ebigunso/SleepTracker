@@ -143,7 +143,7 @@
   - Summary: Task_1 implementation and worker validations completed, but execution paused after user clarified that the prior message was not an approval signal.
   - Validation evidence:
     - `cd sleep-ui && npm run check` (pass)
-    - `cd /c/Users/Kohta/GitLocal/SleepTracker/sleep-ui && npm run test:unit` (pass)
+    - `cd sleep-ui && npm run test:unit` (pass)
   - Notes: Do not proceed to reviewer evidence or plan closeout without explicit approval to continue.
 
 - 2026-03-11 00:20 Wave 2 completed: [Task_2]
@@ -155,7 +155,7 @@
     - `.playwright-cli/login-dark-visible-mobile.png`
     - `.playwright-cli/login-password-visibility-console.log`
     - `.playwright-cli/login-password-visibility-network.log`
-  - Notes: Reviewer status APPROVED; no console errors, failed requests, or unexpected redirects observed.
+  - Notes: Reviewer status APPROVED after the explicit continuation approval recorded in the 2026-03-11 00:18 decision; no console errors, failed requests, or unexpected redirects observed.
 
 ## Decision Log (append-only; re-plans and major discoveries)
 
